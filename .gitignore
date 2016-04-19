@@ -1,3 +1,7 @@
+.metadata/
+.project
+RemoteSystemTempFiles/
+
 # Object files
 *.o
 *.ko
