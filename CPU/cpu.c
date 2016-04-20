@@ -13,73 +13,107 @@
 #define PACKAGESIZE 1024	// Define cual va a ser el size maximo del paquete a enviar
 
 int main(void) {
-	int socket_desc , client_sock , c , read_size;
-	struct sockaddr_in server , client;
-	char client_message[2000];
+	char client_message[PACKAGESIZE], codeBlock[PACKAGESIZE];
+	int kernelClient, umcClient;
 	PCB incoming_pcb;
-
-	//Create socket
-	socket_desc = socket(AF_INET , SOCK_STREAM , 0);
-	if (socket_desc == -1)
+	char message[1000];
+	char* nextLine = (char*) malloc(NEXT_LINE_SIZE), parsedLines;
+	if (nextLine == NULL)
 	{
+		printf("No hay espacio suficiente para nextLine");
+	}
+	//Create socket
+	getKernelClient(&kernelClient);
+	getUmcClient(&umcClient);
+	//CPU loop
+	//Recv Kernell message (PCB) BLOCKING
+
+	while (read_size = recv(kernelClient , incoming_pcb , PACKAGESIZE , 0) > 0) {
+		incoming_pcb = (PCB) client_message;
+		incrementPC(&incoming_pcb); //Incrementar el PC del PCB
+
+		do(getNextLine(umcClient, incoming_pcb.codeIndex, &nextLine)) {//Utilizar el indice de codigo para solicitar a la UMC la proxima sentencia a ejecutar
+			parseNextLine(nextLine, &parsedLines);//Al recibirla parsearla
+			executeParsedLines(parsedLines);//Ejecutar operaciones requeridas
+			//??? //Actualizar valores de programa en UMC
+			incrementPC(&incoming_pcb);//Actualizar PC en PCB
+			notifyKernelQuantumFinished();//Notificar a nucleo que concluyo un quantum
+			//Loop de ejecucion, le pido cada sentencia a la UMC
+		} while (nextLine != NULL)
+	}
+	if(read_size == 0) {
+		puts("Client disconnected");
+		fflush(stdout);
+	}
+	else if(read_size == -1) {
+		perror("recv failed");
+	}
+
+	close(kernelClient);
+	close(umcClient);
+	return 0;
+}
+
+void incrementPC(PCB* incoming_pcb) {
+	incoming_pcb->PC++;
+}
+
+void getParsedInstructions(char* nextLine, char** parsedLines){
+	*parsedLines = parser.parse(nextLine);
+}
+void executeParsedLines (char* parsedLines) {
+	//for instruction in line execute instruction
+}
+
+void getNextLine(int umcClient,int codeIndex, char** nextLine) {
+	send(umcClient, codeIndex, sizeof(codeIndex), 0); //Sending index
+	if ((read_size = recv(umcClient, *nextLine, NEXT_LINE_SIZE , 0)) > 0) {
+		puts("Next Line received");
+	}
+	if(read_size == 0) {
+		puts("Client disconnected");
+		fflush(stdout);
+	}
+	else if(read_size == -1) {
+		perror("recv failed");
+	}
+}
+
+void getKernelClient(int* sock) {
+	struct sockaddr_in server;
+	*sock = socket(AF_INET , SOCK_STREAM , 0);
+	if (*sock == -1) {
 		printf("Could not create socket");
 	}
 	puts("Socket created");
 
-	//Prepare the sockaddr_in structure
+	server.sin_addr.s_addr = inet_addr(KERNEL_ADDR);
 	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_port = htons( 8888 );
+	server.sin_port = htons(KERNEL_PORT);
 
-	//Bind
-	if( bind(socket_desc,(struct sockaddr *)&server , sizeof(server)) < 0)
-	{
-		//print the error message
-		perror("bind failed. Error");
+	//Connect to remote server
+	if (connect(*sock , (struct sockaddr *)&server , sizeof(server)) < 0) {
+		perror("connect failed. Error");
 		return 1;
 	}
-	puts("bind done");
-
-	//Listen
-	listen(socket_desc , 3);
-
-	//Accept and incoming connection
-	puts("Waiting for incoming connections...");
-	c = sizeof(struct sockaddr_in);
-
-	//Accept connection from an incoming client
-	client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c);
-	if (client_sock < 0)
-	{
-		perror("accept failed");
-		return 1;
-	}
-	puts("Connection accepted");
-
-	//Recibo el mensaje del nucleo (el PCB)
-	while( (read_size = recv(client_sock , client_message , 2000 , 0)) > 0 )
-	{
-		incoming_pcb = (PCB) client_message;
-		//Incrementar el PC del PCB
-		//Utilizar el indice de codigo para solicitar a la UMC la proxima sentencia a ejecutar
-		//Al recibirla parsearla
-		//Ejecutar operaciones requeridas
-		//Actualizar valores de programa en UMC
-		//Actualizar PC en PCB
-		//Notificar a nucleo que concluyo un quantum
-		//Loop de ejecucion, le pido cada sentencia a la UMC
-	}
-
-	if(read_size == 0)
-	{
-		puts("Client disconnected");
-		fflush(stdout);
-	}
-	else if(read_size == -1)
-	{
-		perror("recv failed");
-	}
-
-	return 0;
+	puts("Connected to Kernel\n");
 }
+void getUmcClient(int* sock) {
+	struct sockaddr_in server;
+	*sock = socket(AF_INET , SOCK_STREAM , 0);
+	if (*sock == -1) {
+		printf("Could not create socket");
+	}
+	puts("Socket created");
 
+	server.sin_addr.s_addr = inet_addr(UMC_ADDR);
+	server.sin_family = AF_INET;
+	server.sin_port = htons( UMC_PORT );
+
+	//Connect to remote server
+	if (connect(*sock , (struct sockaddr *)&server , sizeof(server)) < 0) {
+		perror("connect failed. Error");
+		return 1;
+	}
+	puts("Connected to UMC\n");
+}
