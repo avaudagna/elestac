@@ -1,5 +1,5 @@
 .metadata/
-RemoteSystemTempFiles/
+RemoteSystemsTempFiles/
 
 # Object files
 *.o
