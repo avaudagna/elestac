@@ -1,5 +1,7 @@
+Debug
+Release
 .metadata/
-RemoteSystemTempFiles/
+RemoteSystemsTempFiles/
 
 # Object files
 *.o
