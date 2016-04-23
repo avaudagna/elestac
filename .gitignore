@@ -1,5 +1,4 @@
 .metadata/
-.project
 RemoteSystemTempFiles/
 
 # Object files
@@ -18,11 +17,11 @@ RemoteSystemTempFiles/
 *.la
 *.lo
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
+# Shared objects (inc. Windows DLLs) Commented to share library
+#*.dll
+#*.so
+#*.so.*
+#*.dylib
 
 # Executables
 *.exe
