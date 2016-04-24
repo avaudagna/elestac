@@ -36,7 +36,7 @@ typedef void * (*boid_function_boid_pointer) (void*);
 int socketServidor;
 UMC_PARAMETERS Umc_Global_Parameters;
 int contConexionesNucleo = 0;
-int contConexionesCPU = 0;
+//int contConexionesCPU = 0;
 
 void *  connection_handler(void * socketCliente);
 void Init_UMC(void);//Inicializa socket server ( para escuchar las conexiones y tmb los parametros globales)
@@ -269,12 +269,13 @@ FunctionPointer QuienSos( int * _socketCliente) {
 			return NULL;
 	}
 
-		package[cantidad_de_bytes_recibidos]='\0';
+		package[strlen(package) - 1] = '\0';
 		printf("\nCliente: ");
 		printf("%s\n", package);
 
-	if ( (strcmp(package,"KERNEL") == 0 ) ) 	// KERNEL
+	if ( (strcmp(package,"KERNEL") == 0 ) ) {	// KERNEL
 		 contConexionesNucleo++;
+
 
 		if ( contConexionesNucleo == 1 )
 			{
@@ -288,35 +289,22 @@ FunctionPointer QuienSos( int * _socketCliente) {
 
 			}
 		else{
-				if ( send(socketCliente,(void *)"Error:Cantidad de conexiones NUCLEO!!",strlen("Error:Cantidad de conexiones NUCLEO")+1,0) == -1 ) {
+				if ( send(socketCliente,(void *)"Error:Cantidad de conexiones KERNEL!!",strlen("Error:Cantidad de conexiones NUCLEO")+1,0) == -1 ) {
 						perror("send");
 						exit(1);
 					  }
 		 }
+	}
 
 	if (( strcmp(package,"CPU") ) == 0 ){   //CPU
 
-			contConexionesCPU++;
-
-		if ( contConexionesCPU == 1 ){
-
-			 if ( send(socketCliente,(void *)"UMC",PACKAGESIZE,0) == -1 ) {
-				 	 	 perror("send");
-				 	 	 exit(1);
-			 	 	  }
+		 if ( send(socketCliente,(void *)"UMC",PACKAGESIZE,0) == -1 ) {
+	 	 	 perror("send");
+	 	 	 exit(1);
+ 	 	  }
 
 			 aux = TestCPU;
 			 return aux;
-
-			}
-		else{
-			if ( send(socketCliente,(void *)"Error:Cantidad de conexiones CPU",PACKAGESIZE,0) == -1 ) {
-						 perror("send");
-						 exit(1);
-			 }
-
-			}
-
 	}
 
 	free(package);
@@ -328,10 +316,16 @@ FunctionPointer QuienSos( int * _socketCliente) {
 void TestKernel(int * socketBuff){
 
 	printf("\nHola , soy el thread encargado de la comunicacion con el Kernel!! :)");
+	contConexionesNucleo--; // finaliza la comunicacion con el socket
+	close(*socketBuff); // cierro socket
+	pthread_exit(0);	// chau thread
 
 }
 void TestCPU(int * socketBuff){
 
 	printf("\nHola , soy el thread encargado de la comunicacion con el CPU!! :)");
+
+	close(*socketBuff);		// cierro socket
+	pthread_exit(0);		// chau thread
 
 }
