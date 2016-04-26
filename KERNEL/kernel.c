@@ -1,11 +1,11 @@
 
 #include "socketCommons.h"
-#define KERNEL_IP "192.168.1.18"
+#define KERNEL_IP "127.0.0.1"
 #define LOCALHOST "127.0.0.1"
-#define UMC_IP "192.168.1.12"
+#define UMC_IP "127.0.0.1"
 
 int UMC_PORT = 6750; // defines que funcionaran como string
-int KERNEL_PORT = 60010; // cuando alan cambie la funcion de la common
+int KERNEL_PORT = 60001; // cuando alan cambie la funcion de la common
 
 int CallUMC();
 int main (int argc, char **argv) {
@@ -22,13 +22,13 @@ int main (int argc, char **argv) {
 	acceptConnection (&clientSocket, &serverSocket);
 	//Receive a message from console
 	while( (read_size = recv(clientSocket , messageBuffer , PACKAGE_SIZE , 0)) > 0 ) {
-		if(strcmp(messageBuffer, "console")){
+		if(strcmp(messageBuffer, "console") == 0){
 			puts ("Console is calling, let's handshake!");
 			//If console is calling -> handshake
 			write(clientSocket , "kernel" , 7);
 			// and now I'm supposed to receive the AnSisOp program
 			while( (read_size = recv(clientSocket , messageBuffer , PACKAGE_SIZE , 0)) > 0 ) {
-				if(strcmp(messageBuffer,"#VamoACalmarno")){
+				if((strcmp(messageBuffer,"#VamoACalmarno")) == 0 ){
 					// Code transfer is finished, call UMC !
 				//	if(CallUMC(fakePCB)){
 					if(CallUMC()){
@@ -41,7 +41,7 @@ int main (int argc, char **argv) {
 					strcat(fakePCB,messageBuffer);
 				}
 			}
-		}else if(strcmp(messageBuffer, "cpu")){ // CPU is alive!
+		}else if((strcmp(messageBuffer, "cpu")) == 0 ){ // CPU is alive!
 			write(clientSocket, fakePCB, strlen(fakePCB)); //send fake PCB
 			while( (read_size = recv(clientSocket , messageBuffer , PACKAGE_SIZE , 0)) > 0 ) { // wait for CPU to finish
 				if(messageBuffer!=NULL) puts(messageBuffer); // if it's "Elestac" we're happy.
@@ -66,7 +66,7 @@ int main (int argc, char **argv) {
 int CallUMC(){
 	int clientUMC;
 	//char* aPCB = PCB; // won't use it now -> Send "kernel"
-	char aPCB[] = "kernel";
+	char aPCB[] = "KERNEL";
 	struct sockaddr_in server;
 	char *clientMessage = NULL, *serverMessage = NULL;
     //Create socket
@@ -90,7 +90,7 @@ int CallUMC(){
      //   clientMessage[strlen(clientMessage) - 1] = '\0';
 
         //Send some data
-        if( send(clientUMC , aPCB , strlen(aPCB) , 0) < 0) {
+        if( send(clientUMC , aPCB , PACKAGE_SIZE , 0) < 0) {
             puts("Send failed");
             return 1;
         }
