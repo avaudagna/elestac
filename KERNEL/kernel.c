@@ -1,6 +1,8 @@
 /* Kernel.c by pacevedo */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "parser/metadata_program.h"
 #include "socketCommons.h"
@@ -28,10 +30,8 @@ int main (int argc, char **argv) {
 	char* programa=hardcodeameUnPrograma(); // create fake ANSISOP program
 	puts(programa); // print it!
 	casiPCB = metadata_desde_literal(programa);
+	printf("Tengo algunas etiquetas: %i \n\n",casiPCB->cantidad_de_etiquetas);
 	free(programa);
-	//char mibuffer[5];
-	//puts(itoa(casiPCB->cantidad_de_etiquetas, mibuffer, 10));
-	puts(casiPCB->etiquetas);
 	setServerSocket(&serverSocket, KERNEL_IP, KERNEL_PORT);
 	acceptConnection (&clientSocket, &serverSocket);
 	//Receive a message from console
