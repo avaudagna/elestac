@@ -269,7 +269,7 @@ FunctionPointer QuienSos( int * _socketCliente) {
 			return NULL;
 	}
 
-		package[strlen(package) - 1] = '\0';
+		//package[strlen(package) - 1] = '\0';
 		printf("\nCliente: ");
 		printf("%s\n", package);
 
@@ -298,7 +298,7 @@ FunctionPointer QuienSos( int * _socketCliente) {
 
 	if (( strcmp(package,"CPU") ) == 0 ){   //CPU
 
-		 if ( send(socketCliente,(void *)"UMC",PACKAGESIZE,0) == -1 ) {
+		 if ( send(socketCliente,(void *)"a=b+3",PACKAGESIZE,0) == -1 ) {
 	 	 	 perror("send");
 	 	 	 exit(1);
  	 	  }
