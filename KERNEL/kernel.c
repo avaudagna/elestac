@@ -1,4 +1,8 @@
+/* Kernel.c by pacevedo */
+#include <stdlib.h>
+#include <stdio.h>
 
+#include "parser/metadata_program.h"
 #include "socketCommons.h"
 #define KERNEL_IP "127.0.0.1"
 #define LOCALHOST "127.0.0.1"
@@ -8,7 +12,9 @@ int UMC_PORT = 6750; // defines que funcionaran como string
 int KERNEL_PORT = 60001; // cuando alan cambie la funcion de la common
 
 int CallUMC();
+char* hardcodeameUnPrograma();
 int main (int argc, char **argv) {
+	t_metadata_program* casiPCB;
 	int serverSocket;
 	int clientSocket, read_size = 0;
 	char *messageBuffer = (char*) malloc(sizeof(char)*PACKAGE_SIZE);
@@ -18,6 +24,14 @@ int main (int argc, char **argv) {
 		puts("===Error in messageBuffer malloc===");
 		return (-1);
 	}
+	puts("\n Initializing the system kernel. #VamoACalmarno \n");
+	char* programa=hardcodeameUnPrograma(); // create fake ANSISOP program
+	puts(programa); // print it!
+	casiPCB = metadata_desde_literal(programa);
+	free(programa);
+	//char mibuffer[5];
+	//puts(itoa(casiPCB->cantidad_de_etiquetas, mibuffer, 10));
+	puts(casiPCB->etiquetas);
 	setServerSocket(&serverSocket, KERNEL_IP, KERNEL_PORT);
 	acceptConnection (&clientSocket, &serverSocket);
 	//Receive a message from console
@@ -30,6 +44,8 @@ int main (int argc, char **argv) {
 			while( (read_size = recv(clientSocket , messageBuffer , PACKAGE_SIZE , 0)) > 0 ) {
 				if((strcmp(messageBuffer,"#VamoACalmarno")) == 0 ){
 					// Code transfer is finished, call UMC !
+					puts("\nThis is a fake ansisop program (hardcoded)\n");
+
 				//	if(CallUMC(fakePCB)){
 					if(CallUMC()){
 						puts("PBC successfully sent to UMC");
@@ -105,4 +121,41 @@ int CallUMC(){
         serverMessage[0] = '\0';
  //   }
     close(clientUMC);
+}
+char* hardcodeameUnPrograma(){
+	char *programita = NULL;
+	char tempbuff[20]="";
+	size_t programlen = 0;
+
+	strcpy(tempbuff,"begin\n");
+	programlen += strlen(tempbuff);
+	programita = realloc(programita, programlen+1);
+	strcat(programita, tempbuff);
+
+    strcpy(tempbuff,"variables a, b\n");
+	programlen += strlen(tempbuff);
+	programita = realloc(programita, programlen+1);
+	strcat(programita, tempbuff);
+
+	strcpy(tempbuff,"a = 3\n");
+	programlen += strlen(tempbuff);
+	programita = realloc(programita, programlen+1);
+	strcat(programita, tempbuff);
+
+	strcpy(tempbuff,"b = 5\n");
+	programlen += strlen(tempbuff);
+	programita = realloc(programita, programlen+1);
+	strcat(programita, tempbuff);
+
+	strcpy(tempbuff,"a = b + 12\n");
+	programlen += strlen(tempbuff);
+	programita = realloc(programita, programlen+1);
+	strcat(programita, tempbuff);
+
+	strcpy(tempbuff,"end\n");
+	programlen += strlen(tempbuff);
+	programita = realloc(programita, programlen+1);
+	strcat(programita, tempbuff);
+
+	return programita;
 }
