@@ -83,7 +83,6 @@ int CallUMC(){
 	int clientUMC;
 	//char* aPCB = PCB; // won't use it now -> Send "kernel"
 	char aPCB[] = "KERNEL";
-	struct sockaddr_in server;
 	char *clientMessage = NULL, *serverMessage = NULL;
     //Create socket
     if(getClientSocket(&clientUMC, UMC_IP, UMC_PORT)) {
@@ -121,6 +120,7 @@ int CallUMC(){
         serverMessage[0] = '\0';
  //   }
     close(clientUMC);
+    return 1;
 }
 char* hardcodeameUnPrograma(){
 	char *programita = NULL;
