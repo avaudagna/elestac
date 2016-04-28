@@ -10,8 +10,8 @@
 #define LOCALHOST "127.0.0.1"
 #define UMC_IP "127.0.0.1"
 
-int UMC_PORT = 6750; // defines que funcionaran como string
-int KERNEL_PORT = 60001; // cuando alan cambie la funcion de la common
+int UMC_PORT = 56789; // defines que funcionaran como string
+int KERNEL_PORT = 54321; // cuando alan cambie la funcion de la common
 
 int CallUMC();
 char* hardcodeameUnPrograma();
@@ -27,11 +27,6 @@ int main (int argc, char **argv) {
 		return (-1);
 	}
 	puts("\n Initializing the system kernel. #VamoACalmarno \n");
-	char* programa=hardcodeameUnPrograma(); // create fake ANSISOP program
-	puts(programa); // print it!
-	casiPCB = metadata_desde_literal(programa);
-	printf("Tengo algunas etiquetas: %i \n\n",casiPCB->cantidad_de_etiquetas);
-	free(programa);
 	setServerSocket(&serverSocket, KERNEL_IP, KERNEL_PORT);
 	acceptConnection (&clientSocket, &serverSocket);
 	//Receive a message from console
@@ -45,20 +40,25 @@ int main (int argc, char **argv) {
 				if((strcmp(messageBuffer,"#VamoACalmarno")) == 0 ){
 					// Code transfer is finished, call UMC !
 					puts("\nThis is a fake ansisop program (hardcoded)\n");
-
-				//	if(CallUMC(fakePCB)){
-					if(CallUMC()){
+					char* programa=hardcodeameUnPrograma(); // create fake ANSISOP program
+					puts(programa); // print it!
+					casiPCB = metadata_desde_literal(programa); // get metadata from the program
+					printf("Cantidad de etiquetas: %i \n\n",casiPCB->cantidad_de_etiquetas); // print something
+					free(programa); // let it free
+					if(CallUMC()){ //	if(CallUMC(fakePCB)){
 						puts("PBC successfully sent to UMC");
 					}
 					break;
 				}else if(messageBuffer!=NULL){
 					// recv ansisop code
+					puts("\n Data received from console: ");
 					puts(messageBuffer);
-					strcat(fakePCB,messageBuffer);
+					//strcat(fakePCB,messageBuffer);
 				}
 			}
 		}else if((strcmp(messageBuffer, "cpu")) == 0 ){ // CPU is alive!
-			write(clientSocket, fakePCB, strlen(fakePCB)); //send fake PCB
+			//write(clientSocket, fakePCB, strlen(fakePCB)); //send fake PCB
+			write(clientSocket, "a=b+3", 6); //send fake PCB
 			while( (read_size = recv(clientSocket , messageBuffer , PACKAGE_SIZE , 0)) > 0 ) { // wait for CPU to finish
 				if(messageBuffer!=NULL) puts(messageBuffer); // if it's "Elestac" we're happy.
 				break;
