@@ -63,7 +63,7 @@ int main(void) {
 	//keep communicating with server
 	while(1) {
 		//Send a handshake to the kernel
-		if( send(kernelSocketClient , kernelHandShake , PACKAGE_SIZE , 0) < 0) {
+		if( send(kernelSocketClient , "cpu" , PACKAGE_SIZE , 0) < 0) {
 				puts("Send failed");
 				return 1;
 		}
@@ -77,7 +77,7 @@ int main(void) {
 		puts(kernelMessage);
 
 		//Send message to the UMC
-		if( send(umcSocketClient , "cpu"  , PACKAGE_SIZE , 0) < 0) {
+		if( send(umcSocketClient , "CPU"  , PACKAGE_SIZE , 0) < 0) {
 				puts("Send failed");
 				return 1;
 		}
@@ -99,7 +99,7 @@ int main(void) {
 		//de lo que me devuelva el parser, devuelvo el resultado para imprimir al kernel
 
 		//Send message to the Kernel
-		if( send(kernelSocketClient , "exit0"  , strlen("exit0") , 0) < 0) {
+		if( send(kernelSocketClient , "Elestac"  , PACKAGE_SIZE , 0) < 0) {
 				puts("Send failed");
 				return 1;
 		}
