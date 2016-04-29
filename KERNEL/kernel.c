@@ -11,7 +11,7 @@
 #define UMC_IP "127.0.0.1"
 
 int UMC_PORT = 56789; // defines que funcionaran como string
-int KERNEL_PORT = 54321; // cuando alan cambie la funcion de la common
+int KERNEL_PORT = 54322; // cuando alan cambie la funcion de la common
 
 int CallUMC();
 char* hardcodeameUnPrograma();
@@ -20,6 +20,7 @@ int main (int argc, char **argv) {
 	int serverSocket;
 	int clientSocket, read_size = 0;
 	char *messageBuffer = (char*) malloc(sizeof(char)*PACKAGE_SIZE);
+	char *consoleMessage = (char*) malloc(sizeof(char)*PACKAGE_SIZE);
 	char *fakePCB = (char*) malloc(sizeof(char)*PACKAGE_SIZE);
 	if(fakePCB == NULL){puts("Error in fakePCB"); return (-1);}else{strcpy(fakePCB,"");} // TODO Delete
 	if(messageBuffer == NULL) {
@@ -34,7 +35,7 @@ int main (int argc, char **argv) {
 		if(strcmp(messageBuffer, "console") == 0){
 			puts ("Console is calling, let's handshake!");
 			//If console is calling -> handshake
-			write(clientSocket , "kernel" , 7);
+			write(clientSocket , "kernel" , PACKAGE_SIZE);
 			// and now I'm supposed to receive the AnSisOp program
 			while( (read_size = recv(clientSocket , messageBuffer , PACKAGE_SIZE , 0)) > 0 ) {
 				if((strcmp(messageBuffer,"#VamoACalmarno")) == 0 ){
@@ -48,17 +49,19 @@ int main (int argc, char **argv) {
 					if(CallUMC()){ //	if(CallUMC(fakePCB)){
 						puts("PBC successfully sent to UMC");
 					}
+					acceptConnection (&clientSocket, &serverSocket);
 					break;
 				}else if(messageBuffer!=NULL){
 					// recv ansisop code
 					puts("\n Data received from console: ");
 					puts(messageBuffer);
 					//strcat(fakePCB,messageBuffer);
+					strcpy(consoleMessage, messageBuffer);
 				}
 			}
 		}else if((strcmp(messageBuffer, "cpu")) == 0 ){ // CPU is alive!
 			//write(clientSocket, fakePCB, strlen(fakePCB)); //send fake PCB
-			write(clientSocket, "a=b+3", 6); //send fake PCB
+			write(clientSocket, consoleMessage, PACKAGE_SIZE); //send fake PCB
 			while( (read_size = recv(clientSocket , messageBuffer , PACKAGE_SIZE , 0)) > 0 ) { // wait for CPU to finish
 				if(messageBuffer!=NULL) puts(messageBuffer); // if it's "Elestac" we're happy.
 				break;
@@ -119,7 +122,7 @@ int CallUMC(){
         clientMessage[0] = '\0';
         serverMessage[0] = '\0';
  //   }
-    close(clientUMC);
+  //  close(clientUMC);
     return 1;
 }
 char* hardcodeameUnPrograma(){
