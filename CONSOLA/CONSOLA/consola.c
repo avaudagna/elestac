@@ -2,23 +2,26 @@
 #include<string.h>    //strlen
 #include<sys/socket.h>    //socket
 #include<arpa/inet.h> //inet_addr
-#include "vac-commons/socketCommons.h"
+#include "socketCommons/socketCommons.h"
 
-#define KERNEL_ADDR "10.0.0.12"
-#define KERNEL_PORT 6669
+#define KERNEL_ADDR "127.0.0.1"
+#define KERNEL_PORT 54322
 
 int main(int argc , char *argv[])
 {
 	int kernelSocketClient;
 	char kernel_reply[2000];
 	//create kernel client
+	if(argc != 2) {
+		puts("usage: console line");
+		return -1; }
 	getClientSocket(&kernelSocketClient, KERNEL_ADDR, KERNEL_PORT);
 
 	//receive a reply from the kernel
-	send(kernelSocketClient, "console", 8, 0);
+	send(kernelSocketClient, "console", PACKAGE_SIZE, 0);
 
 	do {
-		if( recv(kernelSocketClient , kernel_reply , 2000 , 0) < 0) {
+		if( recv(kernelSocketClient , kernel_reply , PACKAGE_SIZE , 0) < 0) {
 			puts("recv failed");
 			break;
 		}
@@ -26,15 +29,16 @@ int main(int argc , char *argv[])
 		 puts(kernel_reply);
 	} while(strcmp(kernel_reply, "kernel"));
 
-	send(kernelSocketClient, "hola", 5, 0);
-	send(kernelSocketClient, "#VamoACalmarno");
-	do {
-		if( recv(kernelSocketClient , kernel_reply , 2000 , 0) < 0) {
-			puts("recv failed");
-			break;
-		}
-	} while(strcmp(kernel_reply, "nop"));
+	send(kernelSocketClient, argv[1], PACKAGE_SIZE, 0);
+	send(kernelSocketClient, "#VamoACalmarno",PACKAGE_SIZE, 0);
+	//do {
+	//	if( recv(kernelSocketClient , kernel_reply , PACKAGE_SIZE , 0) < 0) {
+//			puts("recv failed");
+//			break;
+	//	}
+	//} while(strcmp(kernel_reply, "nop"));
 	close(kernelSocketClient);
+	puts("Socket Closed");
 	    return 0;
 
 }

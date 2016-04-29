@@ -3,7 +3,7 @@
 
 #define PACKET_SIZE 10
 
-int main (void) {
+int loopeo (void) {
 	char src[40];
 	char dest[PACKET_SIZE + 1];
 	int packLen = (int) (sizeof(src)/sizeof(src[0]));
@@ -11,7 +11,7 @@ int main (void) {
 		if(packLen>= PACKET_SIZE){
 			strncpy (dest, PACKET_SIZE, src);
 			send (dest, PACKET_SIZE+1);
-			src = src + PACKET_SIZE;
+			//src = src + PACKET_SIZE;
 			packLen = packLen - PACKET_SIZE;
 
 		}
@@ -21,7 +21,7 @@ int main (void) {
 			packLen = 0;
 		}
 	}
-	printf("%s\n, sizeof %d\n", hola, sizeof(hola[1]) );
+	printf("%s\n, sizeof %d\n", "hola", sizeof("hola"));
 	strcpy(src, "Hoy vinimos a trabajar en el tp de oper");
 	//while()
 	memset(dest, '\0', sizeof(dest));
