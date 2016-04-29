@@ -13,8 +13,8 @@
 #include <sys/sem.h>
 
 /*MACROS y TIPOS DE DATOS*/
-#define PUERTO "6750"
-#define PUERTO_SWAP "8000"
+#define PUERTO "56789"
+#define PUERTO_SWAP "45000"
 #define BACKLOG 1			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
 #define PACKAGESIZE 1024	// Define cual va a ser el size maximo del paquete a enviar
 #define RETARDO 1
@@ -285,7 +285,7 @@ FunctionPointer QuienSos( int * _socketCliente) {
 						perror("send");
 						exit(1);
 					  }
-
+		HablarSwap();
 				 aux = TestKernel;
 				 return aux;
 
@@ -320,6 +320,7 @@ void TestKernel(int * socketBuff){
 	printf("\nHola , soy el thread encargado de la comunicacion con el Kernel!! :)");
 	contConexionesNucleo--; // finaliza la comunicacion con el socket
 	close(*socketBuff); // cierro socket
+	//HablarSwap();
 	pthread_exit(0);	// chau thread
 
 }
@@ -347,7 +348,7 @@ void HablarSwap(void)
 	hints.ai_family = AF_UNSPEC;		// Permite que la maquina se encargue de verificar si usamos IPv4 o IPv6
 	hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
 
-	getaddrinfo(NULL, PUERTO_SWAP, &hints, &serverInfo);	// Carga en serverInfo los datos de la conexion
+	getaddrinfo("127.0.0.1", PUERTO_SWAP, &hints, &serverInfo);	// Carga en serverInfo los datos de la conexion
 	serverSocketSwap = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
 
 	connect(serverSocketSwap, serverInfo->ai_addr, serverInfo->ai_addrlen);
