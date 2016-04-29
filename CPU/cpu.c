@@ -10,7 +10,7 @@
 
 #include <commons/log.h>
 #include <socketCommons.h>
-#include <parser.h>
+#include <parser/parser.h>
 #include "implementation_ansisop.h"
 
 AnSISOP_funciones functions = {
@@ -51,9 +51,9 @@ int main(void) {
 
 
 	//Create CPU server
-	setServerSocket(&cpuSocketServer, KERNEL_ADDR, KERNEL_PORT);
+	//setServerSocket(&cpuSocketServer, KERNEL_ADDR, KERNEL_PORT);
 	//Create CPU client
-	acceptConnection (&cpuClientSocket, &cpuSocketServer);
+	//acceptConnection (&cpuClientSocket, &cpuSocketServer);
 
 	//Crete UMC client
 	getClientSocket(&umcSocketClient, UMC_ADDR , UMC_PORT);
@@ -63,40 +63,33 @@ int main(void) {
 	//keep communicating with server
 	while(1) {
 		//Send a handshake to the kernel
-		if( send(kernelSocketClient , kernelHandShake , strlen(kernelHandShake) , 0) < 0) {
+		if( send(kernelSocketClient , kernelHandShake , PACKAGE_SIZE , 0) < 0) {
 				puts("Send failed");
 				return 1;
 		}
-		//Receive a reply of the handshake from the Kernel
-		if( recv(kernelSocketClient , kernelMessage , PACKAGE_SIZE , 0) < 0) {
-				puts("recv failed");
-				break;
-		}
-		puts("Server reply :");
-		puts(kernelMessage);
 
 		//Wait for PCB from the Kernel
 		if( recv(kernelSocketClient , kernelMessage , PACKAGE_SIZE , 0) < 0) {
 				puts("recv failed");
 				break;
 		}
-		puts("Server reply :");
+		puts("Kernel reply :");
 		puts(kernelMessage);
 
 		//Send message to the UMC
-		if( send(umcSocketClient , "umc"  , strlen("umc") , 0) < 0) {
+		if( send(umcSocketClient , "cpu"  , PACKAGE_SIZE , 0) < 0) {
 				puts("Send failed");
 				return 1;
 		}
-		//Wait for PCB from the Kernel
+		//Wait for response from UMC
 		if( recv(umcSocketClient , umcMessage , PACKAGE_SIZE , 0) < 0) {
 				puts("recv failed");
 				break;
 		}
-		puts("Server reply :");
+		puts("UMC reply :");
 		puts(umcMessage);
 
-		log_info(logFile, "Analizando linea");
+		log_info(&logFile, "Analizando linea");
 		analizadorLinea(strdup(umcMessage), &functions, &kernel_functions);
 
 		//Supongamos que hago algo

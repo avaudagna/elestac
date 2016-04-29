@@ -23,7 +23,6 @@
 								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.option.optimization.level.522912800" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" useByScannerDiscovery="false" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.debugging.level.1414977181" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.1285853014" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="/home/utnso/repos/tp-2016-1c-Vamo-a-calmarno/vac-commons"/>
 									<listOptionValue builtIn="false" value="/home/utnso/repos/tp-2016-1c-Vamo-a-calmarno/vac-commons/socketCommons"/>
 								</option>
 								<option id="gnu.c.compiler.option.dialect.std.454060955" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
@@ -36,12 +35,10 @@
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.1973034391" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker">
 								<option id="gnu.c.link.option.libs.1786588785" name="Libraries (-l)" superClass="gnu.c.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="commons"/>
-									<listOptionValue builtIn="false" value="socket-commons"/>
 									<listOptionValue builtIn="false" value="parser-ansisop"/>
+									<listOptionValue builtIn="false" value="socket-commons"/>
 								</option>
-								<option id="gnu.c.link.option.paths.381827137" name="Library search path (-L)" superClass="gnu.c.link.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="/home/utnso/repos/tp-2016-1c-Vamo-a-calmarno/vac-commons/socketCommons"/>
-								</option>
+								<option id="gnu.c.link.option.paths.381827137" name="Library search path (-L)" superClass="gnu.c.link.option.paths" valueType="libPaths"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.389332811" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
