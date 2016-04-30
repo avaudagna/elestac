@@ -50,7 +50,7 @@ void Procesar_Conexiones(void);
 FunctionPointer QuienSos( int * _socketCliente);
 void TestKernel(int *);
 void TestCPU(int *);
-void HablarSwap(void);
+void HablarSwap(char * msgFromKernel);
 
 int main(){
 
@@ -284,8 +284,20 @@ FunctionPointer QuienSos( int * _socketCliente) {
 				if ( send(socketCliente,"UMC",PACKAGESIZE,0) == -1 ) {
 						perror("send");
 						exit(1);
-					  }
-		HablarSwap();
+				  }
+
+				package[0]='\0';	// clear buffer
+						 //Wait for response from CPU
+				if( recv(socketCliente , (void *) package , PACKAGESIZE , 0) < 0) {
+						perror("recv");
+						exit(1);
+				}
+				if ( send(socketCliente,(void *) package ,PACKAGESIZE,0) == -1 ) {
+					perror("send");
+					exit(1);
+				}
+
+		HablarSwap(package);
 				 aux = TestKernel;
 				 return aux;
 
@@ -300,11 +312,20 @@ FunctionPointer QuienSos( int * _socketCliente) {
 
 	if (( strcmp(package,"CPU") ) == 0 ){   //CPU
 
-		 if ( send(socketCliente,(void *)"a=b+3",PACKAGESIZE,0) == -1 ) {
+		 if ( send(socketCliente,(void *)"UMC",PACKAGESIZE,0) == -1 ) {
 	 	 	 perror("send");
 	 	 	 exit(1);
  	 	  }
-
+		package[0]='\0';	// clear buffer
+		 //Wait for response from CPU
+		if( recv(socketCliente , (void *) package , PACKAGESIZE , 0) < 0) {
+				perror("recv");
+				exit(1);
+		}
+		if ( send(socketCliente,(void *) package ,PACKAGESIZE,0) == -1 ) {
+	 	 	 perror("send");
+	 	 	 exit(1);
+	 	  }
 			 aux = TestCPU;
 			 return aux;
 	}
@@ -334,7 +355,7 @@ void TestCPU(int * socketBuff){
 }
 
 
-void HablarSwap(void)
+void HablarSwap(char * msgFromKernel)
 {
 
 	struct addrinfo hints,
@@ -372,8 +393,25 @@ void HablarSwap(void)
 		}
 		else {
 
-			if ( strcmp(package,"SWAP") == 0)
-				printf("\nSWAP: Hola UMC !!\n");
+			if ( strcmp(package,"SWAP") == 0){
+
+				if ( send(serverSocketSwap,(void *) msgFromKernel,PACKAGESIZE,0) == -1 ) {
+						perror("send");
+						printf("\n No me pude conectar con el SWAP\n Saliendo...");
+						exit(1);
+				}
+
+					 	// espero que me responda el SWAP
+				package[0]='\0';
+				if ( (recv(serverSocketSwap, (void*) package, PACKAGESIZE, 0)) <= 0 ) {
+					perror("recv");
+					exit(1);
+
+				}
+				printf("SWAP:%s\n",package);
+
+			}
+
 		}
 
 		close(serverSocketSwap);
