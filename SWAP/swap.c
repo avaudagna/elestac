@@ -6,12 +6,14 @@
 #include <netdb.h>
 #include <unistd.h>
 
-#include<commons/config.h>
-#include<vac-commons/socketCommons/socketCommons.h>
+#include <commons/config.h>
+#include "socketCommons.h"
 
 
 #define PATH_CONF "swapConf"
 #define PACKAGE_SIZE 1024
+#define IPSWAP "127.0.0.1"
+#define PUERTOSWAP	45000
 
 int main() {
 
@@ -43,7 +45,7 @@ int main() {
     //scanf("%s",pathCustom);
 
     puts("");
-
+/*
     t_config * punteroAStruct = config_create(PATH_CONF);
 
     if(punteroAStruct != NULL){
@@ -82,8 +84,8 @@ int main() {
     puts("");
     puts(".::INITIALIZING SERVER PROCESS::.");
     printf("%d \n",PUERTO_SWAP);
-
-    setServerSocket(&swapSocket,IP_SWAP,PUERTO_SWAP);
+*/
+    setServerSocket(&swapSocket,IPSWAP,PUERTOSWAP);
 
     puts("");
 	acceptConnection(&umcSocket, &swapSocket);
@@ -97,7 +99,7 @@ int main() {
 			}
 
 			if (!done) {
-				package[bytesRecibidos]='\0';
+				//package[bytesRecibidos]='\0';
 				printf("\nCliente: ");
 				printf("%s", package);
 
@@ -106,10 +108,10 @@ int main() {
 
 				fflush(stdin);
 				printf("\nServidor: ");
-				fgets(package,PACKAGE_SIZE,stdin);
-				package[strlen(package) - 1] = '\0';
+				//fgets(package,PACKAGE_SIZE,stdin);
+				//package[strlen(package) - 1] = '\0';
 
-				if ( send(umcSocket,package,strlen(package)+1,0) == -1 ) {
+				if ( send(umcSocket,(void *) "SWAP",PACKAGE_SIZE,0) == -1 ) {
 					perror("send");
 				 	exit(1);
 				}
@@ -121,5 +123,7 @@ int main() {
 
 	close(umcSocket);
 
+
+	return 0;
 }
 
