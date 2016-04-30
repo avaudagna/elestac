@@ -115,6 +115,16 @@ int main() {
 					perror("send");
 				 	exit(1);
 				}
+				if ( (recv(umcSocket, (void*) package, PACKAGE_SIZE, 0)) <= 0 ) {
+					perror("recv");
+					exit(1);
+
+				}
+				if ( send(umcSocket,(void *) package,PACKAGE_SIZE,0) == -1 ) {
+								perror("send");
+							 	exit(1);
+							}
+				printf("Sent :%s\n",package);
 
 				free(package);
 			}

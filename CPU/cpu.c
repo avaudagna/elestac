@@ -76,11 +76,23 @@ int main(void) {
 		puts("Kernel reply :");
 		puts(kernelMessage);
 
-		//Send message to the UMC
+		//Send handshake to the UMC
 		if( send(umcSocketClient , "CPU"  , PACKAGE_SIZE , 0) < 0) {
 				puts("Send failed");
 				return 1;
 		}
+		//Wait for response from UMC handshake
+		if( recv(umcSocketClient , umcMessage , PACKAGE_SIZE , 0) < 0) {
+				puts("recv failed");
+				break;
+		}
+
+		//Send message to the UMC
+		if( send(umcSocketClient , kernelMessage  , PACKAGE_SIZE , 0) < 0) {
+				puts("Send failed");
+				return 1;
+		}
+
 		//Wait for response from UMC
 		if( recv(umcSocketClient , umcMessage , PACKAGE_SIZE , 0) < 0) {
 				puts("recv failed");

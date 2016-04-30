@@ -10,10 +10,10 @@
 #define LOCALHOST "127.0.0.1"
 #define UMC_IP "127.0.0.1"
 
-int UMC_PORT = 56789; // defines que funcionaran como string
-int KERNEL_PORT = 54322; // cuando alan cambie la funcion de la common
+int UMC_PORT = 56793; // defines que funcionaran como string
+int KERNEL_PORT = 54326; // cuando alan cambie la funcion de la common
 
-int CallUMC();
+int CallUMC(char * message);
 char* hardcodeameUnPrograma();
 int main (int argc, char **argv) {
 	t_metadata_program* casiPCB;
@@ -46,9 +46,9 @@ int main (int argc, char **argv) {
 					casiPCB = metadata_desde_literal(programa); // get metadata from the program
 					printf("Cantidad de etiquetas: %i \n\n",casiPCB->cantidad_de_etiquetas); // print something
 					free(programa); // let it free
-					if(CallUMC()){ //	if(CallUMC(fakePCB)){
-						puts("PBC successfully sent to UMC");
-					}
+					//if(CallUMC()){ //	if(CallUMC(fakePCB)){
+					//	puts("PBC successfully sent to UMC");
+					//}
 					acceptConnection (&clientSocket, &serverSocket);
 					break;
 				}else if(messageBuffer!=NULL){
@@ -57,6 +57,9 @@ int main (int argc, char **argv) {
 					puts(messageBuffer);
 					//strcat(fakePCB,messageBuffer);
 					strcpy(consoleMessage, messageBuffer);
+					if(CallUMC(consoleMessage)){ //	if(CallUMC(fakePCB)){
+						puts("PBC successfully sent to UMC");
+					}
 				}
 			}
 		}else if((strcmp(messageBuffer, "cpu")) == 0 ){ // CPU is alive!
@@ -82,10 +85,10 @@ int main (int argc, char **argv) {
 	close(serverSocket);
 	return 0;
 }
-int CallUMC(){
+int CallUMC(char * message){
 	int clientUMC;
 	//char* aPCB = PCB; // won't use it now -> Send "kernel"
-	char aPCB[] = "KERNEL";
+	//char aPCB[] = "KERNEL";
 	char *clientMessage = NULL, *serverMessage = NULL;
     //Create socket
     if(getClientSocket(&clientUMC, UMC_IP, UMC_PORT)) {
@@ -108,14 +111,27 @@ int CallUMC(){
      //   clientMessage[strlen(clientMessage) - 1] = '\0';
 
         //Send some data
-        if( send(clientUMC , aPCB , PACKAGE_SIZE , 0) < 0) {
-            puts("Send failed");
-            return 1;
-        }
+        //if( send(clientUMC , aPCB , PACKAGE_SIZE , 0) < 0) {
+        //    puts("Send failed");
+        //    return 1;
+        //}
+    	//Send SAME data
+	   if( send(clientUMC , "KERNEL" , PACKAGE_SIZE , 0) < 0) {
+	       puts("Send failed");
+	       return 1;
+	   }
+       if( recv(clientUMC , serverMessage , PACKAGE_SIZE , 0) < 0) {
+           puts("recv failed");
+           //break;
+       }
+	   if( send(clientUMC , message , PACKAGE_SIZE , 0) < 0) {
+	       puts("Send failed");
+	       return 1;
+	   }
         //Receive a reply from the server
         if( recv(clientUMC , serverMessage , PACKAGE_SIZE , 0) < 0) {
             puts("recv failed");
-        //    break;
+            //break;
         }
         puts("UMC reply :");
         puts(serverMessage);

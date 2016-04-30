@@ -13,7 +13,7 @@
 #include <sys/sem.h>
 
 /*MACROS y TIPOS DE DATOS*/
-#define PUERTO "56789"
+#define PUERTO "56793"
 #define PUERTO_SWAP "45000"
 #define BACKLOG 1			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
 #define PACKAGESIZE 1024	// Define cual va a ser el size maximo del paquete a enviar

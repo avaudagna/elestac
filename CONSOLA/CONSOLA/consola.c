@@ -5,7 +5,7 @@
 #include "socketCommons/socketCommons.h"
 
 #define KERNEL_ADDR "127.0.0.1"
-#define KERNEL_PORT 54322
+#define KERNEL_PORT 54326
 
 int main(int argc , char *argv[])
 {
@@ -30,7 +30,9 @@ int main(int argc , char *argv[])
 	} while(strcmp(kernel_reply, "kernel"));
 
 	send(kernelSocketClient, argv[1], PACKAGE_SIZE, 0);
+	printf("Sent: %s/n", argv[1]);
 	send(kernelSocketClient, "#VamoACalmarno",PACKAGE_SIZE, 0);
+	puts("Sent: #VamoACalmarno");
 	//do {
 	//	if( recv(kernelSocketClient , kernel_reply , PACKAGE_SIZE , 0) < 0) {
 //			puts("recv failed");
