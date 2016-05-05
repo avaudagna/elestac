@@ -43,14 +43,17 @@ bool done = 0;
 //SWAP
 char* ABSOLUTE_PATH_SWAP;
 t_bitarray* bitArrayStruct;
-int SWAP_BLOCKSIZE;
-FILE* swapFile;
 
-struct AnsisopCode {
+t_bitarray* bitArrayPrueba;
+
+int SWAP_BLOCKSIZE;
+
+
+struct pagina {
    int pid;
    int pageNumber;
    int positionInSWAP;
-} codigos;
+};
 
 int main() {
 	puts(".:: INITIALIZING SWAP ::.");
@@ -72,7 +75,6 @@ int main() {
 
     closeSwapProcess();
 
-    fclose(swapFile);
 	return 0;
 }
 
@@ -210,41 +212,208 @@ int createAndInitSwapFile(){
 	if( system(comandoCrearSwap) ){
 		puts("SWAP file can not be created");
 		return 0;
-	}else
+	}else{
 		puts("SWAP file has been successfully created");
+
+	}
 
 	//Obtengo el path absoluto del archivo .swap
 	ABSOLUTE_PATH_SWAP = string_new();
 	string_append(&ABSOLUTE_PATH_SWAP,PATH_SWAP);
 	string_append(&ABSOLUTE_PATH_SWAP,NOMBRE_SWAP);
 
-	swapFile = fopen(PATH_SWAP,"rb");
+	//Creamos puntero al archivo swap
+	FILE* swapFile = fopen(ABSOLUTE_PATH_SWAP,"rb");
 
 	if (!swapFile){
-		printf("Unable to open swap file!");
+		printf("Unable to open swap file! \n");
 		return 0;
 	}
 
 	//Creamos y limpiamos el BitMap
 	bitArrayStruct = bitarray_create(swapFile,SWAP_BLOCKSIZE);
 
-	/*
+	//Cerramos el puntero
+	fclose(swapFile);
+
 	int i;
 	for (i = 0; i < bitarray_get_max_bit(bitArrayStruct); ++i) {
 		bitarray_clean_bit(bitArrayStruct,i);
 	}
-*/
-	fseek(swapFile, 0L, SEEK_END);
-	printf("tam archivo: %lu \n",ftell(swapFile));
-	printf("tam bitarray: %d \n",bitarray_get_max_bit(bitArrayStruct));
+
+	//Inicializamos la estructura de pagina
+	struct pagina paginas[CANTIDAD_PAGINAS];
+
+	for(i = 0; i < CANTIDAD_PAGINAS; i++){
+		paginas[i].pid = NULL;
+		paginas[i].pageNumber = NULL;
+		paginas[i].positionInSWAP = i;
+	}
 
 	return 1;
+}
+
+
+
+/**********************************************************************************
+ * Devuelve la posicion inicial desde donde se empiezas a escribir la o las paginas
+ * Compacta si es necesario
+ *
+ * Devuelve -1 si el espacio disponible es insuficiente
+ **********************************************************************************/
+int encontrarEspacioDisponible(int cantPaginasNecesarias){
+	int primerEspacio = 0;
+	int aux = 0;
+	int lugaresParciales = 0;
+	int totalLibres = 0;
+	int meEncuentroEn = 0;
+	int paginasRestantes = 0;
+
+	while (meEncuentroEn < CANTIDAD_PAGINAS) {
+		if(cantPaginasNecesarias > CANTIDAD_PAGINAS) //Verifico que la cantidad de paginas requeridas sea menor a las totales
+			return -1;
+
+		primerEspacio = meEncuentroEn;
+
+		if(!bitarray_test_bit(bitArrayStruct,primerEspacio)){ //Si esta disponible me fijo si tiene la cant de pag necesarias
+			totalLibres++;
+			lugaresParciales = 1;
+
+			paginasRestantes = CANTIDAD_PAGINAS - meEncuentroEn;
+			if(paginasRestantes < cantPaginasNecesarias){
+				meEncuentroEn++;
+				break;
+			}
+
+			for (aux = primerEspacio; aux < (meEncuentroEn + cantPaginasNecesarias); aux++) { // For por la cantidad de paginas requeridas
+				meEncuentroEn++;
+
+				if(bitarray_test_bit(bitArrayStruct,meEncuentroEn)){ //Si esta ocupado salimos
+					break;
+				}
+
+				lugaresParciales++;
+				totalLibres++;
+
+				if(lugaresParciales == cantPaginasNecesarias){
+					return primerEspacio; //Hay lugar disponible y continuo ;)
+				}
+			}
+
+		} else {
+			meEncuentroEn++;
+		}
+
+	}
+
+	if(totalLibres >= cantPaginasNecesarias)
+		return compactar(); //Hay lugar pero hay que compactar
+
+	return -1; //No hay lugar :(
+}
+
+int compactar(){
+	return -2;
+}
+
+int escribirPagina(char* contenidoAEscribir, int posicion){
+	FILE* fp = fopen(ABSOLUTE_PATH_SWAP,"rb");
+
+	if(fp == NULL){
+		puts("Page couldn't be written");
+
+		return -1;
+	}
+
+	fseek(fp,posicion,SEEK_SET);
+
+	//Escribimos, si es distinto al count, fallo
+	if(fwrite(contenidoAEscribir,TAMANIO_PAGINA,1,fp) != 1){
+		puts("Page couldn't be written");
+
+		return -1;
+	}
+
+	fclose(fp);
+
+	return 0;
+}
+
+char* leerPagina(int posicion){
+	FILE* fp = fopen(ABSOLUTE_PATH_SWAP,"rb");
+
+	if(fp == NULL){
+		puts("Page couldn't be readed");
+
+		return NULL;
+	}
+
+	fseek(fp,posicion,SEEK_SET);
+
+	char* contenidoObtenido;
+
+	//Escribimos, si es distinto al count, fallo
+	if(fwrite(&contenidoObtenido,TAMANIO_PAGINA,1,fp) != 1){
+		puts("Page couldn't be readed");
+
+		return NULL;
+	}
+
+	fclose(fp);
+
+	return contenidoObtenido;
 }
 
 void closeSwapProcess(){
 	puts(".:: Terminating SWAP process ::.");
 
-	fclose(swapFile);
+	//bitarray_destroy(bitArrayStruct);
+
+	//fclose(swapFile);
 
 	puts(".:: SWAP Process terminated ::.");
+}
+
+
+/****************************
+ *
+ * 			PRUEBAS
+ *
+ ****************************/
+void pruebaFuncEncontrar(){
+	puts(".:: Comienza prueba ::.");
+	puts("");
+
+	FILE* swapFile = fopen(ABSOLUTE_PATH_SWAP,"rb");
+
+	//Creamos y limpiamos el BitMap
+	bitArrayPrueba = bitarray_create(swapFile,10);
+
+	int i;
+	for (i = 0; i < bitarray_get_max_bit(bitArrayPrueba); ++i) {
+		bitarray_clean_bit(bitArrayPrueba,i);
+	}
+
+	puts("BitMap creado e inicializado");
+	puts("");
+
+	puts("Estructura: 1 0 0 1 0 0 1 1 1 1");
+	bitarray_set_bit(bitArrayPrueba,0);
+	//bitarray_set_bit(bitArrayPrueba,1);
+	bitarray_set_bit(bitArrayPrueba,2);
+	//bitarray_set_bit(bitArrayPrueba,3);
+	bitarray_set_bit(bitArrayPrueba,6);
+	bitarray_set_bit(bitArrayPrueba,7);
+	bitarray_set_bit(bitArrayPrueba,8);
+	bitarray_set_bit(bitArrayPrueba,9);
+	for (i = 0; i < 10; ++i) {
+		printf("%d",bitarray_test_bit(bitArrayPrueba,i));
+	}
+
+	puts("");
+	puts("Queremos encontrar un espacio consecutivo de 3 paginas");
+	int resultado = encontrarEspacioDisponible(11);
+	printf("%d \n", resultado);
+
+
 }
