@@ -22,14 +22,24 @@
  * VARIABLES GLOBALES
  ***********************/
 
-//CONFIG
-char* IP_SWAP;
-char* PUERTO_SWAP;
-char* NOMBRE_SWAP;
-char* PATH_SWAP;
-int CANTIDAD_PAGINAS;
-int TAMANIO_PAGINA;
-char* RETARDO_COMPACTACION;
+//SWAP
+char* ABSOLUTE_PATH_SWAP;
+t_bitarray* bitArrayStruct;
+int SWAP_BLOCKSIZE;
+
+struct InfoBloqueCodigo {
+   int pid;
+   int pageNumber;
+   int positionInSWAP;
+};
+
+typedef struct NodoControlCodigo {
+    struct InfoBloqueCodigo infoPagina;
+    struct node * next;
+} controlCodigo_t;
+
+//PRUEBAS
+t_bitarray* bitArrayPrueba;
 
 //CONEXION
 int swapSocket;
@@ -40,20 +50,15 @@ int packageSizeRecibido;
 int bytesRecibidos = 0;
 bool done = 0;
 
-//SWAP
-char* ABSOLUTE_PATH_SWAP;
-t_bitarray* bitArrayStruct;
+//CONFIG
+char* IP_SWAP;
+char* PUERTO_SWAP;
+char* NOMBRE_SWAP;
+char* PATH_SWAP;
+int CANTIDAD_PAGINAS;
+int TAMANIO_PAGINA;
+char* RETARDO_COMPACTACION;
 
-t_bitarray* bitArrayPrueba;
-
-int SWAP_BLOCKSIZE;
-
-
-struct pagina {
-   int pid;
-   int pageNumber;
-   int positionInSWAP;
-};
 
 int main() {
 	puts(".:: INITIALIZING SWAP ::.");
@@ -72,6 +77,7 @@ int main() {
     }
 
     //initServer();
+
 
     closeSwapProcess();
 
@@ -231,7 +237,8 @@ int createAndInitSwapFile(){
 	}
 
 	//Creamos y limpiamos el BitMap
-	bitArrayStruct = bitarray_create(swapFile,SWAP_BLOCKSIZE);
+	char* bitarray[CANTIDAD_PAGINAS];
+	bitArrayStruct = bitarray_create(bitarray,CANTIDAD_PAGINAS/8);
 
 	//Cerramos el puntero
 	fclose(swapFile);
@@ -239,15 +246,6 @@ int createAndInitSwapFile(){
 	int i;
 	for (i = 0; i < bitarray_get_max_bit(bitArrayStruct); ++i) {
 		bitarray_clean_bit(bitArrayStruct,i);
-	}
-
-	//Inicializamos la estructura de pagina
-	struct pagina paginas[CANTIDAD_PAGINAS];
-
-	for(i = 0; i < CANTIDAD_PAGINAS; i++){
-		paginas[i].pid = NULL;
-		paginas[i].pageNumber = NULL;
-		paginas[i].positionInSWAP = i;
 	}
 
 	return 1;
@@ -316,6 +314,36 @@ int compactar(){
 	return -2;
 }
 
+int inicarListaControl(){
+	//Inicializamos la estructura de control de codigos
+	controlCodigo_t * head = NULL;
+	head = malloc(sizeof(controlCodigo_t));
+	if (head == NULL) {
+		return 1;
+	}
+
+	struct InfoBloqueCodigo infoBloque;
+	infoBloque.pid = NULL;
+	infoBloque.pageNumber = NULL;
+	infoBloque.positionInSWAP = NULL;
+
+	head->infoPagina = infoBloque;
+	head->next = NULL;
+
+	return head;
+}
+
+void marcarCodigoComoLibre(struct InfoBloqueCodigo* estructura){
+	int posicionComienzo = estructura->positionInSWAP;
+	int cantPaginasAMarcar = estructura->pageNumber;
+	int i = 0;
+
+	for (i = 0; i < cantPaginasAMarcar; i++) {
+		bitarray_clean_bit(bitArrayStruct,posicionComienzo+i);
+	}
+
+}
+
 int escribirPagina(char* contenidoAEscribir, int posicion){
 	FILE* fp = fopen(ABSOLUTE_PATH_SWAP,"rb");
 
@@ -352,8 +380,8 @@ char* leerPagina(int posicion){
 
 	char* contenidoObtenido;
 
-	//Escribimos, si es distinto al count, fallo
-	if(fwrite(&contenidoObtenido,TAMANIO_PAGINA,1,fp) != 1){
+	//Leemos, si es distinto al count, fallo
+	if(fread(contenidoObtenido,TAMANIO_PAGINA,1,fp) != 1){
 		puts("Page couldn't be readed");
 
 		return NULL;
@@ -367,9 +395,7 @@ char* leerPagina(int posicion){
 void closeSwapProcess(){
 	puts(".:: Terminating SWAP process ::.");
 
-	//bitarray_destroy(bitArrayStruct);
-
-	//fclose(swapFile);
+	bitarray_destroy(bitArrayStruct);
 
 	puts(".:: SWAP Process terminated ::.");
 }
