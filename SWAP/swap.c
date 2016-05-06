@@ -29,7 +29,7 @@ int SWAP_BLOCKSIZE;
 
 struct InfoBloqueCodigo {
    int pid;
-   int pageNumber;
+   int numberOfPages;
    int positionInSWAP;
 };
 
@@ -59,11 +59,28 @@ int CANTIDAD_PAGINAS;
 int TAMANIO_PAGINA;
 char* RETARDO_COMPACTACION;
 
+/**********************
+ *
+ * 		FUNCIONES
+ *
+ **********************/
+int loadConfig();
+void initServer();
+int createAndInitSwapFile();
+int encontrarEspacioDisponible(char* codigo, int cantPaginasNecesarias);
+int compactar();
+int inicarListaControl();
+void marcarCodigoComoLibre(struct InfoBloqueCodigo* estructura);
+int calcularCantidadPaginasNecesarias(char* codigo);
+int escribirPagina(char* contenidoAEscribir, int posicion);
+char* leerPagina(int posicion);
+void closeSwapProcess();
 
 int main() {
 	puts(".:: INITIALIZING SWAP ::.");
 	puts("");
 
+	/*
     if(!loadConfig()){
     	puts("Config file can not be loaded");
     	return -1;
@@ -78,8 +95,9 @@ int main() {
 
     //initServer();
 
-
     closeSwapProcess();
+
+	*/
 
 	return 0;
 }
@@ -259,7 +277,7 @@ int createAndInitSwapFile(){
  *
  * Devuelve -1 si el espacio disponible es insuficiente
  **********************************************************************************/
-int encontrarEspacioDisponible(int cantPaginasNecesarias){
+int encontrarEspacioDisponible(char* codigo, int cantPaginasNecesarias){
 	int primerEspacio = 0;
 	int aux = 0;
 	int lugaresParciales = 0;
@@ -324,7 +342,7 @@ int inicarListaControl(){
 
 	struct InfoBloqueCodigo infoBloque;
 	infoBloque.pid = NULL;
-	infoBloque.pageNumber = NULL;
+	//infoBloque.pageNumber = NULL;
 	infoBloque.positionInSWAP = NULL;
 
 	head->infoPagina = infoBloque;
@@ -335,11 +353,22 @@ int inicarListaControl(){
 
 void marcarCodigoComoLibre(struct InfoBloqueCodigo* estructura){
 	int posicionComienzo = estructura->positionInSWAP;
-	int cantPaginasAMarcar = estructura->pageNumber;
+	//int cantPaginasAMarcar = estructura->pageNumber;
 	int i = 0;
 
 	for (i = 0; i < cantPaginasAMarcar; i++) {
 		bitarray_clean_bit(bitArrayStruct,posicionComienzo+i);
+	}
+
+}
+
+int calcularCantidadPaginasNecesarias(char* codigo){
+	int tamanioCodigo =  string_length(codigo);
+
+	if(tamanioCodigo%TAMANIO_PAGINA){
+		return (tamanioCodigo/TAMANIO_PAGINA)+1;
+	} else {
+		return tamanioCodigo/TAMANIO_PAGINA;
 	}
 
 }
@@ -392,6 +421,62 @@ char* leerPagina(int posicion){
 	return contenidoObtenido;
 }
 
+int pedidoEscritura(char* codigo){
+	int posicionEscrituraInicial;
+
+	//ANTES CALCULO LA CANTIDAD DE PAGINAS QUE NECESITO
+	int cantPaginasNecesarias = calcularCantidadPaginasNecesarias(codigo);
+
+	posicionEscrituraInicial = encontrarEspacioDisponible(codigo, cantPaginasNecesarias);
+
+	if(posicionEscrituraInicial < 0){
+		puts("Insufficient free space");
+
+		return -1;
+	}
+
+	//Genero un array con las paginas a escribir
+	char* paginas[cantPaginasNecesarias];
+	paginas = obtenerArrayConPaginas(codigo,cantPaginasNecesarias);
+
+	//Por cada pagina del array hago una escritura en archivo
+	int i = 0;
+	int cursorEscritura = posicionEscrituraInicial;
+	for (i = 0; i < cantPaginasNecesarias; i++) {
+		escribirPagina(paginas[i], cursorEscritura);
+
+		cursorEscritura = cursorEscritura + TAMANIO_PAGINA;
+	}
+
+	//Una vez finalizada la escritura, genero la estructura de control
+	struct InfoBloqueCodigo strucControl;
+	strucControl.pid = 1;
+	strucControl.numberOfPages = cantPaginasNecesarias;
+	strucControl.positionInSWAP = posicionEscrituraInicial;
+
+
+	return 1;
+}
+
+//Cargo en un array el codigo dividido en paginas
+char ** obtenerArrayConPaginas(char* codigo, int cantPaginasNecesarias){
+	char* paginas[cantPaginasNecesarias];
+
+		int i, cursor = 0;
+		for (i = 0; i < cantPaginasNecesarias; i++) {
+			char* codigoAEscribir = string_substring(codigo,cursor,TAMANIO_PAGINA);
+
+			paginas[i] = codigoAEscribir;
+
+			if(i > 0)
+				cursor = TAMANIO_PAGINA * i;
+
+		}
+
+	return paginas;
+}
+
+
 void closeSwapProcess(){
 	puts(".:: Terminating SWAP process ::.");
 
@@ -438,8 +523,8 @@ void pruebaFuncEncontrar(){
 
 	puts("");
 	puts("Queremos encontrar un espacio consecutivo de 3 paginas");
-	int resultado = encontrarEspacioDisponible(11);
-	printf("%d \n", resultado);
+	//int resultado = encontrarEspacioDisponible(11);
+	//printf("%d \n", resultado);
 
 
 }
