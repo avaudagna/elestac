@@ -1,0 +1,12 @@
+SERIALIZACION
+
+Handshake			--> U0|tamPag(4 bytes)				TOTAL: 7 bytes
+Nuevo proceso		--> U1|pid|longCodigo|codigo		TOTAL: indefinido
+Sobrescribir pag		--> U2|pid|nroPag|payload			TOTAL: indefinido
+Pedido pagina		--> U3|pid|nroPag						TOTAL:
+Finalizar proceso		--> U3|pid								TOTAL: 5 bytes
+
+ TAMANIOS
+pid					--> 2 bytes
+longCodigo		--> 4 bytes
+nroPag			--> 3 bytes
