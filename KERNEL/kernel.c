@@ -35,10 +35,9 @@ int main (int argc, char **argv) {
 
 	char *messageBuffer = (char*) malloc(sizeof(char)*PACKAGE_SIZE);
 	if(messageBuffer == NULL) return (-1);
-//	char *consoleMessage = (char*) malloc(sizeof(char)*PACKAGE_SIZE); // do I really need 2 buffers here with the new code?
 
 	char *fakePCB = (char*) malloc(sizeof(char)*PACKAGE_SIZE); // TODO Delete fakePCB
-
+	// free() the malloc();
 	puts("\n Initializing the system kernel. #VamoACalmarno \n");
 
 	setServerSocket(&serverSocket, KERNEL_IP, KERNEL_PORT);
@@ -80,20 +79,19 @@ int main (int argc, char **argv) {
 								//}
 								acceptConnection (&clientSocket, &serverSocket);
 								break;
-							}else if(messageBuffer!=NULL){
+							}else if(messageBuffer){
 								// recv ansisop code
 								puts("\n Data received from console: ");
 								puts(messageBuffer);
 								//strcat(fakePCB,messageBuffer);
-								strcpy(consoleMessage, messageBuffer);
-								if(CallUMC(consoleMessage)){ //	if(CallUMC(fakePCB)){
+								if(CallUMC(messageBuffer)){ //	if(CallUMC(fakePCB)){
 									puts("PBC successfully sent to UMC");
 								}
 							}
 						}
 					}else if((strcmp(messageBuffer, "cpu")) == 0 ){ // CPU is alive!
 						//write(clientSocket, fakePCB, strlen(fakePCB)); //send fake PCB
-						write(clientSocket, consoleMessage, PACKAGE_SIZE); //send fake PCB
+						write(clientSocket, messageBuffer, PACKAGE_SIZE); //send fake PCB
 						while( (read_size = recv(clientSocket , messageBuffer , PACKAGE_SIZE , 0)) > 0 ) { // wait for CPU to finish
 							if(messageBuffer!=NULL) puts(messageBuffer); // if it's "Elestac" we're happy.
 							break;
@@ -138,12 +136,13 @@ int main (int argc, char **argv) {
 			 */
 		}
 	}
+	free(messageBuffer);
 	close(serverSocket);
 	return 0;
 }
 int CallUMC(char * message){
 	int clientUMC;
-	//char* aPCB = PCB; // won't use it now -> Send "kernel"
+	//char* aPCB = PCB;
 	//char aPCB[] = "KERNEL";
 	char *clientMessage = NULL, *serverMessage = NULL;
     //Create socket
@@ -151,16 +150,9 @@ int CallUMC(char * message){
     	return (-1);
     }
     clientMessage = (char*) calloc(sizeof(char),PACKAGE_SIZE);
-    if(clientMessage == NULL) {
-      puts("===Error in messageBuffer malloc===");
-      return (-1);
-    }
+    if(clientMessage == NULL) return (-1);
     serverMessage = (char*) calloc(sizeof(char),PACKAGE_SIZE);
-    if(serverMessage == NULL) {
-      puts("===Error in messageBuffer malloc===");
-      return (-1);
-    }
-    //keep communicating with server
+    if(serverMessage == NULL) return (-1);
   //  while(1) {
       //  printf("Enter message : ");
      //   fgets(clientMessage, PACKAGE_SIZE, stdin);
@@ -193,8 +185,8 @@ int CallUMC(char * message){
         puts(serverMessage);
         clientMessage[0] = '\0';
         serverMessage[0] = '\0';
- //   }
-  //  close(clientUMC);
+   //}
+    close(clientUMC);
     return 1;
 }
 char* hardcodeameUnPrograma(){
