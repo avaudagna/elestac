@@ -1,0 +1,6 @@
+KERNEL ME MANDA CODIGO , YO CO EL METADATA , PUEDO LEVANTAR INSTRUCCION A INSTRUCCION , LUEGO VOY A IR ITERANDO N VECES, SIENDO N LA CANTIDAD DE INSTRUCCIONES
+QUE CONTIENE EL CODIGO ( me lo devuelve metadata_program ) , y voy a ir metiendo en una estructura con el mismo tamaño que de una pagina hasta cumplir
+con el tañano . En paralelo voy a ir armando un indice donde para cada instruccion almaceno numero de pagina + offset ( siendo el offset el tamaño de todas
+las instrucciones que estan almacenadas antes de la q qiero meter ahora , siempre hablando de una misma pagina claro.
+por ejemplo , para la primera instruccion el offset es  0 , para la 2da , si el tamaño de la primera es 4 , entonces es 4 el offset de la 2da .. y asi sucesivamente ) ,
+Luego , le mando de a paginas ( junto a pid ) al swap y el las almacena )
