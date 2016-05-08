@@ -22,10 +22,11 @@ int getClientSocket(int* clientSocket, const char* address, const int port) {
 int setServerSocket(int* serverSocket, const char* address, const int port) {
 	struct sockaddr_in serverConf;
 	*serverSocket = socket(AF_INET , SOCK_STREAM , 0);
-	if (*serverSocket == -1) {
-		printf("Could not create socket.");
-	}
+	if (*serverSocket == -1) puts("Could not create socket.");
 	puts("Socket created");
+
+	int activado = 1; /* This line and the next are meant to close the server socket if process is killed. */
+	setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
 
 	//Prepare the sockaddr_in structure
 	serverConf.sin_family = AF_INET;

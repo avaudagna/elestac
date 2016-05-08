@@ -24,3 +24,21 @@ KERNEL → UMC
 IDENTIFICADOR_MODULO-IDENTIFICADOR_OPERACION	TAMAÑO EN BYTES		SENTIDO
 K0 – 2 BYTES - HANDSHAKE
 K1|TAMAÑO_DEL_CODIGO|"CODIGO ENTERO"
+
+/********************
+*		Consola
+*********************/
+
+T0 -> kernel replies with clientID
+T1sizeMSJ -> size is 4 bytes, indicating the size of the msj
+
+/********************
+*		CPU
+*********************/
+
+C0 -> kernel replies with clientID
+C1
+C2
+C3
+
+

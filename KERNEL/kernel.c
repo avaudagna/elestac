@@ -22,8 +22,9 @@ int rmvClosedClients(int *clientList, int *clientsOnline);
 int newClient(int serverSocket, int *clientSocket, int *clientsOnline);
 char* hardcodeameUnPrograma();
 int main (int argc, char **argv) {
-	int i;
+	enum {PEDIR_MEMORIA, ENVIAR_PCB, OTRA_COSA} acciones;
 	signal (SIGINT, tratarSeniales);
+	int i;
 	fd_set allSockets;
 
 	t_metadata_program* newPCB;
@@ -44,14 +45,13 @@ int main (int argc, char **argv) {
 
 	while(1){
 		maxSocket = rmvClosedClients (clientSocket, &clientsOnline); /* update clients online counter */
+		if (maxSocket<serverSocket) maxSocket=serverSocket;
 		FD_ZERO(&allSockets); /* Clear all sockets */
 		FD_SET(serverSocket, &allSockets);
 		/* Add all clients to the select() */
 		for (i=0; i<clientsOnline; i++)	FD_SET (clientSocket[i], &allSockets);
-		if (maxSocket<serverSocket) maxSocket=serverSocket;
 		select (maxSocket+1, &allSockets, &allSockets, NULL, NULL);
-		/* if coming out of select(), something happened!
-		 * Check existing clients */
+		/* Check existing clients */
 		for (i=0; i<clientsOnline; i++){
 			if(FD_ISSET(clientSocket[i], &allSockets)){
 				if((read_size = recv(clientSocket[i], messageBuffer, PACKAGE_SIZE, 0)) > 0){
@@ -107,6 +107,9 @@ int main (int argc, char **argv) {
 		        	printf("Client %d closed the connection. \n", i+1);
 		        	fflush(stdout);
 		        	clientSocket[i] = -1;
+		        	close(clientSocket[i]);
+		        	// should I use FD_CLR here?
+
 		        	/*
 		        	 *
 		        	 * TODO
