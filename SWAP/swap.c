@@ -41,6 +41,7 @@ typedef struct InformacionPagina {
    int pid;
    int pageNumber;
    int positionInSWAP;
+   int bitMapPosition;
 };
 
 typedef struct NodoControlCodigo {
@@ -50,8 +51,6 @@ typedef struct NodoControlCodigo {
 
 struct NodoControlCodigo* headControlCodigo = NULL;
 
-//PRUEBAS
-t_bitarray* bitArrayPrueba;
 
 //CONEXION
 int swapSocket;
@@ -78,7 +77,6 @@ char* RETARDO_COMPACTACION;
  **********************/
 
 //PEDIDOS UMC
-int pedidoNuevoProceso(int pid, char* codigo);
 char* pedidoLectura(int pid, int numeroPagina);
 int pedidoEscrituraPagina(int pid, int numeroPagina, char* codigo);
 int pedidoSobrescrituraPagina(int pid, int numeroPagina, char* codigoNuevo);
@@ -94,21 +92,25 @@ void closeSwapProcess();
 //Procesos SWAP
 int encontrarEspacioDisponible(int cantPaginasNecesarias);
 int compactar();
+void imprimirEstadoBitMap();
+int mod (int a, int b);
 int marcarCodigoComoLibre(int pidDelProceso);
 char* obtenerPagina(int pidDelProceso, int numeroPagina);
 
 //Manejo de paginas
 int calcularCantidadPaginasNecesarias(char* codigo);
 int escribirPaginaEnSWAP(char* contenidoAEscribir, int posicion);
+void moverPagina(int bitOrigen, int bitDestino);
 char* leerPagina(int posicion);
 void obtenerArrayConPaginas(char* codigo, int cantPaginasNecesarias, char ** paginas);
 int calcularPosicionEnSWAP(int numeroPaginaBitMap);
 
 //Estructura Control
-void agregarNodoEstructuraControl(int pid, int pageNumber, int positionInSWAP);
+void agregarNodoEstructuraControl(int pid, int pageNumber, int positionInSWAP, int bitMapPosition);
 int obtenerPosicionEnSWAP(int pid, int pageNumber);
 int longitudEstructuraControl();
 int eliminarNodoControl(int pidDelProceso, int pageNumberDelProceso);
+struct InformacionPagina obtenerNodo(int bitMap);
 
 
 int main() {
@@ -141,44 +143,6 @@ int main() {
  *		PEDIDOS UMC
  *
  **********************/
-int pedidoNuevoProceso(int pid, char* codigo){
-	int posicionEscrituraInicial;
-
-	//ANTES CALCULO LA CANTIDAD DE PAGINAS QUE NECESITO
-	int cantPaginasNecesarias = calcularCantidadPaginasNecesarias(codigo);
-
-	//posicionEscrituraInicial = encontrarEspacioDisponible(codigo, cantPaginasNecesarias);
-
-	if(posicionEscrituraInicial < 0){
-		puts("Insufficient free space");
-
-		return -1;
-	}
-
-	//Genero un array con las paginas a escribir
-	char* paginas[cantPaginasNecesarias];
-	obtenerArrayConPaginas(codigo,cantPaginasNecesarias, paginas);
-
-	//Por cada pagina del array hago una escritura en archivo
-	int i = 0;
-	int cursorEscritura = posicionEscrituraInicial;
-	for (i = 0; i < cantPaginasNecesarias; i++) {
-		escribirPaginaEnSWAP(paginas[i], cursorEscritura);
-
-		//Una vez finalizada la escritura, genero la estructura de control
-		struct InformacionPagina strucControl;
-		strucControl.pid = pid;
-		strucControl.pageNumber = i;
-		strucControl.positionInSWAP = cursorEscritura;
-
-		//agregarNodoEstructuraControl(strucControl);
-
-		cursorEscritura = cursorEscritura + TAMANIO_PAGINA;
-	}
-
-	return 1;
-}
-
 char* pedidoLectura(int pid, int numeroPagina){
 	printf("[REQUEST] Page requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
 
@@ -186,11 +150,11 @@ char* pedidoLectura(int pid, int numeroPagina){
 	paginaObtenida = obtenerPagina(pid, numeroPagina);
 
 	if(paginaObtenida == NULL){
-		puts("	An error occurred while trying to fetch the page");
+		puts("--> An error occurred while trying to fetch the page");
 		return NULL;
 	}
 
-	puts("	Page found");
+	puts("Page found!");
 
 	return paginaObtenida;
 }
@@ -202,7 +166,7 @@ int pedidoEscrituraPagina(int pid, int numeroPagina, char* codigo){
 	paginaObtenida = obtenerPagina(pid, numeroPagina);
 
 	if(paginaObtenida != NULL){
-		puts("	Requested page alreay exists");
+		puts("--> Requested page alreay exists");
 		return -1;
 	}
 
@@ -210,15 +174,15 @@ int pedidoEscrituraPagina(int pid, int numeroPagina, char* codigo){
 
 	int posicionEnSWAP = calcularPosicionEnSWAP(numeroDePagina);
 
-	int resultado = escribirPaginaEnSWAP(codigo, posicionEnSWAP);
+	int escritoEnPosicion = escribirPaginaEnSWAP(codigo, posicionEnSWAP);
 
-	if(resultado < 0){
+	if(escritoEnPosicion < 0){
 		return -1;
 	}
 
-	agregarNodoEstructuraControl(pid, numeroPagina, posicionEnSWAP);
+	agregarNodoEstructuraControl(pid, numeroPagina, posicionEnSWAP, escritoEnPosicion);
 
-	puts("	The page has been written");
+	puts("The page has been written!");
 
 	return 0;
 }
@@ -230,13 +194,13 @@ int pedidoSobrescrituraPagina(int pid, int numeroPagina, char* codigoNuevo){
 	posicionPaginaEnSWAP = obtenerPosicionEnSWAP(pid, numeroPagina);
 
 	if(posicionPaginaEnSWAP < 0){
-		puts("	An error occurred while trying to fetch the page");
+		puts("--> An error occurred while trying to fetch the page");
 		return -1;
 	}
 
-	puts("	Overwriting page");
+	puts("Overwriting page");
 	escribirPaginaEnSWAP(codigoNuevo, posicionPaginaEnSWAP);
-	puts("	The page has been overwritten");
+	puts("The page has been overwritten!");
 
 	return 1;
 }
@@ -248,10 +212,10 @@ int pedidoFinalizacionPrograma(int pid){
 	paginasLiberadas = marcarCodigoComoLibre(pid);
 
 	if(paginasLiberadas > 0){
-		printf("	Pages released: %d", paginasLiberadas);
+		printf("Pages released: %d", paginasLiberadas);
 		return 1;
 	} else {
-		puts("	Error while releasing pages");
+		puts("--> Error while releasing pages");
 		return -1;
 	}
 }
@@ -445,10 +409,10 @@ int createAndInitSwapFile(){
 	//printf("%s %s \n", "Command executed --->",comandoCrearSwap);
 
 	if( system(comandoCrearSwap) ){
-		puts("SWAP file can not be created");
+		puts("--> SWAP file can not be created");
 		return 0;
 	}else{
-		puts("SWAP file has been successfully created");
+		puts("SWAP file has been successfully created!");
 
 	}
 
@@ -461,7 +425,7 @@ int createAndInitSwapFile(){
 	FILE* swapFile = fopen(ABSOLUTE_PATH_SWAP,"rb");
 
 	if (!swapFile){
-		printf("Unable to open swap file! \n");
+		printf("--> Unable to open swap file! \n");
 		return 0;
 	}
 
@@ -472,7 +436,7 @@ int createAndInitSwapFile(){
 	//Cerramos el puntero
 	fclose(swapFile);
 
-	int i;
+	int i; //Inicializamos todos los bits en cero (vacio)
 	for (i = 0; i < bitarray_get_max_bit(bitArrayStruct); ++i) {
 		bitarray_clean_bit(bitArrayStruct,i);
 	}
@@ -568,8 +532,69 @@ int encontrarEspacioDisponible(int cantPaginasNecesarias){
 	return -1; //No hay lugar :(
 }
 
+//Desde la posicion indicada, encuentra el proximo bit ocupado
+int encontrarPrimerOcupado(int principio){
+	int actual = principio + 1;
+	int ultimoBit = bitarray_get_max_bit(bitArrayStruct);
+
+	while(!bitarray_test_bit(bitArrayStruct, actual)){
+		if(actual == ultimoBit)
+			return -1;
+
+		actual++;
+	}
+
+	return actual;
+}
+
 int compactar(){
-	return -2;
+	puts(".:: DEFRAGMETATION REQUESTED ::. \n");
+
+	puts(".:: SWAP STATE BEFORE DEFRAGMETATION ::. \n");
+	imprimirEstadoBitMap();
+
+	int espacioActual, espacioLibre = 0;
+	while(bitarray_test_bit(bitArrayStruct, espacioLibre)){ //Encontramos el primer espacio libre
+		espacioLibre++;
+	}
+
+	for(espacioActual = 0; espacioActual < CANTIDAD_PAGINAS; espacioActual++) { //Empezamos a recorrer el BitMap desde el primer elemento
+		if(bitarray_test_bit(bitArrayStruct, espacioActual) && espacioActual > espacioLibre){ //Si esta ocupado y es superior a un espacio libre, estramos
+			int proximoOcupado = encontrarPrimerOcupado(espacioLibre); //Encontramos el espacio ocupado siguiente
+
+			moverPagina(proximoOcupado, espacioLibre); //Movemos la pagina
+			espacioLibre++; //Marcamos el espacio movido como libre
+		}
+
+	}
+
+	puts("\n .:: BEGINING DEFRAGMETATION ::. \n");
+	puts(".:: SWAP STATE AFTER DEFRAGMETATION ::. \n");
+	imprimirEstadoBitMap();
+
+	return 0;
+}
+
+void imprimirEstadoBitMap(){
+	int i;
+	for(i = 0; i < CANTIDAD_PAGINAS ; i++){
+		printf("%d",bitarray_test_bit(bitArrayStruct, i));
+
+		if(mod(i, 100) == 0 && i!=0){
+			printf("\n");
+		}
+	}
+
+	printf("\n Total: %d \n", i);
+}
+
+int mod (int a, int b){
+   int ret = a % b;
+
+   if(ret < 0)
+	   ret+=b;
+
+   return ret;
 }
 
 int marcarCodigoComoLibre(int pidDelProceso){
@@ -603,12 +628,12 @@ char* obtenerPagina(int pidDelProceso, int numeroPagina){
 	return NULL;
 }
 
+
 /**********************
  *
  *	Manejo de paginas
  *
  **********************/
-
 int calcularCantidadPaginasNecesarias(char* codigo){
 	int tamanioCodigo =  string_length(codigo);
 
@@ -624,38 +649,63 @@ int escribirPaginaEnSWAP(char* contenidoAEscribir, int posicion){
 	FILE* fp = fopen(ABSOLUTE_PATH_SWAP,"r+b");
 
 	if(!fp){
-		puts("	Page couldn't be written");
+		puts("--> Page couldn't be written");
+		fclose(fp);
+
 		return -1;
 	}
 
 	if(fseek(fp,posicion,SEEK_SET)){
-		puts("	Invalid pointer");
+		puts("--> Invalid pointer");
+		fclose(fp);
 
 		return -1;
 	}
 
-	size_t resultado;
-	resultado = fwrite(contenidoAEscribir,TAMANIO_PAGINA,1,fp);
+	int escritoEnPosicion = ftell(fp);
 
 	//Escribimos, si es distinto al count, fallo
-	if(resultado != 1){
-		puts("	Page couldn't be written");
-		printf("%d \n", resultado);
+	if(fwrite(contenidoAEscribir,TAMANIO_PAGINA,1,fp) != 1){
+		puts("--> Page couldn't be written");
+		fclose(fp);
 
 		return -1;
 	}
 
 	fclose(fp);
 
-	return 0;
+	return escritoEnPosicion;
+}
+
+void moverPagina(int bitOrigen, int bitDestino){
+	//Calculo la posicion destino multiplicando la posicion por el tamanio de pagina
+	int posicionDestino = bitDestino*TAMANIO_PAGINA;
+
+	//Obtengo la informacion de la pagina a mover
+	struct InformacionPagina nodoObtenido = obtenerNodo(bitOrigen);
+
+	//Copio el contenido de la misma
+	char* contenidoPagina = leerPagina(nodoObtenido.positionInSWAP);
+
+	//Escribo el contenido de la misma en la posicion del bit destino
+	escribirPaginaEnSWAP(contenidoPagina, bitDestino*TAMANIO_PAGINA);
+
+	//Elimino el nodo desactualizado
+	eliminarNodoControl(nodoObtenido.pid, nodoObtenido.pageNumber);
+
+	//Inserto uno nuevo con la posicion actualizada
+	agregarNodoEstructuraControl(nodoObtenido.pid, nodoObtenido.pageNumber, posicionDestino, bitDestino);
+
+	//Actualizo el BitMap
+	bitarray_set_bit(bitArrayStruct,bitDestino);
+	bitarray_clean_bit(bitArrayStruct, bitOrigen);
 }
 
 char* leerPagina(int posicion){
 	FILE* fp = fopen(ABSOLUTE_PATH_SWAP,"rb+");
 
 	if(fp == NULL){
-		puts("Page couldn't be readed");
-
+		puts("--> File couldn't be opened");
 		return NULL;
 	}
 
@@ -664,14 +714,12 @@ char* leerPagina(int posicion){
 	char contenidoObtenido[TAMANIO_PAGINA];
 
 	//Leemos, si es distinto al count, fallo
-	/*
+
 	if(fread(contenidoObtenido,TAMANIO_PAGINA,1,fp) != 1){
-		puts("Page couldn't be readed");
+		puts("--> Page couldn't be readed");
 
 		return NULL;
 	}
-	*/
-	fread(contenidoObtenido,TAMANIO_PAGINA,1,fp);
 
 	fclose(fp);
 
@@ -694,8 +742,8 @@ void obtenerArrayConPaginas(char* codigo, int cantPaginasNecesarias, char ** pag
 
 		if(i > 0)
 			cursor = TAMANIO_PAGINA * i;
-
 	}
+
 }
 
 /*************************
@@ -703,11 +751,12 @@ void obtenerArrayConPaginas(char* codigo, int cantPaginasNecesarias, char ** pag
  *	Estructura de control
  *
  *************************/
-void agregarNodoEstructuraControl(int pid, int pageNumber, int positionInSWAP){
+void agregarNodoEstructuraControl(int pid, int pageNumber, int positionInSWAP, int bitMapPosition){
 	struct InformacionPagina infoAAgregar;
 	infoAAgregar.pid = pid;
 	infoAAgregar.pageNumber = pageNumber;
 	infoAAgregar.positionInSWAP = positionInSWAP;
+	infoAAgregar.bitMapPosition = bitMapPosition;
 
 	if(headControlCodigo == NULL){
 		if(iniciarEstructuraControl(infoAAgregar) == 1)
@@ -738,6 +787,20 @@ int obtenerPosicionEnSWAP(int pidBuscado, int pageNumber){
 	}
 
 	return -1;
+}
+
+struct InformacionPagina obtenerNodo(int bitMap){
+	controlCodigo_t * current = headControlCodigo;
+
+	struct InformacionPagina infoEncontrada;
+	while (current != NULL) {
+		if(current->infoPagina.bitMapPosition == bitMap)
+			return current->infoPagina;
+
+		current = current->next;
+	}
+
+	return infoEncontrada;
 }
 
 int longitudEstructuraControl(){
@@ -781,101 +844,4 @@ int eliminarNodoControl(int pidDelProceso, int pageNumberDelProceso){
 	}
 
 	return 0;
-}
-
-/****************************
- *
- * 			PRUEBAS
- *
- ****************************/
-void pruebaFuncEncontrar(){
-	puts(".:: Comienza prueba ::.");
-	puts("");
-
-	FILE* swapFile = fopen(ABSOLUTE_PATH_SWAP,"rb");
-
-	//Creamos y limpiamos el BitMap
-	bitArrayPrueba = bitarray_create(swapFile,10);
-
-	int i;
-	for (i = 0; i < bitarray_get_max_bit(bitArrayPrueba); ++i) {
-		bitarray_clean_bit(bitArrayPrueba,i);
-	}
-
-	puts("BitMap creado e inicializado");
-	puts("");
-
-	puts("Estructura: 1 0 0 1 0 0 1 1 1 1");
-	bitarray_set_bit(bitArrayPrueba,0);
-	//bitarray_set_bit(bitArrayPrueba,1);
-	bitarray_set_bit(bitArrayPrueba,2);
-	//bitarray_set_bit(bitArrayPrueba,3);
-	bitarray_set_bit(bitArrayPrueba,6);
-	bitarray_set_bit(bitArrayPrueba,7);
-	bitarray_set_bit(bitArrayPrueba,8);
-	bitarray_set_bit(bitArrayPrueba,9);
-	for (i = 0; i < 10; ++i) {
-		printf("%d",bitarray_test_bit(bitArrayPrueba,i));
-	}
-
-	puts("");
-	puts("Queremos encontrar un espacio consecutivo de 3 paginas");
-	//int resultado = encontrarEspacioDisponible(11);
-	//printf("%d \n", resultado);
-
-
-}
-
-void pruebaLista(){
-	struct InformacionPagina info1;
-	struct InformacionPagina info2;
-	struct InformacionPagina info3;
-	struct InformacionPagina info4;
-
-	info1.pid = 1;
-	info1.pageNumber = 5432;
-	info1.positionInSWAP = 89;
-
-	info2.pid = 2;
-	info2.pageNumber = 21312;
-	info2.positionInSWAP = 421;
-
-	info3.pid = 3;
-	info3.pageNumber = 47821;
-	info3.positionInSWAP = 654;
-
-	info4.pid = 2;
-	info4.pageNumber = 574;
-	info4.positionInSWAP = 421;
-
-	/*
-	agregarNodoEstructuraControl(info1);
-	agregarNodoEstructuraControl(info2);
-	agregarNodoEstructuraControl(info3);
-	agregarNodoEstructuraControl(info4);
-	 */
-
-	printf("%d \n", obtenerPosicionEnSWAP(2,21312));
-	printf("size: %d \n",longitudEstructuraControl());
-	printf("%d \n", eliminarNodoControl(2,-1));
-	printf("size: %d \n",longitudEstructuraControl());
-
-}
-
-void pruebaUMC(){
-	puts(".:: INICIANDO PRUEBA UMC ::.");
-	puts("");
-
-	printf("%s", ABSOLUTE_PATH_SWAP);
-
-	puts("");
-	pedidoEscrituraPagina(3,5,"HOLA!");
-	puts("");
-
-	char* contenidoLeido = pedidoLectura(3,5);
-
-	puts("");
-
-	printf("%s \n", contenidoLeido);
-	puts("");
 }
