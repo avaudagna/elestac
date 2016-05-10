@@ -27,6 +27,7 @@
 #define PROCESO_FINALIZAR			6
 #define PAG_CANTIDAD				7
 
+
 /************************
  * VARIABLES GLOBALES
  ***********************/
@@ -79,6 +80,7 @@ char* RETARDO_COMPACTACION;
 //PEDIDOS UMC
 int pedidoNuevoProceso(int pid, char* codigo);
 char* pedidoLectura(int pid, int numeroPagina);
+int pedidoEscrituraPagina(int pid, int numeroPagina, char* codigo);
 int pedidoSobrescrituraPagina(int pid, int numeroPagina, char* codigoNuevo);
 int pedidoFinalizacionPrograma(int pid);
 
@@ -90,7 +92,7 @@ int iniciarEstructuraControl();
 void closeSwapProcess();
 
 //Procesos SWAP
-int encontrarEspacioDisponible(char* codigo, int cantPaginasNecesarias);
+int encontrarEspacioDisponible(int cantPaginasNecesarias);
 int compactar();
 int marcarCodigoComoLibre(int pidDelProceso);
 char* obtenerPagina(int pidDelProceso, int numeroPagina);
@@ -100,9 +102,10 @@ int calcularCantidadPaginasNecesarias(char* codigo);
 int escribirPaginaEnSWAP(char* contenidoAEscribir, int posicion);
 char* leerPagina(int posicion);
 void obtenerArrayConPaginas(char* codigo, int cantPaginasNecesarias, char ** paginas);
+int calcularPosicionEnSWAP(int numeroPaginaBitMap);
 
 //Estructura Control
-void agregarNodoEstructuraControl(struct InformacionPagina infoPagina);
+void agregarNodoEstructuraControl(int pid, int pageNumber, int positionInSWAP);
 int obtenerPosicionEnSWAP(int pid, int pageNumber);
 int longitudEstructuraControl();
 int eliminarNodoControl(int pidDelProceso, int pageNumberDelProceso);
@@ -112,7 +115,7 @@ int main() {
 	puts(".:: INITIALIZING SWAP ::.");
 	puts("");
 
-	/*
+
     if(!loadConfig()){
     	puts("Config file can not be loaded");
     	return -1;
@@ -127,12 +130,11 @@ int main() {
 
     //initServer();
 
-    closeSwapProcess();
-
-	*/
+	closeSwapProcess();
 
 	return 0;
 }
+
 
 /**********************
  *
@@ -145,7 +147,7 @@ int pedidoNuevoProceso(int pid, char* codigo){
 	//ANTES CALCULO LA CANTIDAD DE PAGINAS QUE NECESITO
 	int cantPaginasNecesarias = calcularCantidadPaginasNecesarias(codigo);
 
-	posicionEscrituraInicial = encontrarEspacioDisponible(codigo, cantPaginasNecesarias);
+	//posicionEscrituraInicial = encontrarEspacioDisponible(codigo, cantPaginasNecesarias);
 
 	if(posicionEscrituraInicial < 0){
 		puts("Insufficient free space");
@@ -163,15 +165,16 @@ int pedidoNuevoProceso(int pid, char* codigo){
 	for (i = 0; i < cantPaginasNecesarias; i++) {
 		escribirPaginaEnSWAP(paginas[i], cursorEscritura);
 
+		//Una vez finalizada la escritura, genero la estructura de control
+		struct InformacionPagina strucControl;
+		strucControl.pid = pid;
+		strucControl.pageNumber = i;
+		strucControl.positionInSWAP = cursorEscritura;
+
+		//agregarNodoEstructuraControl(strucControl);
+
 		cursorEscritura = cursorEscritura + TAMANIO_PAGINA;
 	}
-
-	//Una vez finalizada la escritura, genero la estructura de control
-	struct InformacionPagina strucControl;
-	strucControl.pid = pid;
-	strucControl.pageNumber = cantPaginasNecesarias;
-	strucControl.positionInSWAP = posicionEscrituraInicial;
-
 
 	return 1;
 }
@@ -190,6 +193,34 @@ char* pedidoLectura(int pid, int numeroPagina){
 	puts("	Page found");
 
 	return paginaObtenida;
+}
+
+int pedidoEscrituraPagina(int pid, int numeroPagina, char* codigo){
+	printf("[REQUEST] Page writing requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
+
+	char* paginaObtenida = NULL;
+	paginaObtenida = obtenerPagina(pid, numeroPagina);
+
+	if(paginaObtenida != NULL){
+		puts("	Requested page alreay exists");
+		return -1;
+	}
+
+	int numeroDePagina = encontrarEspacioDisponible(1); //Solo necesitamos escribir una pagina
+
+	int posicionEnSWAP = calcularPosicionEnSWAP(numeroDePagina);
+
+	int resultado = escribirPaginaEnSWAP(codigo, posicionEnSWAP);
+
+	if(resultado < 0){
+		return -1;
+	}
+
+	agregarNodoEstructuraControl(pid, numeroPagina, posicionEnSWAP);
+
+	puts("	The page has been written");
+
+	return 0;
 }
 
 int pedidoSobrescrituraPagina(int pid, int numeroPagina, char* codigoNuevo){
@@ -482,7 +513,7 @@ void closeSwapProcess(){
  *
  * Devuelve -1 si el espacio disponible es insuficiente
  **********************************************************************************/
-int encontrarEspacioDisponible(char* codigo, int cantPaginasNecesarias){
+int encontrarEspacioDisponible(int cantPaginasNecesarias){
 	int primerEspacio = 0;
 	int aux = 0;
 	int lugaresParciales = 0;
@@ -504,6 +535,10 @@ int encontrarEspacioDisponible(char* codigo, int cantPaginasNecesarias){
 			if(paginasRestantes < cantPaginasNecesarias){
 				meEncuentroEn++;
 				break;
+			}
+
+			if(cantPaginasNecesarias == 1){ //Si solo necesito una pagina
+				return meEncuentroEn;
 			}
 
 			for (aux = primerEspacio; aux < (meEncuentroEn + cantPaginasNecesarias); aux++) { // For por la cantidad de paginas requeridas
@@ -586,19 +621,26 @@ int calcularCantidadPaginasNecesarias(char* codigo){
 }
 
 int escribirPaginaEnSWAP(char* contenidoAEscribir, int posicion){
-	FILE* fp = fopen(ABSOLUTE_PATH_SWAP,"rb");
+	FILE* fp = fopen(ABSOLUTE_PATH_SWAP,"r+b");
 
-	if(fp == NULL){
-		puts("Page couldn't be written");
+	if(!fp){
+		puts("	Page couldn't be written");
+		return -1;
+	}
+
+	if(fseek(fp,posicion,SEEK_SET)){
+		puts("	Invalid pointer");
 
 		return -1;
 	}
 
-	fseek(fp,posicion,SEEK_SET);
+	size_t resultado;
+	resultado = fwrite(contenidoAEscribir,TAMANIO_PAGINA,1,fp);
 
 	//Escribimos, si es distinto al count, fallo
-	if(fwrite(contenidoAEscribir,TAMANIO_PAGINA,1,fp) != 1){
-		puts("Page couldn't be written");
+	if(resultado != 1){
+		puts("	Page couldn't be written");
+		printf("%d \n", resultado);
 
 		return -1;
 	}
@@ -609,7 +651,7 @@ int escribirPaginaEnSWAP(char* contenidoAEscribir, int posicion){
 }
 
 char* leerPagina(int posicion){
-	FILE* fp = fopen(ABSOLUTE_PATH_SWAP,"rb");
+	FILE* fp = fopen(ABSOLUTE_PATH_SWAP,"rb+");
 
 	if(fp == NULL){
 		puts("Page couldn't be readed");
@@ -619,18 +661,25 @@ char* leerPagina(int posicion){
 
 	fseek(fp,posicion,SEEK_SET);
 
-	char* contenidoObtenido;
+	char contenidoObtenido[TAMANIO_PAGINA];
 
 	//Leemos, si es distinto al count, fallo
+	/*
 	if(fread(contenidoObtenido,TAMANIO_PAGINA,1,fp) != 1){
 		puts("Page couldn't be readed");
 
 		return NULL;
 	}
+	*/
+	fread(contenidoObtenido,TAMANIO_PAGINA,1,fp);
 
 	fclose(fp);
 
 	return contenidoObtenido;
+}
+
+int calcularPosicionEnSWAP(int numeroPaginaBitMap){
+	return TAMANIO_PAGINA * numeroPaginaBitMap;
 }
 
 //Cargo en un array el codigo dividido en paginas
@@ -654,9 +703,14 @@ void obtenerArrayConPaginas(char* codigo, int cantPaginasNecesarias, char ** pag
  *	Estructura de control
  *
  *************************/
-void agregarNodoEstructuraControl(struct InformacionPagina infoPagina){
+void agregarNodoEstructuraControl(int pid, int pageNumber, int positionInSWAP){
+	struct InformacionPagina infoAAgregar;
+	infoAAgregar.pid = pid;
+	infoAAgregar.pageNumber = pageNumber;
+	infoAAgregar.positionInSWAP = positionInSWAP;
+
 	if(headControlCodigo == NULL){
-		if(iniciarEstructuraControl(infoPagina) == 1)
+		if(iniciarEstructuraControl(infoAAgregar) == 1)
 			puts("La estructura no pudo ser creada");
 
 	} else {
@@ -667,7 +721,7 @@ void agregarNodoEstructuraControl(struct InformacionPagina infoPagina){
 
 		/* now we can add a new variable */
 		current->next = malloc(sizeof(controlCodigo_t));
-		current->infoPagina = infoPagina;
+		current->infoPagina = infoAAgregar;
 		current->next->next = NULL;
 	}
 
@@ -794,14 +848,34 @@ void pruebaLista(){
 	info4.pageNumber = 574;
 	info4.positionInSWAP = 421;
 
+	/*
 	agregarNodoEstructuraControl(info1);
 	agregarNodoEstructuraControl(info2);
 	agregarNodoEstructuraControl(info3);
 	agregarNodoEstructuraControl(info4);
+	 */
 
 	printf("%d \n", obtenerPosicionEnSWAP(2,21312));
 	printf("size: %d \n",longitudEstructuraControl());
 	printf("%d \n", eliminarNodoControl(2,-1));
 	printf("size: %d \n",longitudEstructuraControl());
 
+}
+
+void pruebaUMC(){
+	puts(".:: INICIANDO PRUEBA UMC ::.");
+	puts("");
+
+	printf("%s", ABSOLUTE_PATH_SWAP);
+
+	puts("");
+	pedidoEscrituraPagina(3,5,"HOLA!");
+	puts("");
+
+	char* contenidoLeido = pedidoLectura(3,5);
+
+	puts("");
+
+	printf("%s \n", contenidoLeido);
+	puts("");
 }
