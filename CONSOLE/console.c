@@ -3,22 +3,30 @@
 #include<sys/socket.h>    //socket
 #include<arpa/inet.h> //inet_addr
 #include "socketCommons/socketCommons.h"
+#include <signal.h>
 
 #define KERNEL_ADDR "127.0.0.1"
 #define KERNEL_PORT 54326
 
+#define PACKAGE_SIZE 10
+
+void tratarSeniales(int);
 int main(int argc , char *argv[])
 {
+	signal (SIGINT, tratarSeniales);
 	int kernelSocketClient;
 	char kernel_reply[2000];
 	//create kernel client
-	if(argc != 2) {
-		puts("usage: console line");
+	if(argc != 3) {
+		puts("usage: console conf file");
 		return -1; }
 	getClientSocket(&kernelSocketClient, KERNEL_ADDR, KERNEL_PORT);
 
+	/*le voy a mandar al kernel una T0 (terminal),
+	y me va a devolver el client_id (un número) que me represente con el cual él me conoce
+	Luego T1+ sizeMsj en 4B +(todo el código como viene)*/
 	//receive a reply from the kernel
-	send(kernelSocketClient, "console", PACKAGE_SIZE, 0);
+	send(kernelSocketClient, "T0", PACKAGE_SIZE, 0);
 
 	do {
 		if( recv(kernelSocketClient , kernel_reply , PACKAGE_SIZE , 0) < 0) {
@@ -27,12 +35,43 @@ int main(int argc , char *argv[])
 		}
 		 puts("Kernel reply :");
 		 puts(kernel_reply);
-	} while(strcmp(kernel_reply, "kernel"));
 
-	send(kernelSocketClient, argv[1], PACKAGE_SIZE, 0);
-	printf("Sent: %s/n", argv[1]);
-	send(kernelSocketClient, "#VamoACalmarno",PACKAGE_SIZE, 0);
-	puts("Sent: #VamoACalmarno");
+	}
+	/*
+	 * OJO con este while, ya no recibo "kernel"...
+	 */
+	while(strcmp(kernel_reply, "kernel"));
+
+	// le envío a kernel T1+sizeMsj en 4B+mensaje
+
+	FILE * fp;
+	fp = fopen (argv[2], "r");
+	fseek(fp, SEEK_SET, 0);
+
+	fseek(fp, 0L, SEEK_END);
+	long int sz = ftell(fp);
+	fseek(fp, 0L, SEEK_SET);
+
+	//Despues haces malloc con sz
+	char* prog = (char*) malloc(sz);
+
+	fread(prog, sz+1, 1, fp);
+	fclose(fp);
+
+	int sizeMsj = strlen("T1")+5+(int) sz;
+	char* mensaje = (char*) malloc(sizeMsj);
+
+    char buffer [20];
+    sprintf(buffer, "%04d\n", (int) sz);
+
+	strcpy(mensaje, "T1");
+	strcat(mensaje, buffer);
+	strcat(mensaje, prog);
+	send(kernelSocketClient, mensaje, sizeMsj, 0);
+	//printf("Sent: %s/n", fp);
+	printf("Sent: %s/n", mensaje);
+	//send(kernelSocketClient, "#VamoACalmarno",PACKAGE_SIZE, 0);
+	//puts("Sent: #VamoACalmarno");
 	//do {
 	//	if( recv(kernelSocketClient , kernel_reply , PACKAGE_SIZE , 0) < 0) {
 //			puts("recv failed");
@@ -45,6 +84,17 @@ int main(int argc , char *argv[])
 
 }
 
+void tratarSeniales(int senial){
+	printf ("Tratando seniales\n");
+	printf("\nSenial: %d\n",senial);
+	switch (senial){
+		case SIGINT:
+			// Detecta Ctrl+C y evita el cierre.
+			printf("Esto acabará con el sistema. Presione Ctrl+C una vez más para confirmar.\n\n");
+			signal (SIGINT, SIG_DFL); // solo controlo una vez.
+			break;
+	}
+}
 
 
 
