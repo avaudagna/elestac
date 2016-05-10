@@ -41,6 +41,16 @@ int main (int argc, char **argv) {
 	// free() the malloc();
 	puts("\n Initializing the system kernel. #VamoACalmarno \n");
 
+	puts("\nThis is a fake ansisop program (hardcoded)\n");
+	char* programa=hardcodeameUnPrograma(); // create fake ANSISOP program
+	puts(programa); // print it!
+	newPCB = metadata_desde_literal(programa); // get metadata from the program
+	printf("Cantidad de etiquetas: %i \n\n",newPCB->cantidad_de_etiquetas); // print something
+	newPCB->instrucciones_serializado+=1;
+	puts("wanta");
+	free(programa); // let it free
+
+
 	setServerSocket(&serverSocket, KERNEL_IP, KERNEL_PORT);
 
 	while(1){
@@ -108,8 +118,7 @@ int main (int argc, char **argv) {
 		        	fflush(stdout);
 		        	clientSocket[i] = -1;
 		        	close(clientSocket[i]);
-		        	// should I use FD_CLR here?
-
+		        	FD_CLR(serverSocket, &allSockets);
 		        	/*
 		        	 *
 		        	 * TODO
@@ -193,15 +202,15 @@ int CallUMC(char * message){
     return 1;
 }
 char* hardcodeameUnPrograma(){
-	char *programita = NULL;
-	char tempbuff[20]="";
-	size_t programlen = 0;
+	char *programita = "begin\nvariables f, A, g \n A = 	0  \n!Global = 1+A\n  print !Global \n jnz !Global Siguiente \n:Proximo\n	 \n f = 8	   \ng <- doble !Global	\n  io impresora 20\n	:Siguiente	 \n imprimir A  \ntextPrint  Hola Mundo!  \n\n  sumar1 &g	 \n print g  \n\n  sinParam \n \nend\n\nfunction sinParam\n	textPrint Bye\nend\n\n#Devolver el doble del\n#primer parametro\nfunction doble\nvariables f  \n f = $0 + $0 \n  return fvend\n\nfunction sumar1\n	*$0 = 1 + *$0\nend\n\nfunction imprimir\n  wait mutexA\n    print $0+1\n  signal mutexB\nend\n\n";
+	//char tempbuff[]="";
+	//size_t programlen = 0;
 
-	strcpy(tempbuff,"begin\n");
-	programlen += strlen(tempbuff);
-	programita = realloc(programita, programlen+1);
-	strcat(programita, tempbuff);
-
+//	strcpy(programita,"begin");
+//	programlen += strlen(tempbuff);
+	//programita = realloc(programita, programlen+1);
+	//strcat(programita, tempbuff);
+/*
     strcpy(tempbuff,"variables a, b\n");
 	programlen += strlen(tempbuff);
 	programita = realloc(programita, programlen+1);
@@ -226,7 +235,7 @@ char* hardcodeameUnPrograma(){
 	programlen += strlen(tempbuff);
 	programita = realloc(programita, programlen+1);
 	strcat(programita, tempbuff);
-
+*/
 	return programita;
 }
 void tratarSeniales(int senial){
