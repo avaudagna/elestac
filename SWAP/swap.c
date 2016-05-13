@@ -6,6 +6,7 @@
 #include <netdb.h>
 #include <unistd.h>
 
+//Librerias propias
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/bitarray.h>
@@ -34,6 +35,7 @@
 
 //SWAP
 char* ABSOLUTE_PATH_SWAP;
+char* bitMap;
 t_bitarray* bitArrayStruct;
 int SWAP_BLOCKSIZE;
 
@@ -50,7 +52,6 @@ typedef struct NodoControlCodigo {
 } controlCodigo_t;
 
 struct NodoControlCodigo* headControlCodigo = NULL;
-
 
 //CONEXION
 int swapSocket;
@@ -91,6 +92,7 @@ void closeSwapProcess();
 
 //Procesos SWAP
 int encontrarEspacioDisponible(int cantPaginasNecesarias);
+int encontrarPrimerOcupado(int principio);
 int compactar();
 void imprimirEstadoBitMap();
 int mod (int a, int b);
@@ -102,16 +104,15 @@ int calcularCantidadPaginasNecesarias(char* codigo);
 int escribirPaginaEnSWAP(char* contenidoAEscribir, int posicion);
 void moverPagina(int bitOrigen, int bitDestino);
 char* leerPagina(int posicion);
-void obtenerArrayConPaginas(char* codigo, int cantPaginasNecesarias, char ** paginas);
 int calcularPosicionEnSWAP(int numeroPaginaBitMap);
 
 //Estructura Control
 void agregarNodoEstructuraControl(int pid, int pageNumber, int positionInSWAP, int bitMapPosition);
 int obtenerPosicionEnSWAP(int pid, int pageNumber);
+struct InformacionPagina obtenerNodo(int bitMap);
 int longitudEstructuraControl();
 int eliminarNodoControl(int pidDelProceso, int pageNumberDelProceso);
-struct InformacionPagina obtenerNodo(int bitMap);
-
+void eliminarListaControl();
 
 int main() {
 	puts(".:: INITIALIZING SWAP ::.");
@@ -131,6 +132,51 @@ int main() {
     }
 
     //initServer();
+
+    //Pedimos de escribir el pid 1 con 10 paginas
+    puts(".:: Escribimos 15 paginas de prueba ::.");
+
+    int i, j;
+	char letra = 'a';
+	for(i = 0; i < 15; i++){
+		char codigo[TAMANIO_PAGINA];
+
+		for(j = 0;j < TAMANIO_PAGINA; j++){
+			codigo[j] = letra;
+		}
+
+		pedidoEscrituraPagina(1, i, codigo);
+		//free(codigo);
+		letra++;
+	}
+
+	puts("");
+	puts("");
+
+	int sizeControl = longitudEstructuraControl();
+	printf("Cantidad de nodos de control creados: %d \n", sizeControl);
+	printf("%d \n", obtenerPosicionEnSWAP(1,1));
+
+	puts("");
+	puts("");
+
+	puts(" .:: Sobre escribimos las primeras 10 ::. ");
+	for(i = 0; i < 10; i++){
+		char codigo[TAMANIO_PAGINA];
+		for(j = 0;j < TAMANIO_PAGINA; j++){
+			codigo[j] = letra;
+		}
+
+		pedidoSobrescrituraPagina(1, i, codigo);
+		//free(codigo);
+		letra++;
+	}
+
+
+	imprimirNodos();
+
+	puts(" .:: Leemos pagina ::. ");
+	printf("%s \n", pedidoLectura(1,0));
 
 	closeSwapProcess();
 
@@ -170,9 +216,9 @@ int pedidoEscrituraPagina(int pid, int numeroPagina, char* codigo){
 		return -1;
 	}
 
-	int numeroDePagina = encontrarEspacioDisponible(1); //Solo necesitamos escribir una pagina
+	int bitMap = encontrarEspacioDisponible(1); //Solo necesitamos escribir una pagina
 
-	int posicionEnSWAP = calcularPosicionEnSWAP(numeroDePagina);
+	int posicionEnSWAP = calcularPosicionEnSWAP(bitMap);
 
 	int escritoEnPosicion = escribirPaginaEnSWAP(codigo, posicionEnSWAP);
 
@@ -181,6 +227,7 @@ int pedidoEscrituraPagina(int pid, int numeroPagina, char* codigo){
 	}
 
 	agregarNodoEstructuraControl(pid, numeroPagina, posicionEnSWAP, escritoEnPosicion);
+	bitarray_set_bit(bitArrayStruct, bitMap);
 
 	puts("The page has been written!");
 
@@ -265,8 +312,12 @@ int loadConfig(){
 		printf("	%s --> %d \n",keys[5],TAMANIO_PAGINA);
 		printf("	%s --> %s \n",keys[6],RETARDO_COMPACTACION);
 
+		free(punteroAStruct);
+
 		return 1;
 	} else {
+		free(punteroAStruct);
+
 		return 0;
 	}
 }
@@ -360,8 +411,8 @@ void initServer(){
 			}
 
 			if ( send(umcSocket,(void *) package,PACKAGE_SIZE,0) == -1 ) {
-							perror("send");
-							exit(1);
+				perror("send");
+				exit(1);
 			}
 
 			printf("Sent :%s\n",package);
@@ -410,10 +461,11 @@ int createAndInitSwapFile(){
 
 	if( system(comandoCrearSwap) ){
 		puts("--> SWAP file can not be created");
+		free(comandoCrearSwap);
 		return 0;
 	}else{
 		puts("SWAP file has been successfully created!");
-
+		free(comandoCrearSwap);
 	}
 
 	//Obtengo el path absoluto del archivo .swap
@@ -430,8 +482,8 @@ int createAndInitSwapFile(){
 	}
 
 	//Creamos y limpiamos el BitMap
-	char* bitarray[CANTIDAD_PAGINAS];
-	bitArrayStruct = bitarray_create(bitarray,CANTIDAD_PAGINAS/8);
+	bitMap = malloc(sizeof(char[CANTIDAD_PAGINAS]));
+	bitArrayStruct = bitarray_create(bitMap,CANTIDAD_PAGINAS/8);
 
 	//Cerramos el puntero
 	fclose(swapFile);
@@ -448,7 +500,7 @@ int iniciarEstructuraControl(struct InformacionPagina infoBloque){
 	//Inicializamos la estructura de control de codigos
 	headControlCodigo = malloc(sizeof(controlCodigo_t));
 
-	if (headControlCodigo == NULL)
+	if(headControlCodigo == NULL)
 		return 1;
 
 	headControlCodigo->infoPagina = infoBloque;
@@ -460,6 +512,31 @@ int iniciarEstructuraControl(struct InformacionPagina infoBloque){
 void closeSwapProcess(){
 	puts(".:: Terminating SWAP process ::.");
 
+	/******************************
+	 * Liberamos variables globales
+	 ******************************/
+
+	//SWAP
+	free(ABSOLUTE_PATH_SWAP);
+	free(bitMap);
+	free(bitArrayStruct);
+	free(headControlCodigo);
+
+	//CONEXION
+	free(package);
+
+	//CONFIG
+	free(IP_SWAP);
+	free(PUERTO_SWAP);
+	free(NOMBRE_SWAP);
+	free(PATH_SWAP);
+	free(RETARDO_COMPACTACION);
+
+	//Eliminamos la lista con todos sus modulos
+	eliminarListaControl();
+	free(headControlCodigo);
+
+	//Liberamos el BitMap
 	bitarray_destroy(bitArrayStruct);
 
 	puts(".:: SWAP Process terminated ::.");
@@ -599,7 +676,7 @@ int mod (int a, int b){
 
 int marcarCodigoComoLibre(int pidDelProceso){
 	int modificaciones = 0;
-	controlCodigo_t * current = headControlCodigo;
+	controlCodigo_t * current;
 	controlCodigo_t * temp_node;
 
 	for(current = headControlCodigo; current != NULL; current = current->next){
@@ -636,6 +713,7 @@ char* obtenerPagina(int pidDelProceso, int numeroPagina){
  **********************/
 int calcularCantidadPaginasNecesarias(char* codigo){
 	int tamanioCodigo =  string_length(codigo);
+	free(codigo);
 
 	if(tamanioCodigo%TAMANIO_PAGINA){
 		return (tamanioCodigo/TAMANIO_PAGINA)+1;
@@ -648,9 +726,16 @@ int calcularCantidadPaginasNecesarias(char* codigo){
 int escribirPaginaEnSWAP(char* contenidoAEscribir, int posicion){
 	FILE* fp = fopen(ABSOLUTE_PATH_SWAP,"r+b");
 
+	char pagina[TAMANIO_PAGINA];
+	int i;
+	for(i = 0; i < TAMANIO_PAGINA; i++){
+		pagina[i] = contenidoAEscribir[i];
+	}
+
 	if(!fp){
 		puts("--> Page couldn't be written");
 		fclose(fp);
+		free(contenidoAEscribir);
 
 		return -1;
 	}
@@ -658,6 +743,7 @@ int escribirPaginaEnSWAP(char* contenidoAEscribir, int posicion){
 	if(fseek(fp,posicion,SEEK_SET)){
 		puts("--> Invalid pointer");
 		fclose(fp);
+		free(contenidoAEscribir);
 
 		return -1;
 	}
@@ -665,14 +751,16 @@ int escribirPaginaEnSWAP(char* contenidoAEscribir, int posicion){
 	int escritoEnPosicion = ftell(fp);
 
 	//Escribimos, si es distinto al count, fallo
-	if(fwrite(contenidoAEscribir,TAMANIO_PAGINA,1,fp) != 1){
+	if(fwrite(pagina,TAMANIO_PAGINA,1,fp) != 1){
 		puts("--> Page couldn't be written");
 		fclose(fp);
+		free(contenidoAEscribir);
 
 		return -1;
 	}
 
 	fclose(fp);
+	//free(contenidoAEscribir);
 
 	return escritoEnPosicion;
 }
@@ -689,6 +777,7 @@ void moverPagina(int bitOrigen, int bitDestino){
 
 	//Escribo el contenido de la misma en la posicion del bit destino
 	escribirPaginaEnSWAP(contenidoPagina, bitDestino*TAMANIO_PAGINA);
+	free(contenidoPagina);
 
 	//Elimino el nodo desactualizado
 	eliminarNodoControl(nodoObtenido.pid, nodoObtenido.pageNumber);
@@ -711,7 +800,7 @@ char* leerPagina(int posicion){
 
 	fseek(fp,posicion,SEEK_SET);
 
-	char contenidoObtenido[TAMANIO_PAGINA];
+	char* contenidoObtenido = malloc(sizeof(TAMANIO_PAGINA*sizeof(char)));
 
 	//Leemos, si es distinto al count, fallo
 
@@ -728,22 +817,6 @@ char* leerPagina(int posicion){
 
 int calcularPosicionEnSWAP(int numeroPaginaBitMap){
 	return TAMANIO_PAGINA * numeroPaginaBitMap;
-}
-
-//Cargo en un array el codigo dividido en paginas
-void obtenerArrayConPaginas(char* codigo, int cantPaginasNecesarias, char ** paginas){
-	char* buffer = *paginas;
-
-	int i, cursor = 0;
-	for (i = 0; i < cantPaginasNecesarias; i++) {
-		char* codigoAEscribir = string_substring(codigo,cursor,TAMANIO_PAGINA);
-
-		buffer[i] = codigoAEscribir;
-
-		if(i > 0)
-			cursor = TAMANIO_PAGINA * i;
-	}
-
 }
 
 /*************************
@@ -763,34 +836,30 @@ void agregarNodoEstructuraControl(int pid, int pageNumber, int positionInSWAP, i
 			puts("La estructura no pudo ser creada");
 
 	} else {
-		controlCodigo_t * current = headControlCodigo;
+		struct NodoControlCodigo * current = headControlCodigo;
 		while (current->next != NULL) {
 			current = current->next;
 		}
 
-		/* now we can add a new variable */
 		current->next = malloc(sizeof(controlCodigo_t));
-		current->infoPagina = infoAAgregar;
+		current->next->infoPagina = infoAAgregar;
 		current->next->next = NULL;
 	}
-
 }
 
 int obtenerPosicionEnSWAP(int pidBuscado, int pageNumber){
-	controlCodigo_t * current = headControlCodigo;
+	struct NodoControlCodigo * current = headControlCodigo;
 
-	while (current != NULL) {
-		if(current->infoPagina.pid == pidBuscado && current->infoPagina.pageNumber == pageNumber)
+	for(current = headControlCodigo; current != NULL; current = current->next){
+		if((current->infoPagina.pid == pidBuscado) && (current->infoPagina.pageNumber == pageNumber))
 			return current->infoPagina.positionInSWAP;
-
-		current = current->next;
 	}
 
 	return -1;
 }
 
 struct InformacionPagina obtenerNodo(int bitMap){
-	controlCodigo_t * current = headControlCodigo;
+	struct NodoControlCodigo * current = headControlCodigo;
 
 	struct InformacionPagina infoEncontrada;
 	while (current != NULL) {
@@ -811,6 +880,7 @@ int longitudEstructuraControl(){
 		length++;
 	}
 
+	free(current);
 	return length;
 }
 
@@ -831,17 +901,42 @@ int eliminarNodoControl(int pidDelProceso, int pageNumberDelProceso){
 
 	} else { //Eliminamos solo el que matchea con el pid y el pageNumber
 		for(current = headControlCodigo; current != NULL; current = current->next){
-				if(current->infoPagina.pid == pidDelProceso && current->infoPagina.pageNumber == pageNumberDelProceso){
-					temp_node = current->next;
+			if(current->infoPagina.pid == pidDelProceso && current->infoPagina.pageNumber == pageNumberDelProceso){
+				temp_node = current->next;
 
-					current->next = temp_node->next;
+				current->next = temp_node->next;
 
-					free(temp_node);
+				free(temp_node);
 
-					return 0;
-				}
+				return 0;
+			}
 		}
 	}
 
 	return 0;
+}
+
+void eliminarListaControl(){
+	struct NodoControlCodigo * current;
+	struct NodoControlCodigo * temp_node;
+
+	for(current = headControlCodigo; current != NULL; current = current->next){
+		temp_node = current->next;
+
+		current->next = temp_node->next;
+
+		free(temp_node);
+
+	}
+}
+
+void imprimirNodos(){
+	puts("\n .:: NODOS ESTRUCTURA DE CONTROL ::.");
+
+	struct NodoControlCodigo* current;
+	for(current = headControlCodigo; current != NULL; current = current->next){
+		printf("Nodo --> pid: %d, pageNumber: %d, positionInSWAP: %d, BitMap: %d \n", current->infoPagina.pid, current->infoPagina.pageNumber, current->infoPagina.positionInSWAP,current->infoPagina.bitMapPosition);
+	}
+
+	puts("");
 }
