@@ -1,4 +1,10 @@
-﻿SERIALIZACION
+﻿	*************************************************************************************
+	*** DOCUMENTACIÓN SOBRE PROTOCOLOS Y ESTRUCTURAS QUE VAN A SER ENVIADAS/RECIBIDAS ***
+	*************************************************************************************
+
+----------------------------------
+--- SERIALIZACION - PROTOCOLOS ---
+----------------------------------
 
 /********************
 *		TAMANIOS
@@ -25,3 +31,27 @@ IDENTIFICADOR_MODULO-IDENTIFICADOR_OPERACION	TAMAÑO EN BYTES		SENTIDO
 K0 – 2 BYTES - HANDSHAKE
 K1 - CANTIDAD_DE_PAGINAS
 K2 TAMAÑO_DEL_CODIGO "CODIGO ENTERO"
+
+	********************************
+	***ESTRUCTURAS DE INTERCAMBIO***
+	********************************
+
+------------ Estructuras entre CPU-UMC --------------
+A continuar se detallan las 2 estructuras para intercambiar datos con la CPU
+
+struct request_data{
+
+	int pid;
+	int page;
+	int offset;
+	int size_data;
+}
+
+struct save_data{
+	
+	int pid;
+	int page;
+   	int offset;
+   	int size_data;
+	void * data;
+} 
