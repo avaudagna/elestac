@@ -13,6 +13,6 @@
 
 int getClientSocket(int* clientSocket, const char* address, const int port) ;
 int setServerSocket(int* serverSocket, const char* address, const int port);
-int acceptConnection (int *clientSocket, int* serverSocket);
+int acceptConnection (int clientSocket, int serverSocket);
 
 #endif
