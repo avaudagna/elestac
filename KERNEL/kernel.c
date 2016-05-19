@@ -3,11 +3,24 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
-//#include <unistd.h> /* posix for common syscalls */
 #include <commons/string.h>
 #include <commons/collections/list.h>
+#include <commons/log.h>
 #include <parser/metadata_program.h>
 #include "socketCommons.h"
+
+typedef enum {NEW, READY, EXECUTING, BLOCKED, EXIT} t_queue;
+
+typedef struct {
+		uint32_t pid;
+		uint32_t instrucciones_serializado;
+		uint32_t instrucciones_size;
+		uint32_t program_counter;
+		uint32_t stack_base;
+		uint32_t stack_cursor;
+		uint32_t stack_size;
+		t_queue status;
+	} t_pcb;
 
 #define MAX_CLIENTS 100
 #define KERNEL_IP "127.0.0.1"
@@ -18,13 +31,12 @@
 int UMC_PORT = 56793; /* defines que funcionaran como string */
 int KERNEL_PORT = 54326; /* cuando alan cambie la funcion de la common */
 
-int RequestPages2UMC(char * codigo,t_metadata_program* metadata);
+int RequestPages2UMC(t_metadata_program* metadata);
 void tratarSeniales(int);
 int rmvClosedClients(int *clientList, int *clientsOnline);
 int newClient(int serverSocket, int *clientSocket, int clientsOnline);
 
 int main (int argc, char **argv) {
-	//enum {PEDIR_MEMORIA, ENVIAR_PCB, OTRA_COSA} acciones;
 	signal (SIGINT, tratarSeniales);
 	int i;
 	fd_set allSockets;
@@ -34,6 +46,9 @@ int main (int argc, char **argv) {
 	int read_size = 0;
 	int clientsOnline=0; /* CPUs and Consoles */
 	int maxSocket=0;
+
+	kernel_cpus_conectadas = list_create();
+	kernel_consolas_conectadas = list_create();
 
 	char *messageBuffer = (char*) malloc(sizeof(char)*PACKAGE_SIZE);
 	if(messageBuffer == NULL) return (-1);
@@ -46,9 +61,7 @@ int main (int argc, char **argv) {
 		FD_SET(serverSocket, &allSockets);
 		/* Add all clients to the select() */
 		for (i=0; i<clientsOnline; i++)	FD_SET(clientSocket[i], &allSockets);
-		if(select (maxSocket+1, &allSockets, NULL, NULL, NULL)>0){
-			puts("Sali del select con algo interesante.");
-		}
+		select (maxSocket+1, &allSockets, NULL, NULL, NULL);
 		/* Check existing clients */
 		for (i=0; i<clientsOnline; i++){
 			if(FD_ISSET(clientSocket[i], &allSockets)){
@@ -92,28 +105,33 @@ int main (int argc, char **argv) {
 			// Function will return 0 or -1 unless a new connection was created!
 			printf("Clientes antes de aceptar: %d \n", clientsOnline);
 			int aceptado=newClient(serverSocket, clientSocket, clientsOnline);
-			if(aceptado>0){
+			if(aceptado>clientsOnline){
 				clientsOnline=aceptado;
 				char clientID[2];
 				sprintf(clientID, "%02d\n", (int) clientSocket[clientsOnline-1]);
-				printf("The new client is %s\n",clientID);
 				if((read_size = recv(clientSocket[clientsOnline-1], messageBuffer, 2, 0)) > 0){
 					if(strcmp(messageBuffer, "T0") == 0){
 						puts ("A console is calling, let's handshake!");
 						// TODO Add the console to the list of console clients.
 						/* Server sends to the client the clientID */
-						write(clientSocket[clientsOnline-1],clientID,2);
-
-						char ansisopLen[4];
-						recv(clientSocket[clientsOnline-1], messageBuffer, 4, 0);
-						recv(clientSocket[clientsOnline-1], &ansisopLen, 4, 0);
-						//TODO Check if ansisopLen is taking the 4 digits of code length.
-						char *codigo = malloc(atoi(ansisopLen));
+						write(clientSocket[clientsOnline-1],clientID,3);
+						char progSize[4];
+						recv(clientSocket[clientsOnline-1], messageBuffer, 2, 0);//Leo T1 -> TODO eliminar esto del protocolo porque molesta
+						recv(clientSocket[clientsOnline-1], progSize, 4, 0); // Leo el size del programa
+						int ansisopLen=atoi(progSize);
+						char *codigo = malloc(ansisopLen);
 						recv(clientSocket[clientsOnline-1], codigo, ansisopLen, 0);
-						printf("El codigo ansisop recibido es:\n%s\n",codigo);
 						t_metadata_program* newPCB = metadata_desde_literal(codigo);
+						printf("El codigo ansisop recibido es:\n%s\n",codigo);
+						int instrucciones=newPCB->instrucciones_size;
+						puts("El cod");
+						for(i=0;i<instrucciones;i++){
+							puts();
+							(newPCB->instrucciones_serializado+i)->start;
+							(newPCB->instrucciones_serializado+i)->offset;
+						}
 						//printf("Cantidad de etiquetas: %i \n\n",newPCB->cantidad_de_etiquetas);
-						if(RequestPages2UMC(codigo,newPCB)){
+						if(RequestPages2UMC(newPCB)){
 							puts("Ask UMC for pages to allocate PCB");
 							//create PCB and submit to UMC for storage
 							//serialize newPCB and submit
@@ -131,34 +149,27 @@ int main (int argc, char **argv) {
 	close(serverSocket);
 	return 0;
 }
-int RequestPages2UMC(char * codigo,t_metadata_program* metadata){
+int RequestPages2UMC(t_metadata_program* metadata){
 	int clientUMC;
-    //Create socket
-    if(getClientSocket(&clientUMC, UMC_IP, UMC_PORT)) {
-    	return (-1);
-    }
+	if(getClientSocket(&clientUMC, UMC_IP, UMC_PORT)) return (-1);
+	char *msg = NULL;
 
-    char *msg = NULL;
-    msg = (char*) calloc(sizeof(char),PACKAGE_SIZE);
-
-	   if( send(clientUMC , "hay espacio?" , PACKAGE_SIZE , 0) < 0) {
-	       puts("Send failed");
-	       return 1;
-	   }
-       if( recv(clientUMC , msg , 1, 0) < 0) {
-           puts("recv failed");
-       }
-	   if( send(clientUMC , codigo , PACKAGE_SIZE , 0) < 0) {
-	       puts("Send failed");
-	       return 1;
-	   }
-       if( recv(clientUMC , msg , PACKAGE_SIZE , 0) < 0) {
-            puts("recv failed");
-        }
-        puts("UMC reply :");
-        puts(msg);
-    close(clientUMC);
-    return 1;
+	msg = (char*) calloc(sizeof(char),PACKAGE_SIZE);
+	send(clientUMC , "hay espacio?" , PACKAGE_SIZE , 0);
+	if( recv(clientUMC , msg , 1, 0) < 0) {
+	   puts("recv failed");
+	}
+	if( send(clientUMC , "codigo", PACKAGE_SIZE , 0) < 0) {
+	   puts("Send failed");
+	   return 1;
+	}
+	if( recv(clientUMC , msg , PACKAGE_SIZE , 0) < 0) {
+		puts("recv failed");
+	}
+	puts("UMC reply :");
+	puts(msg);
+	close(clientUMC);
+	return 1;
 }
 void tratarSeniales(int senial){
 	printf ("Tratando seniales\n");
@@ -198,9 +209,6 @@ int newClient(int serverSocket, int *clientSocket, int clientsOnline){
  * Returns the socket descriptor ID if success was achieved.
  */
 //	if(clientsOnline>=MAX_CLIENTS) return 0;
-//	struct sockaddr_in clientConf;
-//	int c = sizeof(struct sockaddr_in);
-	//clientSocket[clientsOnline] = accept(serverSocket, (struct sockaddr *)&clientConf, (socklen_t*)&c);
 	clientSocket[clientsOnline]=acceptConnection((int) clientSocket[clientsOnline],serverSocket);
 	if (clientSocket[clientsOnline] < 0) {
 		perror("Accept failed :(");
