@@ -21,9 +21,11 @@
 #define FLUSH   3
 #define SALIR   (-1)
 
-#define PUERTO_SWAP 1234
+// TODO LO QUE ES CON SWAP
+#define PUERTO_SWAP "1234"
 #define IP_SWAP "127.0.0.1"
-
+#define SIZE_HANDSHAKE_SWAP 5 // 'U' 1 Y 4 BYTES PARA LA CANTIDAD DE PAGINAS
+#define PAGE_SIZE 1024
 
 typedef struct umc_parametros {
      int	core_cpu_port,
@@ -55,8 +57,8 @@ void Imprimir_Menu(void);
 void Menu_UMC(void);
 void Procesar_Conexiones(void);
 FunctionPointer QuienSos( int * _socketCliente);
-void TestKernel(int *);
-void TestCPU(int *);
+void AtenderKernel(int *);
+void AtenderCPU(int *);
 
 int main(){
 
@@ -119,11 +121,21 @@ void *  connection_handler(void * _socket)
 void Init_UMC(void)
 {
 //  Init_Parameters();
-  Init_Socket(); // socket de escucha
-  Init_Swap(); // socket con swap
-  HandShake_Swap();
-
+	Init_Swap(); // socket con swap
+	HandShake_Swap();
+	Init_Socket(); // socket de escucha
 }
+
+/*
+ * void Init_Parameters (char * file_conf){
+ *
+ * 		//leo el file y cargo la estructura Umc_Global_Parameters
+ *
+ * }
+ *
+ *
+ *
+ * */
 
 void Init_Socket(void)
 {
@@ -294,7 +306,7 @@ FunctionPointer QuienSos( int * _socketCliente) {
 						exit(1);
 					  }
 
-				 aux = TestKernel;
+				 aux = AtenderKernel;
 				 return aux;
 
 			}
@@ -313,7 +325,7 @@ FunctionPointer QuienSos( int * _socketCliente) {
 	 	 	 exit(1);
  	 	  }
 
-			 aux = TestCPU;
+			 aux = AtenderCPU;
 			 return aux;
 	}
 
@@ -323,7 +335,7 @@ FunctionPointer QuienSos( int * _socketCliente) {
 }
 
 
-void TestKernel(int * socketBuff ){
+void AtenderKernel(int * socketBuff ){
 
 	printf("\nHola , soy el thread encargado de la comunicacion con el Kernel!! :)");
 	contConexionesNucleo--; // finaliza la comunicacion con el socket
@@ -331,7 +343,7 @@ void TestKernel(int * socketBuff ){
 	pthread_exit(0);	// chau thread
 
 }
-void TestCPU(int * socketBuff){
+void AtenderCPU(int * socketBuff){
 
 	printf("\nHola , soy el thread encargado de la comunicacion con el CPU!! :)");
 
@@ -366,6 +378,33 @@ void Init_Swap(void){
 void HandShake_Swap(void){
  // enviar trama : U+tamPag
  // esperar 1(correcto)+cantidad_de_paginas_libres
+
+	char *package = NULL;
+	char *trama_handshake = NULL;
+	trama_handshake = (char * )malloc (SIZE_HANDSHAKE_SWAP);
+
+	sprintf(trama_handshake,"U%d",PAGE_SIZE);
+
+	if ( send(socketClienteSwap,trama_handshake,SIZE_HANDSHAKE_SWAP,0) == -1 ) {
+			perror("send");
+			exit(1);
+		}
+	package = (char *) malloc(sizeof(char) * SIZE_HANDSHAKE_SWAP) ;
+	if ( recv(socketClienteSwap, (void*) package, PACKAGESIZE, 0) > 0 ){
+
+		if ( package[0] == '1'){
+			// seteo cantidad de paginas libres en swap
+			printf("\nSe ejecuto correctamente el handshake");
+		}
+
+	}
+	else{
+		perror("recv");
+		exit(1);
+	}
+
+
+
 }
 
 
