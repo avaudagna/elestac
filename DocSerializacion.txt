@@ -13,15 +13,14 @@ pid					--> 2 bytes
 longCodigo		--> 4 bytes
 nroPag			--> 3 bytes
 
-/********************
-*		SWAP
-*********************/
-OPERACION                                  SERIALIZACION                                                  RESPUESTA
-Handhsake                          - ->    U+tamPag                                                   - ->    1(correcto)
-ESCRITURA                          - ->    1+pid+numPagina+codigo                - ->    1(correcto)
-SOBREESCRITURA           - ->    2+pid+numPagina+codigo                - ->    1(correcto)
-LECTURA                              - ->    3+pid+numPagina                                  - ->     char[tamanioPagina]
-FINALIZACION_PROG   - ->    4+pid                                                             - ->     1(correcto)
+/***************************************************************************
+*		SWAP <--> UMC
+****************************************************************************/
+OPERACION                                  SERIALIZACION(UMC->SWAP)                RESPUESTA ( SWAP -> UMC)
+Handhsake                          - ->    U+tamPag                            - ->    1(correcto)+cantidad_de_paginas_libres
+ESCRITURA                          - ->    1+pid+numPagina+codigo              - ->    1(correcto)+cantidad_de_paginas_libres
+LECTURA                            - ->    3+pid+numPagina                     - ->     char[tamanioPagina]
+FINALIZACION_PROG                  - ->    4+pid                               - ->     1(correcto)+cantidad_de_paginas_libres
 
 
 UMC → KERNEL 
