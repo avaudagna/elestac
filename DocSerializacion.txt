@@ -16,12 +16,13 @@ nroPag			--> 3 bytes
 /********************
 *		SWAP
 *********************/
-Handshake			--> U0|tamPag(4 bytes)				TOTAL: 7 bytes
-Nuevo proceso		--> U1|pid|longCodigo|codigo		TOTAL: indefinido
-Sobrescribir pag		--> U2|pid|nroPag|payload			TOTAL: indefinido
-Pedido pagina		--> U3|pid|nroPag						TOTAL:
-Finalizar proceso		--> U4|pid								TOTAL: 5 bytes
-Cant paginas solicit	--> U5|cantPaginas					TOTAL: 5 bytes
+OPERACION                                  SERIALIZACION                                                  RESPUESTA
+Handhsake                          - ->    U+tamPag                                                   - ->    1(correcto)
+ESCRITURA                          - ->    1+pid+numPagina+codigo                - ->    1(correcto)
+SOBREESCRITURA           - ->    2+pid+numPagina+codigo                - ->    1(correcto)
+LECTURA                              - ->    3+pid+numPagina                                  - ->     char[tamanioPagina]
+FINALIZACION_PROG   - ->    4+pid                                                             - ->     1(correcto)
+
 
 UMC → KERNEL 
 U0|TAMAÑO PAGINA  → 7 BYTES	- HANDSHAKE
