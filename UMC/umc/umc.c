@@ -13,14 +13,17 @@
 #include <sys/sem.h>
 
 /*MACROS y TIPOS DE DATOS*/
-#define PUERTO "56793"
-#define PUERTO_SWAP "45000"
+#define PUERTO "6750"
 #define BACKLOG 1			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
 #define PACKAGESIZE 1024	// Define cual va a ser el size maximo del paquete a enviar
 #define RETARDO 1
 #define DUMP    2
 #define FLUSH   3
 #define SALIR   (-1)
+
+#define PUERTO_SWAP 1234
+#define IP_SWAP "127.0.0.1"
+
 
 typedef struct umc_parametros {
      int	core_cpu_port,
@@ -33,15 +36,19 @@ typedef struct umc_parametros {
 
 typedef void (*FunctionPointer)(int *);
 typedef void * (*boid_function_boid_pointer) (void*);
+
 /*Global Variables */
 int socketServidor;
+int socketClienteSwap;
 UMC_PARAMETERS Umc_Global_Parameters;
 int contConexionesNucleo = 0;
 //int contConexionesCPU = 0;
 
 void *  connection_handler(void * socketCliente);
-void Init_UMC(void);//Inicializa socket server ( para escuchar las conexiones y tmb los parametros globales)
+void Init_UMC(void);
 void Init_Socket(void);
+void Init_Swap(void);
+void HandShake_Swap(void);
 //void Init_Parameters(void);
 void *  funcion_menu(void * noseusa);
 void Imprimir_Menu(void);
@@ -50,7 +57,6 @@ void Procesar_Conexiones(void);
 FunctionPointer QuienSos( int * _socketCliente);
 void TestKernel(int *);
 void TestCPU(int *);
-void HablarSwap(char * msgFromKernel);
 
 int main(){
 
@@ -58,7 +64,7 @@ int main(){
 	Menu_UMC();
 
   while(1)
-	 {
+	 	 {
         	Procesar_Conexiones();
          }	
 
@@ -79,7 +85,7 @@ void *  connection_handler(void * _socket)
  
  		
 	//  close(socketServidor);  // NO LO CIERRO PORQUE LOS FILE DESCRIPTOR SE COMPARTEN ENTRE LOS THREADS
-		printf("Cliente conectado. Esperando mensajes:\n");
+		       printf("Cliente conectado. Esperando mensajes:\n");
 	    	do
 	     	  {
 
@@ -113,7 +119,9 @@ void *  connection_handler(void * _socket)
 void Init_UMC(void)
 {
 //  Init_Parameters();
-  Init_Socket();
+  Init_Socket(); // socket de escucha
+  Init_Swap(); // socket con swap
+  HandShake_Swap();
 
 }
 
@@ -284,20 +292,8 @@ FunctionPointer QuienSos( int * _socketCliente) {
 				if ( send(socketCliente,"UMC",PACKAGESIZE,0) == -1 ) {
 						perror("send");
 						exit(1);
-				  }
+					  }
 
-				package[0]='\0';	// clear buffer
-						 //Wait for response from CPU
-				if( recv(socketCliente , (void *) package , PACKAGESIZE , 0) < 0) {
-						perror("recv");
-						exit(1);
-				}
-				if ( send(socketCliente,(void *) package ,PACKAGESIZE,0) == -1 ) {
-					perror("send");
-					exit(1);
-				}
-
-		HablarSwap(package);
 				 aux = TestKernel;
 				 return aux;
 
@@ -312,20 +308,11 @@ FunctionPointer QuienSos( int * _socketCliente) {
 
 	if (( strcmp(package,"CPU") ) == 0 ){   //CPU
 
-		 if ( send(socketCliente,(void *)"UMC",PACKAGESIZE,0) == -1 ) {
+		 if ( send(socketCliente,(void *)"a=b+3",PACKAGESIZE,0) == -1 ) {
 	 	 	 perror("send");
 	 	 	 exit(1);
  	 	  }
-		package[0]='\0';	// clear buffer
-		 //Wait for response from CPU
-		if( recv(socketCliente , (void *) package , PACKAGESIZE , 0) < 0) {
-				perror("recv");
-				exit(1);
-		}
-		if ( send(socketCliente,(void *) package ,PACKAGESIZE,0) == -1 ) {
-	 	 	 perror("send");
-	 	 	 exit(1);
-	 	  }
+
 			 aux = TestCPU;
 			 return aux;
 	}
@@ -336,12 +323,11 @@ FunctionPointer QuienSos( int * _socketCliente) {
 }
 
 
-void TestKernel(int * socketBuff){
+void TestKernel(int * socketBuff ){
 
 	printf("\nHola , soy el thread encargado de la comunicacion con el Kernel!! :)");
 	contConexionesNucleo--; // finaliza la comunicacion con el socket
 	close(*socketBuff); // cierro socket
-	//HablarSwap();
 	pthread_exit(0);	// chau thread
 
 }
@@ -355,68 +341,31 @@ void TestCPU(int * socketBuff){
 }
 
 
-void HablarSwap(char * msgFromKernel)
-{
+void Init_Swap(void){
 
-	struct addrinfo hints,
-					*serverInfo;
-	int 	serverSocketSwap,
-			enviar = 1,
-			cantidad_de_bytes_recibidos = 0;
-	char 	package[PACKAGESIZE];
+		struct addrinfo hints;
+		struct addrinfo *serverInfo;
 
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;		// Permite que la maquina se encargue de verificar si usamos IPv4 o IPv6
-	hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
+		memset(&hints, 0, sizeof(hints));
+		hints.ai_family = AF_UNSPEC;		// Permite que la maquina se encargue de verificar si usamos IPv4 o IPv6
+		hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
 
-	getaddrinfo("127.0.0.1", PUERTO_SWAP, &hints, &serverInfo);	// Carga en serverInfo los datos de la conexion
-	serverSocketSwap = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
+		getaddrinfo(IP_SWAP, PUERTO_SWAP, &hints, &serverInfo);	// Carga en serverInfo los datos de la conexion
 
-	connect(serverSocketSwap, serverInfo->ai_addr, serverInfo->ai_addrlen);
-	freeaddrinfo(serverInfo);	// No lo necesitamos mas
-
-	printf("\nConectando al SWAP ...\n");
+		socketClienteSwap = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
 
 
-	if ( send(serverSocketSwap,"UMC",PACKAGESIZE,0) == -1 ) {
-			perror("send");
-			printf("\n No me pude conectar con el SWAP\n Saliendo...");
+		if ( connect(socketClienteSwap, serverInfo->ai_addr, serverInfo->ai_addrlen) == -1 ){
+			perror("connect");
 			exit(1);
-	}
-
-	cantidad_de_bytes_recibidos = recv(serverSocketSwap, (void*) package, PACKAGESIZE, 0);	 	// espero que me responda el SWAP
-
-		if ( cantidad_de_bytes_recibidos <= 0 ) {
-
-			if ( cantidad_de_bytes_recibidos < 0 )
-					perror("recv");
 		}
-		else {
+		freeaddrinfo(serverInfo);	// No lo necesitamos mas
 
-			if ( strcmp(package,"SWAP") == 0){
+}
 
-				if ( send(serverSocketSwap,(void *) msgFromKernel,PACKAGESIZE,0) == -1 ) {
-						perror("send");
-						printf("\n No me pude conectar con el SWAP\n Saliendo...");
-						exit(1);
-				}
-
-					 	// espero que me responda el SWAP
-				package[0]='\0';
-				if ( (recv(serverSocketSwap, (void*) package, PACKAGESIZE, 0)) <= 0 ) {
-					perror("recv");
-					exit(1);
-
-				}
-				printf("SWAP:%s\n",package);
-
-			}
-
-		}
-
-		close(serverSocketSwap);
-
-
+void HandShake_Swap(void){
+ // enviar trama : U+tamPag
+ // esperar 1(correcto)+cantidad_de_paginas_libres
 }
 
 
