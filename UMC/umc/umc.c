@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/sem.h>
+#include <errno.h>
 
 /*MACROS y TIPOS DE DATOS*/
 #define PUERTO "6750"
@@ -39,12 +40,13 @@ typedef struct umc_parametros {
 typedef void (*FunctionPointer)(int *);
 typedef void * (*boid_function_boid_pointer) (void*);
 
-/*Global Variables */
+/*VARIABLES GLOBALES */
 int socketServidor;
 int socketClienteSwap;
 UMC_PARAMETERS Umc_Global_Parameters;
 int contConexionesNucleo = 0;
 //int contConexionesCPU = 0;
+int paginasLibresEnSwap = 0;
 
 void *  connection_handler(void * socketCliente);
 void Init_UMC(void);
@@ -377,23 +379,33 @@ void Init_Swap(void){
 
 void HandShake_Swap(void){
  // enviar trama : U+tamPag
- // esperar 1(correcto)+cantidad_de_paginas_libres
+ // esperar de SWAP 1(correcto)+cantidad_de_paginas_libres
 
-	char *package = NULL;
-	char *trama_handshake = NULL;
-	trama_handshake = (char * )malloc (SIZE_HANDSHAKE_SWAP);
+	char *package = NULL;	// recepcion
+	char *buffer= NULL;
+	char trama_handshake[SIZE_HANDSHAKE_SWAP];
+	buffer = (char * )malloc (SIZE_HANDSHAKE_SWAP);
 
-	sprintf(trama_handshake,"U%d",PAGE_SIZE);
+	sprintf(buffer,"U%d",PAGE_SIZE);
 
-	if ( send(socketClienteSwap,trama_handshake,SIZE_HANDSHAKE_SWAP,0) == -1 ) {
+	int i = 0;
+
+	// le quito el \0 al final
+
+	for(i=0;i<SIZE_HANDSHAKE_SWAP;i++){
+		trama_handshake[i]=buffer[i];
+	}
+
+	if ( send(socketClienteSwap,(void *)trama_handshake,SIZE_HANDSHAKE_SWAP,0) == -1 ) {
 			perror("send");
 			exit(1);
 		}
+	// SWAP me responde 1+CANTIDAD_DE_PAGINAS_LIBRES ( 1 byte + 4 de cantidad de paginas libres )
 	package = (char *) malloc(sizeof(char) * SIZE_HANDSHAKE_SWAP) ;
-	if ( recv(socketClienteSwap, (void*) package, PACKAGESIZE, 0) > 0 ){
+	if ( recv(socketClienteSwap, (void*) package, SIZE_HANDSHAKE_SWAP, 0) > 0 ){
 
 		if ( package[0] == '1'){
-			// seteo cantidad de paginas libres en swap
+			//  paginasLibresEnSwap = los 4 bytes que quedan
 			printf("\nSe ejecuto correctamente el handshake");
 		}
 
@@ -402,8 +414,6 @@ void HandShake_Swap(void){
 		perror("recv");
 		exit(1);
 	}
-
-
 
 }
 
