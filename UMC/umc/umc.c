@@ -415,6 +415,15 @@ void AtenderKernel(int * socketBuff){
 }
 
 
+int IdentificarOperacion(int * socketBuff){
+
+
+
+	return 0;
+}
+
+
+
 
 
 
