@@ -22,11 +22,12 @@
 #define FLUSH   3
 #define SALIR   (-1)
 
-// TODO LO QUE ES CON SWAP
-#define PUERTO_SWAP "1234"
-#define IP_SWAP "127.0.0.1"
-#define SIZE_HANDSHAKE_SWAP 5 // 'U' 1 Y 4 BYTES PARA LA CANTIDAD DE PAGINAS
-#define PAGE_SIZE 1024
+/* COMUNICACION/OPERACIONES CON KERNEL*/
+#define IDENTIFICADOR_OPERACION 99
+#define HANDSHAKE 0
+#define SOLICITUD_NUEVO_PROCESO 1
+#define FINALIZAR_PROCESO 2
+#define EXIT (-1)
 
 typedef struct umc_parametros {
      int	core_cpu_port,
@@ -37,7 +38,36 @@ typedef struct umc_parametros {
 			retardo;
 }UMC_PARAMETERS;
 
-typedef void (*FunctionPointer)(int *);
+
+typedef struct parametros_hilos {
+	int * socketBuff;
+	char * package;
+}PARAMETROS_HILO;
+
+
+
+// Funciones para/con KERNEL
+int IdentificarOperacion(char * package);
+void HandShakeKernel(int * socketBuff,char * package);
+void ProcesoSolicitudNuevoProceso(int * socketBuff,char * package);
+void FinalizarProceso(int * socketBuff,char * package);
+void AtenderKernel(PARAMETROS_HILO *param);
+void RecibirYAlmacenarPaginas(int * socketBuff);
+
+#define SIZE_HANDSHAKE_KERNEL 5
+
+
+// TODO LO QUE ES CON SWAP
+#define PUERTO_SWAP "6500"
+#define IP_SWAP "127.0.0.1"
+#define SIZE_HANDSHAKE_SWAP 5 // 'U' 1 Y 4 BYTES PARA LA CANTIDAD DE PAGINAS
+#define PAGE_SIZE 1024
+
+// Funciones para operar con el swap
+void Init_Swap(void);
+void HandShake_Swap(void);
+
+typedef void (*FunctionPointer)(PARAMETROS_HILO *);
 typedef void * (*boid_function_boid_pointer) (void*);
 
 /*VARIABLES GLOBALES */
@@ -47,20 +77,20 @@ UMC_PARAMETERS Umc_Global_Parameters;
 int contConexionesNucleo = 0;
 //int contConexionesCPU = 0;
 int paginasLibresEnSwap = 0;
+int stack_size;
 
 void *  connection_handler(void * socketCliente);
 void Init_UMC(void);
 void Init_Socket(void);
-void Init_Swap(void);
-void HandShake_Swap(void);
 //void Init_Parameters(void);
 void *  funcion_menu(void * noseusa);
 void Imprimir_Menu(void);
 void Menu_UMC(void);
 void Procesar_Conexiones(void);
-FunctionPointer QuienSos( int * _socketCliente);
-void AtenderKernel(int *);
-void AtenderCPU(int *);
+//FunctionPointer QuienSos( int * _socketCliente, PARAMETROS_HILO **param);
+
+FunctionPointer QuienSos(PARAMETROS_HILO **param);
+void AtenderCPU(PARAMETROS_HILO *param);
 
 int main(){
 
@@ -241,6 +271,7 @@ void Procesar_Conexiones (void)
 	socklen_t addrlen = sizeof(addr);
     pthread_t *thread_id;				// pthread pointer, por cada nueva conexion , creo uno nuevo
     FunctionPointer ConnectionHandler;
+    PARAMETROS_HILO * param = NULL;
 
       if( ( socketBuffer = accept(socketServidor, (struct sockaddr *) &addr, &addrlen) ) == -1 ) {
     	  perror("accept");
@@ -250,15 +281,19 @@ void Procesar_Conexiones (void)
 
 	    socketCliente = (int *) malloc ( sizeof(int));
 	    *socketCliente = socketBuffer;
-	    thread_id = (pthread_t * ) malloc (sizeof(pthread_t));		// new thread
+	    thread_id = (pthread_t * ) malloc (sizeof(pthread_t));	// new thread
+	    param = (PARAMETROS_HILO *) malloc ( sizeof(PARAMETROS_HILO));
 
-	ConnectionHandler = QuienSos(socketCliente);
+	    param->socketBuff = socketCliente;
+	    ConnectionHandler = QuienSos(&param);
+	//ConnectionHandler = QuienSos(socketCliente,&param);
 
-	if( pthread_create( thread_id , NULL , (boid_function_boid_pointer) ConnectionHandler , (void*) &socketCliente) < 0)
-		  {
+	// if( pthread_create( thread_id , NULL , (boid_function_boid_pointer) ConnectionHandler , (void*) &socketCliente) < 0)
+	  if( pthread_create( thread_id , NULL , (boid_function_boid_pointer) ConnectionHandler , (void*) param ) < 0)
+	    {
 			perror("pthread_create");
 			exit(1);
-		  }
+		}
 		//pthread_join(thread_id,NULL);
 	
 }
@@ -276,11 +311,11 @@ void Menu_UMC(void)
 }
 
 
-FunctionPointer QuienSos( int * _socketCliente) {
-
+//FunctionPointer QuienSos( int * _socketCliente , PARAMETROS_HILO **param) {
+FunctionPointer QuienSos(PARAMETROS_HILO **param) {
 
 	FunctionPointer aux = NULL;
-	int   socketCliente					= *( (int *) _socketCliente),
+	int   socketCliente					= *((*param)->socketBuff),
 		  cantidad_de_bytes_recibidos 	= 0;
 	char *package 						= NULL;
 
@@ -297,19 +332,15 @@ FunctionPointer QuienSos( int * _socketCliente) {
 		printf("\nCliente: ");
 		printf("%s\n", package);
 
-	if ( (strcmp(package,"KERNEL") == 0 ) ) {	// KERNEL
+	if ( (strcmp(package,"K") == 0 ) ) {	// KERNEL
 		 contConexionesNucleo++;
 
+		if ( contConexionesNucleo == 1 ) {
 
-		if ( contConexionesNucleo == 1 )
-			{
-				if ( send(socketCliente,"UMC",PACKAGESIZE,0) == -1 ) {
-						perror("send");
-						exit(1);
-					  }
-
-				 aux = AtenderKernel;
-				 return aux;
+			(*param)->package = (char * ) malloc (cantidad_de_bytes_recibidos + 1);
+			strcpy((*param)->package,package);
+			aux = AtenderKernel;
+			return aux;
 
 			}
 		else{
@@ -336,7 +367,7 @@ FunctionPointer QuienSos( int * _socketCliente) {
 
 }
 
-
+/*
 void AtenderKernel(int * socketBuff ){
 
 	printf("\nHola , soy el thread encargado de la comunicacion con el Kernel!! :)");
@@ -344,13 +375,137 @@ void AtenderKernel(int * socketBuff ){
 	close(*socketBuff); // cierro socket
 	pthread_exit(0);	// chau thread
 
-}
-void AtenderCPU(int * socketBuff){
+}*/
+
+void AtenderCPU(PARAMETROS_HILO *param){
 
 	printf("\nHola , soy el thread encargado de la comunicacion con el CPU!! :)");
 
-	close(*socketBuff);		// cierro socket
+	close(*param->socketBuff);		// cierro socket
 	pthread_exit(0);		// chau thread
+
+}
+
+
+void AtenderKernel(PARAMETROS_HILO *param){
+
+	printf("\nHola , soy el thread encargado de la comunicacion con el Kernel!! :)");
+	int estado = IDENTIFICADOR_OPERACION;	// la primera vez que entra,es porque ya recibi una 'K'
+
+	while(estado != EXIT)
+	{
+		switch(estado)
+		{
+		case IDENTIFICADOR_OPERACION:
+			estado = IdentificarOperacion(param->package);
+			break;
+		case HANDSHAKE:	// K0
+				HandShakeKernel(param->socketBuff,param->package);
+			estado = EXIT;
+			break;
+		case SOLICITUD_NUEVO_PROCESO:		// K1
+				ProcesoSolicitudNuevoProceso(param->socketBuff,param->package);
+			estado = EXIT;
+			break;
+		case FINALIZAR_PROCESO:	// K2
+			FinalizarProceso(param->socketBuff,param->package);
+			estado = EXIT;
+			break;
+		default:
+			printf("Identificador de operacion invalido");
+			estado=EXIT;
+			break;
+
+		}
+	}
+
+	contConexionesNucleo--; // finaliza la comunicacion con el socket
+
+	close(*param->socketBuff); // cierro socket
+	pthread_exit(0);	// chau thread
+
+}
+
+
+int IdentificarOperacion(char * package){
+
+	return package[1];
+
+}
+
+void  HandShakeKernel(int * socketBuff,char * package){
+
+	// recibo STACK_SIZE
+	char *buffer_stack = NULL;
+	buffer_stack = (char *) malloc(4);
+	memcpy(buffer_stack,package+2,4);
+	stack_size = atoi(buffer_stack); 	// STACK_SIZE debe ser una variable global
+
+	// devuelvo U0+TAMAÑO PAGINA
+
+	char *buffer= NULL;
+	char trama_handshake[SIZE_HANDSHAKE_KERNEL];
+		buffer = (char * )malloc (SIZE_HANDSHAKE_KERNEL);
+
+		sprintf(buffer,"U%d",PAGE_SIZE);
+
+		int i = 0;
+
+		// le quito el \0 al final
+
+		for(i=0;i<SIZE_HANDSHAKE_SWAP;i++){
+			trama_handshake[i]=buffer[i];
+		}
+
+		if ( send(*socketBuff,(void *)trama_handshake,SIZE_HANDSHAKE_SWAP,0) == -1 ) {
+				perror("send");
+				exit(1);
+			}
+
+}
+
+void ProcesoSolicitudNuevoProceso(int * socketBuff,char * package){
+
+	int cantidadDePaginasSolicitidas;
+	char *buffer = NULL;
+	buffer = (char *) malloc(4);
+	memcpy(buffer,package+2,4);
+	cantidadDePaginasSolicitidas = atoi(buffer);
+	free(buffer);
+
+	if ( cantidadDePaginasSolicitidas < paginasLibresEnSwap) {
+
+		buffer = (char *) malloc( 4);
+		sprintf(buffer,"U1SI");
+
+		char trama_handshake[4];
+		int i = 0;
+		// le quito el \0 al final
+		for(i=0;i<4;i++){
+			trama_handshake[i]=buffer[i];
+		}
+		send(*socketBuff,(void *)trama_handshake,4,0);
+
+		RecibirYAlmacenarPaginas(socketBuff);
+
+	}else{
+		buffer = (char *) malloc( 4);
+		sprintf(buffer,"U1NO");
+
+		char trama_handshake[4];
+		int i = 0;
+		// le quito el \0 al final
+		for(i=0;i<4;i++){
+			trama_handshake[i]=buffer[i];
+		}
+		send(*socketBuff,(void *)trama_handshake,4,0);
+	}
+
+}
+
+void RecibirYAlmacenarPaginas(int * socketBuff){
+
+
 
 }
 
@@ -406,6 +561,10 @@ void HandShake_Swap(void){
 
 		if ( package[0] == '1'){
 			//  paginasLibresEnSwap = los 4 bytes que quedan
+			char *aux=NULL;
+			aux = (char *) malloc(4);
+			memcpy(aux,package+1,4);
+			paginasLibresEnSwap = atoi(aux);
 			printf("\nSe ejecuto correctamente el handshake");
 		}
 
