@@ -48,10 +48,11 @@ typedef struct parametros_hilos {
 
 // Funciones para/con KERNEL
 int IdentificarOperacion(char * package);
-void  HandShakeKernel(int * socketBuff,char * package);
+void HandShakeKernel(int * socketBuff,char * package);
 void ProcesoSolicitudNuevoProceso(int * socketBuff,char * package);
 void FinalizarProceso(int * socketBuff,char * package);
 void AtenderKernel(PARAMETROS_HILO *param);
+void RecibirYAlmacenarPaginas(int * socketBuff);
 
 #define SIZE_HANDSHAKE_KERNEL 5
 
@@ -76,6 +77,7 @@ UMC_PARAMETERS Umc_Global_Parameters;
 int contConexionesNucleo = 0;
 //int contConexionesCPU = 0;
 int paginasLibresEnSwap = 0;
+int stack_size;
 
 void *  connection_handler(void * socketCliente);
 void Init_UMC(void);
@@ -435,7 +437,6 @@ void  HandShakeKernel(int * socketBuff,char * package){
 
 	// recibo STACK_SIZE
 	char *buffer_stack = NULL;
-	int stack_size;
 	buffer_stack = (char *) malloc(4);
 	memcpy(buffer_stack,package+2,4);
 	stack_size = atoi(buffer_stack); 	// STACK_SIZE debe ser una variable global
@@ -463,8 +464,50 @@ void  HandShakeKernel(int * socketBuff,char * package){
 
 }
 
+void ProcesoSolicitudNuevoProceso(int * socketBuff,char * package){
+
+	int cantidadDePaginasSolicitidas;
+	char *buffer = NULL;
+	buffer = (char *) malloc(4);
+	memcpy(buffer,package+2,4);
+	cantidadDePaginasSolicitidas = atoi(buffer);
+	free(buffer);
+
+	if ( cantidadDePaginasSolicitidas < paginasLibresEnSwap) {
+
+		buffer = (char *) malloc( 4);
+		sprintf(buffer,"U1SI");
+
+		char trama_handshake[4];
+		int i = 0;
+		// le quito el \0 al final
+		for(i=0;i<4;i++){
+			trama_handshake[i]=buffer[i];
+		}
+		send(*socketBuff,(void *)trama_handshake,4,0);
+
+		RecibirYAlmacenarPaginas(socketBuff);
+
+	}else{
+		buffer = (char *) malloc( 4);
+		sprintf(buffer,"U1NO");
+
+		char trama_handshake[4];
+		int i = 0;
+		// le quito el \0 al final
+		for(i=0;i<4;i++){
+			trama_handshake[i]=buffer[i];
+		}
+		send(*socketBuff,(void *)trama_handshake,4,0);
+	}
+
+}
+
+void RecibirYAlmacenarPaginas(int * socketBuff){
 
 
+
+}
 
 
 void Init_Swap(void){
@@ -518,6 +561,10 @@ void HandShake_Swap(void){
 
 		if ( package[0] == '1'){
 			//  paginasLibresEnSwap = los 4 bytes que quedan
+			char *aux=NULL;
+			aux = (char *) malloc(4);
+			memcpy(aux,package+1,4);
+			paginasLibresEnSwap = atoi(aux);
 			printf("\nSe ejecuto correctamente el handshake");
 		}
 
