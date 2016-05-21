@@ -29,12 +29,29 @@
 #define FINALIZAR_PROCESO 2
 #define EXIT (-1)
 
+typedef struct umc_parametros {
+     int	core_cpu_port,
+	       	ip_swap,
+			port_swap,
+			marcos,
+			marcos_size,
+			retardo;
+}UMC_PARAMETERS;
+
+
+typedef struct parametros_hilos {
+	int * socketBuff;
+	char * package;
+}PARAMETROS_HILO;
+
+
+
 // Funciones para/con KERNEL
-int IdentificarOperacion(int * socketBuff);
-void  HandShakeKernel(int * socketBuff);
-void ProcesoSolicitudNuevoProceso(int * socketBuff);
-void FinalizarProceso(int * socketBuff)
-void AtenderKernel(int *);
+int IdentificarOperacion(int * socketBuff,char * package);
+void  HandShakeKernel(int * socketBuff,char * package);
+void ProcesoSolicitudNuevoProceso(int * socketBuff,char * package);
+void FinalizarProceso(int * socketBuff,char * package);
+void AtenderKernel(PARAMETROS_HILO *param);
 
 
 
@@ -48,17 +65,7 @@ void AtenderKernel(int *);
 void Init_Swap(void);
 void HandShake_Swap(void);
 
-
-typedef struct umc_parametros {
-     int	core_cpu_port,
-	       	ip_swap,
-			port_swap,
-			marcos,
-			marcos_size,
-			retardo;
-}UMC_PARAMETERS;
-
-typedef void (*FunctionPointer)(int *);
+typedef void (*FunctionPointer)(PARAMETROS_HILO *);
 typedef void * (*boid_function_boid_pointer) (void*);
 
 /*VARIABLES GLOBALES */
@@ -77,8 +84,10 @@ void *  funcion_menu(void * noseusa);
 void Imprimir_Menu(void);
 void Menu_UMC(void);
 void Procesar_Conexiones(void);
-FunctionPointer QuienSos( int * _socketCliente);
-void AtenderCPU(int *);
+//FunctionPointer QuienSos( int * _socketCliente, PARAMETROS_HILO **param);
+
+FunctionPointer QuienSos(PARAMETROS_HILO **param);
+void AtenderCPU(PARAMETROS_HILO *param);
 
 int main(){
 
@@ -259,6 +268,7 @@ void Procesar_Conexiones (void)
 	socklen_t addrlen = sizeof(addr);
     pthread_t *thread_id;				// pthread pointer, por cada nueva conexion , creo uno nuevo
     FunctionPointer ConnectionHandler;
+    PARAMETROS_HILO * param = NULL;
 
       if( ( socketBuffer = accept(socketServidor, (struct sockaddr *) &addr, &addrlen) ) == -1 ) {
     	  perror("accept");
@@ -268,15 +278,19 @@ void Procesar_Conexiones (void)
 
 	    socketCliente = (int *) malloc ( sizeof(int));
 	    *socketCliente = socketBuffer;
-	    thread_id = (pthread_t * ) malloc (sizeof(pthread_t));		// new thread
+	    thread_id = (pthread_t * ) malloc (sizeof(pthread_t));	// new thread
+	    param = (PARAMETROS_HILO *) malloc ( sizeof(PARAMETROS_HILO));
 
-	ConnectionHandler = QuienSos(socketCliente);
+	    param->socketBuff = socketCliente;
+	    ConnectionHandler = QuienSos(&param);
+	//ConnectionHandler = QuienSos(socketCliente,&param);
 
-	if( pthread_create( thread_id , NULL , (boid_function_boid_pointer) ConnectionHandler , (void*) &socketCliente) < 0)
-		  {
+	// if( pthread_create( thread_id , NULL , (boid_function_boid_pointer) ConnectionHandler , (void*) &socketCliente) < 0)
+	  if( pthread_create( thread_id , NULL , (boid_function_boid_pointer) ConnectionHandler , (void*) param ) < 0)
+	    {
 			perror("pthread_create");
 			exit(1);
-		  }
+		}
 		//pthread_join(thread_id,NULL);
 	
 }
@@ -294,11 +308,11 @@ void Menu_UMC(void)
 }
 
 
-FunctionPointer QuienSos( int * _socketCliente) {
-
+//FunctionPointer QuienSos( int * _socketCliente , PARAMETROS_HILO **param) {
+FunctionPointer QuienSos(PARAMETROS_HILO **param) {
 
 	FunctionPointer aux = NULL;
-	int   socketCliente					= *( (int *) _socketCliente),
+	int   socketCliente					= *((*param)->socketBuff),
 		  cantidad_de_bytes_recibidos 	= 0;
 	char *package 						= NULL;
 
@@ -318,16 +332,12 @@ FunctionPointer QuienSos( int * _socketCliente) {
 	if ( (strcmp(package,"K") == 0 ) ) {	// KERNEL
 		 contConexionesNucleo++;
 
+		if ( contConexionesNucleo == 1 ) {
 
-		if ( contConexionesNucleo == 1 )
-			{
-				if ( send(socketCliente,"UMC",PACKAGESIZE,0) == -1 ) {
-						perror("send");
-						exit(1);
-					  }
-
-				 aux = AtenderKernel;
-				 return aux;
+			(*param)->package = (char * ) malloc (cantidad_de_bytes_recibidos + 1);
+			strcpy((*param)->package,package);
+			aux = AtenderKernel;
+			return aux;
 
 			}
 		else{
@@ -374,29 +384,28 @@ void AtenderCPU(int * socketBuff){
 }
 
 
-void AtenderKernel(int * socketBuff){
+void AtenderKernel(PARAMETROS_HILO *param){
 
 	printf("\nHola , soy el thread encargado de la comunicacion con el Kernel!! :)");
-	int tamanioCodigoBuff,
-		estado = IDENTIFICADOR_OPERACION;	// la primera vez que entra,es porque ya recibi una 'K'
+	int estado = IDENTIFICADOR_OPERACION;	// la primera vez que entra,es porque ya recibi una 'K'
 
 	while(estado != EXIT)
 	{
 		switch(estado)
 		{
 		case IDENTIFICADOR_OPERACION:
-			estado = IdentificarOperacion(socketBuff);
+			estado = IdentificarOperacion(param->socketBuff,param->package);
 			break;
 		case HANDSHAKE:	// K0
-				HandShakeKernel(socketBuff);
+				HandShakeKernel(param->socketBuff,param->package);
 			estado = EXIT;
 			break;
 		case SOLICITUD_NUEVO_PROCESO:		// K1
-				ProcesoSolicitudNuevoProceso(socketBuff);
+				ProcesoSolicitudNuevoProceso(param->socketBuff,param->package);
 			estado = EXIT;
 			break;
 		case FINALIZAR_PROCESO:	// K2
-			FinalizarProceso(socketBuff);
+			FinalizarProceso(param->socketBuff,param->package);
 			estado = EXIT;
 			break;
 		default:
@@ -409,18 +418,13 @@ void AtenderKernel(int * socketBuff){
 
 	contConexionesNucleo--; // finaliza la comunicacion con el socket
 
-	close(*socketBuff); // cierro socket
+	close(*param->socketBuff); // cierro socket
 	pthread_exit(0);	// chau thread
 
 }
 
 
-int IdentificarOperacion(int * socketBuff){
 
-
-
-	return 0;
-}
 
 
 
