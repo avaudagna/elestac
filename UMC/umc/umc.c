@@ -47,12 +47,13 @@ typedef struct parametros_hilos {
 
 
 // Funciones para/con KERNEL
-int IdentificarOperacion(int * socketBuff,char * package);
+int IdentificarOperacion(char * package);
 void  HandShakeKernel(int * socketBuff,char * package);
 void ProcesoSolicitudNuevoProceso(int * socketBuff,char * package);
 void FinalizarProceso(int * socketBuff,char * package);
 void AtenderKernel(PARAMETROS_HILO *param);
 
+#define SIZE_HANDSHAKE_KERNEL 5
 
 
 // TODO LO QUE ES CON SWAP
@@ -374,11 +375,11 @@ void AtenderKernel(int * socketBuff ){
 
 }*/
 
-void AtenderCPU(int * socketBuff){
+void AtenderCPU(PARAMETROS_HILO *param){
 
 	printf("\nHola , soy el thread encargado de la comunicacion con el CPU!! :)");
 
-	close(*socketBuff);		// cierro socket
+	close(*param->socketBuff);		// cierro socket
 	pthread_exit(0);		// chau thread
 
 }
@@ -394,7 +395,7 @@ void AtenderKernel(PARAMETROS_HILO *param){
 		switch(estado)
 		{
 		case IDENTIFICADOR_OPERACION:
-			estado = IdentificarOperacion(param->socketBuff,param->package);
+			estado = IdentificarOperacion(param->package);
 			break;
 		case HANDSHAKE:	// K0
 				HandShakeKernel(param->socketBuff,param->package);
@@ -424,8 +425,43 @@ void AtenderKernel(PARAMETROS_HILO *param){
 }
 
 
+int IdentificarOperacion(char * package){
 
+	return package[1];
 
+}
+
+void  HandShakeKernel(int * socketBuff,char * package){
+
+	// recibo STACK_SIZE
+	char *buffer_stack = NULL;
+	int stack_size;
+	buffer_stack = (char *) malloc(4);
+	memcpy(buffer_stack,package+2,4);
+	stack_size = atoi(buffer_stack); 	// STACK_SIZE debe ser una variable global
+
+	// devuelvo U0+TAMAÑO PAGINA
+
+	char *buffer= NULL;
+	char trama_handshake[SIZE_HANDSHAKE_KERNEL];
+		buffer = (char * )malloc (SIZE_HANDSHAKE_KERNEL);
+
+		sprintf(buffer,"U%d",PAGE_SIZE);
+
+		int i = 0;
+
+		// le quito el \0 al final
+
+		for(i=0;i<SIZE_HANDSHAKE_SWAP;i++){
+			trama_handshake[i]=buffer[i];
+		}
+
+		if ( send(*socketBuff,(void *)trama_handshake,SIZE_HANDSHAKE_SWAP,0) == -1 ) {
+				perror("send");
+				exit(1);
+			}
+
+}
 
 
 
