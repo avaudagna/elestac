@@ -9,28 +9,31 @@
 /********************
 *		TAMANIOS
 *********************/
-pid					--> 2 bytes
-longCodigo		--> 4 bytes
+pid				--> 4 bytes
+tamañoDePagina	--> 4 bytes
 nroPag			--> 3 bytes
+stack_size  	---> 4 bytes
+
 
 /***************************************************************************
 *		SWAP <--> UMC
 ****************************************************************************/
 OPERACION                                  SERIALIZACION(UMC->SWAP)                RESPUESTA ( SWAP -> UMC)
-Handhsake                          - ->    U+tamPag                            - ->    1(correcto)+cantidad_de_paginas_libres
-ESCRITURA                          - ->    1+pid+numPagina+codigo              - ->    1(correcto)+cantidad_de_paginas_libres
-LECTURA                            - ->    3+pid+numPagina                     - ->     char[tamanioPagina]
+Handhsake                    - ->    U+tamPag                            - ->    1(correcto)+cantidad_de_pag_libres (5bytes)
+ESCRITURA                    - ->    1+pid+numPagina+codigo              - ->    1(correcto)+cantidad_de_pag_libres (5bytes)
+LECTURA                      -->    3+pid+numPagina                     -->     PID+pagina
 FINALIZACION_PROG                  - ->    4+pid                               - ->     1(correcto)+cantidad_de_paginas_libres
 
 /***************************************************************************
           UMC <--> KERNEL
 ***************************************************************************/ 
-OPERACION 								   SERIALIZACION(KERNEL->UMC)				RESPUESTA(UMC-->KERNEL)				
-HANDSHAKE 								   K0+STACK_SIZE							U0+TAMAÑO PAGINA (6 BYTES: UO : 2 y 4 de pagina) 
-CONSULTA-PAGINAS + ENVIO				   K1+CANTIDAD_DE_PAGINAS_NECESARIAS		U1+SI / U1+NO    (4 bytes en total)
-	SI SE PUEDE, ENTONCES ME EMPEZAS A ENVIAR DE A 1 PAGINA ( JUNTO AL PID).
-    SI NO SE PUEDE, ENTONCES SE CIERRA LA COMUNICACION
-FINALIZACION_PROCESO					   K2+PID 									U2+PID
+OPERACION 								   SERIALIZACION(KERNEL->UMC)					RESPUESTA(UMC-->KERNEL)				
+HANDSHAKE 								   0+STACK_SIZE							    	TAMAÑO PAGINA ( 4 de pagina) 
+CONSULTA-PAGINAS + ENVIO				   1+PID+CANTIDAD_PAGINAS	(5 bytes)				SI / NO    	  (2 bytes )
+	SI SE PUEDE, ENTONCES ME EMPEZAS A ENVIAR DE A 1 PAGINA ( JUNTO AL PID+Pagina).
+											PAGINA1+0+TAMANIO_PAGINA+PAGINA 	4+4+4+tamPagina
+											PAGINA2+0+TAMANIO_PAGINA+PAGINA
+ FINALIZACION_PROCESO					   2+PID 										OK		
 
 
 
