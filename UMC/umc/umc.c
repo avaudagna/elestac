@@ -22,11 +22,32 @@
 #define FLUSH   3
 #define SALIR   (-1)
 
+/* COMUNICACION/OPERACIONES CON KERNEL*/
+#define IDENTIFICADOR_OPERACION 99
+#define HANDSHAKE 0
+#define SOLICITUD_NUEVO_PROCESO 1
+#define FINALIZAR_PROCESO 2
+#define EXIT (-1)
+
+// Funciones para/con KERNEL
+int IdentificarOperacion(int * socketBuff);
+void  HandShakeKernel(int * socketBuff);
+void ProcesoSolicitudNuevoProceso(int * socketBuff);
+void FinalizarProceso(int * socketBuff)
+void AtenderKernel(int *);
+
+
+
 // TODO LO QUE ES CON SWAP
-#define PUERTO_SWAP "1234"
+#define PUERTO_SWAP "6500"
 #define IP_SWAP "127.0.0.1"
 #define SIZE_HANDSHAKE_SWAP 5 // 'U' 1 Y 4 BYTES PARA LA CANTIDAD DE PAGINAS
 #define PAGE_SIZE 1024
+
+// Funciones para operar con el swap
+void Init_Swap(void);
+void HandShake_Swap(void);
+
 
 typedef struct umc_parametros {
      int	core_cpu_port,
@@ -51,15 +72,12 @@ int paginasLibresEnSwap = 0;
 void *  connection_handler(void * socketCliente);
 void Init_UMC(void);
 void Init_Socket(void);
-void Init_Swap(void);
-void HandShake_Swap(void);
 //void Init_Parameters(void);
 void *  funcion_menu(void * noseusa);
 void Imprimir_Menu(void);
 void Menu_UMC(void);
 void Procesar_Conexiones(void);
 FunctionPointer QuienSos( int * _socketCliente);
-void AtenderKernel(int *);
 void AtenderCPU(int *);
 
 int main(){
@@ -297,7 +315,7 @@ FunctionPointer QuienSos( int * _socketCliente) {
 		printf("\nCliente: ");
 		printf("%s\n", package);
 
-	if ( (strcmp(package,"KERNEL") == 0 ) ) {	// KERNEL
+	if ( (strcmp(package,"K") == 0 ) ) {	// KERNEL
 		 contConexionesNucleo++;
 
 
@@ -336,7 +354,7 @@ FunctionPointer QuienSos( int * _socketCliente) {
 
 }
 
-
+/*
 void AtenderKernel(int * socketBuff ){
 
 	printf("\nHola , soy el thread encargado de la comunicacion con el Kernel!! :)");
@@ -344,7 +362,8 @@ void AtenderKernel(int * socketBuff ){
 	close(*socketBuff); // cierro socket
 	pthread_exit(0);	// chau thread
 
-}
+}*/
+
 void AtenderCPU(int * socketBuff){
 
 	printf("\nHola , soy el thread encargado de la comunicacion con el CPU!! :)");
@@ -353,6 +372,50 @@ void AtenderCPU(int * socketBuff){
 	pthread_exit(0);		// chau thread
 
 }
+
+
+void AtenderKernel(int * socketBuff){
+
+	printf("\nHola , soy el thread encargado de la comunicacion con el Kernel!! :)");
+	int tamanioCodigoBuff,
+		estado = IDENTIFICADOR_OPERACION;	// la primera vez que entra,es porque ya recibi una 'K'
+
+	while(estado != EXIT)
+	{
+		switch(estado)
+		{
+		case IDENTIFICADOR_OPERACION:
+			estado = IdentificarOperacion(socketBuff);
+			break;
+		case HANDSHAKE:	// K0
+				HandShakeKernel(socketBuff);
+			estado = EXIT;
+			break;
+		case SOLICITUD_NUEVO_PROCESO:		// K1
+				ProcesoSolicitudNuevoProceso(socketBuff);
+			estado = EXIT;
+			break;
+		case FINALIZAR_PROCESO:	// K2
+			FinalizarProceso(socketBuff);
+			estado = EXIT;
+			break;
+		default:
+			printf("Identificador de operacion invalido");
+			estado=EXIT;
+			break;
+
+		}
+	}
+
+	contConexionesNucleo--; // finaliza la comunicacion con el socket
+
+	close(*socketBuff); // cierro socket
+	pthread_exit(0);	// chau thread
+
+}
+
+
+
 
 
 void Init_Swap(void){
