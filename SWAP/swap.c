@@ -14,20 +14,16 @@
 #include "socketCommons.h"
 
 
+//OPERACIONES UMC
+#define ESCRIBIR 1
+#define SOBREESCRITURA 2
+#define LECTURA 3
+#define FINALIZARPROG 4
+
 #define PATH_CONF "swapConf"
 #define PACKAGE_SIZE 1024
 #define IPSWAP "127.0.0.1"
 #define PUERTOSWAP	45000
-
-//ESTADOS
-#define REPOSO						0
-#define IDENTIFICADOR_OPERACION		1
-#define HANDSHAKE					2
-#define PROCESO_NUEVO				3
-#define PAG_SOBRESCRITURA			4
-#define PAG_PEDIDO					5
-#define PROCESO_FINALIZAR			6
-#define PAG_CANTIDAD				7
 
 
 /************************
@@ -318,7 +314,6 @@ int init_Config(){
 					case 2: NOMBRE_SWAP = config_get_string_value(punteroAStruct,keys[i]); break;
 					case 3: PATH_SWAP = config_get_string_value(punteroAStruct,keys[i]); break;
 					case 4: CANTIDAD_PAGINAS = config_get_int_value(punteroAStruct,keys[i]); break;
-					case 5: TAMANIO_PAGINA = config_get_int_value(punteroAStruct,keys[i]); break;
 					case 6: RETARDO_COMPACTACION = config_get_string_value(punteroAStruct,keys[i]); break;
 				}
 
@@ -330,7 +325,6 @@ int init_Config(){
 		printf("	%s --> %s \n",keys[2],NOMBRE_SWAP);
 		printf("	%s --> %s \n",keys[3],PATH_SWAP);
 		printf("	%s --> %d \n",keys[4],CANTIDAD_PAGINAS);
-		printf("	%s --> %d \n",keys[5],TAMANIO_PAGINA);
 		printf("	%s --> %s \n",keys[6],RETARDO_COMPACTACION);
 
 		free(punteroAStruct);
@@ -350,98 +344,94 @@ void init_Server(){
 
 	acceptConnection(&umcSocket, &swapSocket);
 
-	int estado = 0;
+	int handshakeOK = 0;
+	void* buffer = malloc(sizeof(int));
+	char handShake;
+	int operacion = 0;
+	int pid;
+	int numeroPagina;
+	char* codigo;
 
-	while(1){
-		package = (char *) malloc(sizeof(char) * PACKAGE_SIZE ) ;
-		bytesRecibidos = recv(umcSocket, (void*) package, PACKAGE_SIZE, 0);
-		if ( bytesRecibidos <= 0 ) {
-			done = 1;
-		}
-
-		/* SERIALIZACION
-		 *
-		 * Handshake			-->	U0|tamPag(4 bytes)				TOTAL: 7 bytes
-		 * Nuevo proceso		--> U1|pid|longCodigo|codigo		TOTAL: indefinido
-		 * Sobrescribir pag		--> U2|pid|nroPag|payload			TOTAL: indefinido
-		 * Pedido pagina		--> U3|pid|nroPag					TOTAL:
-		 * Finalizar proceso	--> U4|pid							TOTAL: 5 bytes
-		 * Cant paginas disp	--> U5|cantPag
-		 *
-		 *
-		 * TAMANIOS
-		 * 		pid				--> 2 bytes
-		 * 		longCodigo		--> 4 bytes
-		 * 		nroPag			--> 3 bytes
-		 *
-		 */
-
-		switch(estado) {
-			case REPOSO:	// recibo , si lo que recibi es 'U'
-				printf("\n Estoy en reposo \n");
-				estado = IDENTIFICADOR_OPERACION;
+	while (1){
+		if(handshakeOK){
+			if(recv(umcSocket,buffer,sizeof(int),0)<= 0)
 				break;
 
-			case IDENTIFICADOR_OPERACION:
-				//estado = identificarOperacion(package);
-				break;
+			memcpy(&operacion,buffer,sizeof(int));
+			free(buffer);
 
-			case HANDSHAKE:	// U0
-				//enviarHandShakeKernel(package);
-				estado = REPOSO;
-				break;
+			switch (operacion) {
+				case ESCRIBIR: //pid(int), numeroPagina(int), codigo (undefined)
+					//Recibo el PID
+					if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
+						continue;
 
-			case PROCESO_NUEVO:  // U1
-				estado = 1;
+					memcpy(&pid, buffer, sizeof(int));
+					free(buffer);
+
+					//Recibo la longitud del codigo
+					if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
+						continue;
+
+					memcpy(&numeroPagina, buffer, sizeof(int));
+					free(buffer);
+
+					//Recibimos el codigo
+					if(recv(umcSocket, buffer, sizeof(numeroPagina), 0)<= 0)
+						continue;
+
+					memcpy(&codigo, buffer, sizeof(int));
+					free(buffer);
+
+					//Hacemos el request
+					int resultado = request_EscrituraPagina(pid, numeroPagina, codigo);
+
+					if(resultado > -1){ //ENVIAMOS OK A UMC
+
+					} else { //ENVIAMOS ERROR A UMC
+
+					}
+
+					break;
+
+				case SOBREESCRITURA:
+					puts("Sobreescritura");
+
+					break;
+
+				case LECTURA:
+					puts("Lectura");
+
+					break;
+				case FINALIZARPROG:
+					puts("Finalizar");
+
+					break;
+				default:
+					puts("Algun error");
+					//printf("Error de comando\n");
+			}
 
 
-				break;
+		} else { //HAGO EL HANDSHAKE
+			if(recv(umcSocket,buffer,sizeof(char),0)<= 0)
+				continue;
 
-			default:
-				printf("Error!");
-				estado=REPOSO;
-				break;
+			memcpy(&handShake,buffer,sizeof(char));
+			free(buffer);
+
+			if(handShake == 'U'){ //El handshake es correcto
+				if(recv(umcSocket,buffer,sizeof(int),0)<= 0)
+					continue;
+
+				memcpy(&TAMANIO_PAGINA,buffer,sizeof(char));
+				free(buffer);
+
+				handshakeOK = 1;
+			}
 		}
 
 	}
-
-	do {
-
-		if (!done) {
-			//package[bytesRecibidos]='\0';
-			printf("\nCliente: ");
-			printf("%s", package);
-
-			if(!strcmp(package,"Adios"))
-				break;
-
-			fflush(stdin);
-			printf("\nServidor: ");
-			//fgets(package,PACKAGE_SIZE,stdin);
-			//package[strlen(package) - 1] = '\0';
-
-			if ( send(umcSocket,(void *) "SWAP",PACKAGE_SIZE,0) == -1 ) {
-				perror("send");
-				exit(1);
-			}
-
-			if ( (recv(umcSocket, (void*) package, PACKAGE_SIZE, 0)) <= 0 ) {
-				perror("recv");
-				exit(1);
-
-			}
-
-			if ( send(umcSocket,(void *) package,PACKAGE_SIZE,0) == -1 ) {
-				perror("send");
-				exit(1);
-			}
-
-			printf("Sent :%s\n",package);
-
-			free(package);
-		}
-
-	  } while(!done);
 
 	close(umcSocket);
 }
@@ -638,6 +628,10 @@ int swap_Compactar(){
 	puts(".:: SWAP STATE BEFORE DEFRAGMETATION ::. \n");
 	imprimir_EstadoBitMap();
 
+	puts("\n .:: BEGINING DEFRAGMETATION ::. \n");
+
+	sleep(RETARDO_COMPACTACION);
+
 	int espacioActual, espacioLibre = 0;
 	while(bitarray_test_bit(bitArrayStruct, espacioLibre)){ //Encontramos el primer espacio libre
 		espacioLibre++;
@@ -653,7 +647,6 @@ int swap_Compactar(){
 
 	}
 
-	puts("\n .:: BEGINING DEFRAGMETATION ::. \n");
 	puts(".:: SWAP STATE AFTER DEFRAGMETATION ::. \n");
 	imprimir_EstadoBitMap();
 
@@ -826,6 +819,7 @@ int listaControl_IniciarLista(struct InformacionPagina infoBloque){
 
 	return 0;
 }
+
 void listaControl_AgregarNodo(int pid, int pageNumber, int positionInSWAP, int bitMapPosition){
 	if(headControlCodigo == NULL){
 		struct InformacionPagina infoAAgregar;
@@ -897,6 +891,7 @@ int listaControl_Longitud(){
 	}
 
 	free(current);
+
 	return length;
 }
 
