@@ -15,6 +15,8 @@
 #include <commons/collections/list.h>
 #include <commons/collections/node.h>
 
+#define IDENTIFICADOR_MODULO 1
+
 /*MACROS y TIPOS DE DATOS*/
 #define PUERTO "6750"
 #define BACKLOG 1			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
@@ -51,13 +53,13 @@ typedef struct parametros_hilos {
 
 
 // Funciones para/con KERNEL
-int IdentificarOperacion(char * package);
-void HandShakeKernel(int * socketBuff,char * package);
-void ProcesoSolicitudNuevoProceso(int * socketBuff,char * package);
+int IdentificarOperacion(int * socketBuff);
+void HandShakeKernel(int * socketBuff);
+void ProcesoSolicitudNuevoProceso(int * socketBuff);
 void FinalizarProceso(int * socketBuff,char * package);
-void AtenderKernel(PARAMETROS_HILO *param);
+void AtenderKernel(int * socketBuff);
 void RecibirYAlmacenarPaginas(int * socketBuff, int cantidadPaginasSolicitadas);
-int EsperandoKernel(int * socketBuff);
+//int EsperandoKernel(int * socketBuff);
 
 #define SIZE_HANDSHAKE_KERNEL 5
 
@@ -72,7 +74,7 @@ int EsperandoKernel(int * socketBuff);
 void Init_Swap(void);
 void HandShake_Swap(void);
 
-typedef void (*FunctionPointer)(PARAMETROS_HILO *);
+typedef void (*FunctionPointer)(int * socketBuff);
 typedef void * (*boid_function_boid_pointer) (void*);
 
 /*VARIABLES GLOBALES */
@@ -95,7 +97,7 @@ void Procesar_Conexiones(void);
 //FunctionPointer QuienSos( int * _socketCliente, PARAMETROS_HILO **param);
 
 FunctionPointer QuienSos(PARAMETROS_HILO **param);
-void AtenderCPU(PARAMETROS_HILO *param);
+void AtenderCPU(int * socketBuff);
 
 int main(){
 
@@ -293,8 +295,8 @@ void Procesar_Conexiones (void)
 	    ConnectionHandler = QuienSos(&param);
 	//ConnectionHandler = QuienSos(socketCliente,&param);
 
-	// if( pthread_create( thread_id , NULL , (boid_function_boid_pointer) ConnectionHandler , (void*) &socketCliente) < 0)
-	  if( pthread_create( thread_id , NULL , (boid_function_boid_pointer) ConnectionHandler , (void*) param ) < 0)
+	if( pthread_create( thread_id , NULL , (boid_function_boid_pointer) ConnectionHandler , (void*) &socketCliente) < 0)
+	  //if( pthread_create( thread_id , NULL , (boid_function_boid_pointer) ConnectionHandler , (void*) param ) < 0)
 	    {
 			perror("pthread_create");
 			exit(1);
@@ -322,10 +324,11 @@ FunctionPointer QuienSos(PARAMETROS_HILO **param) {
 	FunctionPointer aux = NULL;
 	int   socketCliente					= *((*param)->socketBuff),
 		  cantidad_de_bytes_recibidos 	= 0;
-	char *package 						= NULL;
+	//char *package 						= NULL;
+	char package;
 
-	package = (char *) malloc(sizeof(char) * PACKAGESIZE ) ;
-	cantidad_de_bytes_recibidos = recv(socketCliente, (void*) package, PACKAGESIZE, 0);
+	//package = (char *) malloc(sizeof(char) * IDENTIFICADOR_MODULO ) ;
+	cantidad_de_bytes_recibidos = recv(socketCliente, (void*) (&package), IDENTIFICADOR_MODULO, 0);
 	if ( cantidad_de_bytes_recibidos <= 0 ) {
 		if ( cantidad_de_bytes_recibidos < 0 )
 			perror("recv");
@@ -334,16 +337,18 @@ FunctionPointer QuienSos(PARAMETROS_HILO **param) {
 	}
 
 		//package[strlen(package) - 1] = '\0';
-		printf("\nCliente: ");
-		printf("%s\n", package);
+		//printf("\nCliente: ");
+		//printf("%s\n", package);
 
-	if ( (strcmp(package,"K") == 0 ) ) {	// KERNEL
-		 contConexionesNucleo++;
+	//if ( (strcmp(package,"K") == 0 ) ) {	// KERNEL
+
+	if ( package == 'K' ) {	// KERNEL
+		contConexionesNucleo++;
 
 		if ( contConexionesNucleo == 1 ) {
 
-			(*param)->package = (char * ) malloc (cantidad_de_bytes_recibidos + 1);
-			strcpy((*param)->package,package);
+			//(*param)->package = (char * ) malloc (cantidad_de_bytes_recibidos + 1);
+			//strcpy((*param)->package,package++);	// me saco de encima la K
 			aux = AtenderKernel;
 			return aux;
 
@@ -356,8 +361,10 @@ FunctionPointer QuienSos(PARAMETROS_HILO **param) {
 		 }
 	}
 
-	if (( strcmp(package,"CPU") ) == 0 ){   //CPU
+	// if (( strcmp(package,"C") ) == 0 ){   //CPU
 
+		if ( package == 'C' ) {	// CPU
+			// FALTA GESTIONAR CONEXION CPU
 		 if ( send(socketCliente,(void *)"a=b+3",PACKAGESIZE,0) == -1 ) {
 	 	 	 perror("send");
 	 	 	 exit(1);
@@ -367,7 +374,7 @@ FunctionPointer QuienSos(PARAMETROS_HILO **param) {
 			 return aux;
 	}
 
-	free(package);
+	//free(package);
 	return aux;
 
 }
@@ -382,17 +389,17 @@ void AtenderKernel(int * socketBuff ){
 
 }*/
 
-void AtenderCPU(PARAMETROS_HILO *param){
+void AtenderCPU(int * socketBuff){
 
 	printf("\nHola , soy el thread encargado de la comunicacion con el CPU!! :)");
 
-	close(*param->socketBuff);		// cierro socket
+	close(*socketBuff);		// cierro socket
 	pthread_exit(0);		// chau thread
 
 }
 
 
-void AtenderKernel(PARAMETROS_HILO *param){
+void AtenderKernel(int * socketBuff){
 
 	printf("\nHola , soy el thread encargado de la comunicacion con el Kernel!! :)");
 	int estado = IDENTIFICADOR_OPERACION;	// la primera vez que entra,es porque ya recibi una 'K'
@@ -401,22 +408,23 @@ void AtenderKernel(PARAMETROS_HILO *param){
 	{
 		switch(estado)
 		{
-		case REPOSO:
+		/*case REPOSO:
 			estado = EsperandoKernel();		// A la espera de algun tipo de operacion
 			break;
+		*/
 		case IDENTIFICADOR_OPERACION:
-			estado = IdentificarOperacion(param->package);
+			estado = IdentificarOperacion(socketBuff);
 			break;
 		case HANDSHAKE:	// K0
-				HandShakeKernel(param->socketBuff,param->package);
-			estado = REPOSO;
+				HandShakeKernel(socketBuff);
+			estado = IDENTIFICADOR_OPERACION;
 			break;
-		case SOLICITUD_NUEVO_PROCESO:		// K1
-				ProcesoSolicitudNuevoProceso(param->socketBuff,param->package);
-			estado = REPOSO;
+		case SOLICITUD_NUEVO_PROCESO:		// 1
+				ProcesoSolicitudNuevoProceso(socketBuff);
+			estado = IDENTIFICADOR_OPERACION;
 			break;
-		case FINALIZAR_PROCESO:	// K2
-			FinalizarProceso(param->socketBuff,param->package);
+		case FINALIZAR_PROCESO:	// 2
+			FinalizarProceso(socketBuff);
 			estado = REPOSO;
 			break;
 		default:
@@ -429,25 +437,35 @@ void AtenderKernel(PARAMETROS_HILO *param){
 
 	contConexionesNucleo--; // finaliza la comunicacion con el socket
 
-	close(*param->socketBuff); // cierro socket
+	close(*socketBuff); // cierro socket
 	pthread_exit(0);	// chau thread
 
 }
 
 
-int IdentificarOperacion(char * package){
+int IdentificarOperacion(int * socketBuff){
 
-	return package[0];
+	int package;
+
+	while ( (recv(*socketBuff, (void*) (&package), 1, 0)) <= 0 );	// levanto byte que indica que tipo de operacion se va a llevar a cabo
+
+	return package;
 
 }
 
-void  HandShakeKernel(int * socketBuff,char * package){
+void  HandShakeKernel(int * socketBuff){
 
 	// recibo STACK_SIZE
-	char *buffer_stack = NULL;
-	buffer_stack = (char *) malloc(4);
-	memcpy(buffer_stack,package+2,4);
-	stack_size = atoi(buffer_stack); 	// STACK_SIZE debe ser una variable global
+	//char *buffer_stack = NULL;
+	//buffer_stack = (char *) malloc(4);
+	//memcpy(buffer_stack,package+2,4);
+	int cantidad_bytes_recibidos;
+
+	cantidad_bytes_recibidos = recv(*socketBuff, (void*) (&stack_size), sizeof(stack_size), 0);		// levanto los 4 bytes q son del stack_size
+
+	if ( cantidad_bytes_recibidos <= 0){
+		perror("recv");
+	}
 
 	// devuelvo U0+TAMAÑO PAGINA
 
@@ -472,41 +490,45 @@ void  HandShakeKernel(int * socketBuff,char * package){
 
 }
 
-void ProcesoSolicitudNuevoProceso(int * socketBuff,char * package){
+/* TRAMA : 1+PID+CANTIDAD_PAGINAS
+ **/
 
-	int cantidadDePaginasSolicitadas;
-	char *buffer = NULL;
-	buffer = (char *) malloc(4);
-	memcpy(buffer,package+2,4);
-	cantidadDePaginasSolicitadas = atoi(buffer);
-	free(buffer);
+void ProcesoSolicitudNuevoProceso(int * socketBuff){
 
-	if ( cantidadDePaginasSolicitadas < paginasLibresEnSwap) {
+	int cantidadDePaginasSolicitadas,
+		cantidad_bytes_recibidos,
+		pid_aux;
 
-		buffer = (char *) malloc( 4);
-		sprintf(buffer,"SI");
+	// levanto los 4 bytes q son del pid
+	cantidad_bytes_recibidos = recv(*socketBuff, (void*) (&pid_aux), sizeof(pid_aux), 0);
 
-		char trama_handshake[strlen(buffer)];
-		int i = 0;
-		// le quito el \0 al final
-		for(i=0;i<(strlen(buffer));i++){
-			trama_handshake[i]=buffer[i];
+		if ( cantidad_bytes_recibidos <= 0){
+			perror("recv");
 		}
-		send(*socketBuff,(void *)trama_handshake,4,0);
 
-		RecibirYAlmacenarPaginas(socketBuff,cantidadDePaginasSolicitadas);
+	// levanto los 4 bytes q son del cantidadDePaginasSolicitadas
+	cantidad_bytes_recibidos = recv(*socketBuff, (void*) (&cantidadDePaginasSolicitadas), sizeof(cantidadDePaginasSolicitadas), 0);
+
+		if ( cantidad_bytes_recibidos <= 0){
+				perror("recv");
+		}
+
+	if ( cantidadDePaginasSolicitadas < paginasLibresEnSwap) {	// Se puede almacenar el nuevo proceso , respondo que SI
+
+		char trama_handshake[2]={'S','I'};
+
+		if ( send(*socketBuff,(void *)trama_handshake,2,0) == -1){
+			perror("send");
+		}
+		else
+			RecibirYAlmacenarPaginas(socketBuff,cantidadDePaginasSolicitadas);
 
 	}else{
-		buffer = (char *) malloc( 4);
-		sprintf(buffer,"NO");
 
-		char trama_handshake[strlen(buffer)];
-		int i = 0;
-		// le quito el \0 al final
-		for(i=0;i<(strlen(buffer));i++){
-			trama_handshake[i]=buffer[i];
-		}
-		send(*socketBuff,(void *)trama_handshake,4,0);
+		char trama_handshake[2]={'N','O'};
+
+		if ( send(*socketBuff,(void *)trama_handshake,2,0) == -1 )
+			perror("send");
 	}
 
 }
