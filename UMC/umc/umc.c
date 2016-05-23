@@ -12,6 +12,8 @@
 #include <pthread.h>
 #include <sys/sem.h>
 #include <errno.h>
+#include <commons/collections/list.h>
+#include <commons/collections/node.h>
 
 /*MACROS y TIPOS DE DATOS*/
 #define PUERTO "6750"
@@ -23,11 +25,13 @@
 #define SALIR   (-1)
 
 /* COMUNICACION/OPERACIONES CON KERNEL*/
+#define REPOSO 3
 #define IDENTIFICADOR_OPERACION 99
 #define HANDSHAKE 0
 #define SOLICITUD_NUEVO_PROCESO 1
 #define FINALIZAR_PROCESO 2
 #define EXIT (-1)
+#define PID_SIZE 4
 
 typedef struct umc_parametros {
      int	core_cpu_port,
@@ -52,7 +56,8 @@ void HandShakeKernel(int * socketBuff,char * package);
 void ProcesoSolicitudNuevoProceso(int * socketBuff,char * package);
 void FinalizarProceso(int * socketBuff,char * package);
 void AtenderKernel(PARAMETROS_HILO *param);
-void RecibirYAlmacenarPaginas(int * socketBuff);
+void RecibirYAlmacenarPaginas(int * socketBuff, int cantidadPaginasSolicitadas);
+int EsperandoKernel(int * socketBuff);
 
 #define SIZE_HANDSHAKE_KERNEL 5
 
@@ -396,20 +401,23 @@ void AtenderKernel(PARAMETROS_HILO *param){
 	{
 		switch(estado)
 		{
+		case REPOSO:
+			estado = EsperandoKernel();		// A la espera de algun tipo de operacion
+			break;
 		case IDENTIFICADOR_OPERACION:
 			estado = IdentificarOperacion(param->package);
 			break;
 		case HANDSHAKE:	// K0
 				HandShakeKernel(param->socketBuff,param->package);
-			estado = EXIT;
+			estado = REPOSO;
 			break;
 		case SOLICITUD_NUEVO_PROCESO:		// K1
 				ProcesoSolicitudNuevoProceso(param->socketBuff,param->package);
-			estado = EXIT;
+			estado = REPOSO;
 			break;
 		case FINALIZAR_PROCESO:	// K2
 			FinalizarProceso(param->socketBuff,param->package);
-			estado = EXIT;
+			estado = REPOSO;
 			break;
 		default:
 			printf("Identificador de operacion invalido");
@@ -429,7 +437,7 @@ void AtenderKernel(PARAMETROS_HILO *param){
 
 int IdentificarOperacion(char * package){
 
-	return package[1];
+	return package[0];
 
 }
 
@@ -466,36 +474,36 @@ void  HandShakeKernel(int * socketBuff,char * package){
 
 void ProcesoSolicitudNuevoProceso(int * socketBuff,char * package){
 
-	int cantidadDePaginasSolicitidas;
+	int cantidadDePaginasSolicitadas;
 	char *buffer = NULL;
 	buffer = (char *) malloc(4);
 	memcpy(buffer,package+2,4);
-	cantidadDePaginasSolicitidas = atoi(buffer);
+	cantidadDePaginasSolicitadas = atoi(buffer);
 	free(buffer);
 
-	if ( cantidadDePaginasSolicitidas < paginasLibresEnSwap) {
+	if ( cantidadDePaginasSolicitadas < paginasLibresEnSwap) {
 
 		buffer = (char *) malloc( 4);
-		sprintf(buffer,"U1SI");
+		sprintf(buffer,"SI");
 
-		char trama_handshake[4];
+		char trama_handshake[strlen(buffer)];
 		int i = 0;
 		// le quito el \0 al final
-		for(i=0;i<4;i++){
+		for(i=0;i<(strlen(buffer));i++){
 			trama_handshake[i]=buffer[i];
 		}
 		send(*socketBuff,(void *)trama_handshake,4,0);
 
-		RecibirYAlmacenarPaginas(socketBuff);
+		RecibirYAlmacenarPaginas(socketBuff,cantidadDePaginasSolicitadas);
 
 	}else{
 		buffer = (char *) malloc( 4);
-		sprintf(buffer,"U1NO");
+		sprintf(buffer,"NO");
 
-		char trama_handshake[4];
+		char trama_handshake[strlen(buffer)];
 		int i = 0;
 		// le quito el \0 al final
-		for(i=0;i<4;i++){
+		for(i=0;i<(strlen(buffer));i++){
 			trama_handshake[i]=buffer[i];
 		}
 		send(*socketBuff,(void *)trama_handshake,4,0);
@@ -503,9 +511,26 @@ void ProcesoSolicitudNuevoProceso(int * socketBuff,char * package){
 
 }
 
-void RecibirYAlmacenarPaginas(int * socketBuff){
+void RecibirYAlmacenarPaginas(int * socketBuff,int cantidadPaginasSolicitadas){
+
+int i = 0;
+char *package = NULL;
+
+package = (char *) malloc ( PAGE_SIZE + PID_SIZE );
+
+	for(i=0;i<cantidadPaginasSolicitadas ; i++){
+
+		recv(*socketBuff,(void *) package, sizeof(package),0);
+
+		// recibo pid + pagina
+
+		// punteroHeaderPaginasPid=listaDeTablasDePaginas(pid)
+
+		// agregarNodo(punteroHeaderPaginasPid,PID,i ( nro de pagina) )
 
 
+
+	}
 
 }
 
