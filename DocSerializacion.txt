@@ -27,13 +27,10 @@ FINALIZACION_PROG                  - ->    4+pid                               -
 /***************************************************************************
           UMC <--> KERNEL
 ***************************************************************************/ 
-OPERACION 								   SERIALIZACION(KERNEL->UMC)					RESPUESTA(UMC-->KERNEL)				
-HANDSHAKE 								   0+STACK_SIZE							    	TAMAÑO PAGINA ( 4 de pagina) 
-CONSULTA-PAGINAS + ENVIO				   1+PID+CANTIDAD_PAGINAS	(5 bytes)				SI / NO    	  (2 bytes )
-	SI SE PUEDE, ENTONCES ME EMPEZAS A ENVIAR DE A 1 PAGINA ( JUNTO AL PID+Pagina).
-											PAGINA1+0+TAMANIO_PAGINA+PAGINA 	4+4+4+tamPagina
-											PAGINA2+0+TAMANIO_PAGINA+PAGINA
- FINALIZACION_PROCESO					   2+PID 										OK		
+OPERACION 								   SERIALIZACION(KERNEL->UMC)											RESPUESTA(UMC-->KERNEL)	
+HANDSHAKE 								   0+STACK_SIZE							    							TAMAÑO PAGINA (4 de pag) 
+CONSULTA-PAGINAS + ENVIO				   1+PID+CANT PAGs+CODE SIZE+CODE	( 13bytes + sizecode bytes)			SI / NO (2 bytes )
+FINALIZACION_PROCESO					   2+PID 																OK		
 
 
 
