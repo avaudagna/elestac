@@ -22,7 +22,7 @@
 #define PATH_CONF "swapConf"
 #define PACKAGE_SIZE 1024
 #define IPSWAP "127.0.0.1"
-#define PUERTOSWAP	45000
+#define PUERTOSWAP	45005
 
 
 /************************
@@ -78,12 +78,10 @@ char* request_Lectura(int pid, int numeroPagina);
 void umc_leer();
 
 int request_EscrituraPagina(int pid, int numeroPagina, char* codigo);
-int request_SobrescrituraPagina(int pid, int numeroPagina, char* codigoNuevo);
 void umc_escribir();
 
 int request_FinalizacionPrograma(int pid);
 void umc_finalizarPrograma();
-
 
 //Inicializacion y finalizacion
 int init_Config();
@@ -122,12 +120,12 @@ void imprimir_EstadoBitMap();
 void imprimir_NodosEstructuraControl();
 
 //Otras
+char obtenerPrimerChar(void* buffer);
 int mod (int a, int b);
 
 int main() {
 	puts(".:: INITIALIZING SWAP ::.");
 	puts("");
-
 
 	if(!init_Config()){
     	puts("Config file can not be loaded");
@@ -136,11 +134,9 @@ int main() {
 
     puts("");
 
-
     init_Server();
 
-
-	//close_SwapProcess();
+	close_SwapProcess();
 
 	return 0;
 }
@@ -162,7 +158,7 @@ char* request_Lectura(int pid, int numeroPagina){
 		return NULL;
 	}
 
-	puts("Page found!");
+	puts("--> Page found!");
 
 	return paginaObtenida;
 }
@@ -173,9 +169,21 @@ int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
 	char* paginaObtenida = NULL;
 	paginaObtenida = swap_ObtenerPagina(pid, numeroPagina);
 
-	if(paginaObtenida != NULL){
-		puts("--> Requested page alreay exists");
-		return -1;
+	if(paginaObtenida != NULL){ //Si la pagina ya existe, la sobreescribo
+		puts("--> Requested page alreay exists. Overwriting existing page");
+
+		int posicionPaginaEnSWAP;
+		posicionPaginaEnSWAP = listaControl_ObtenerPosicionEnSWAP(pid, numeroPagina);
+
+		if(posicionPaginaEnSWAP < 0){
+			puts("--> An error occurred while trying to fetch the page");
+			return -1;
+		}
+
+		paginas_EscribirPaginaEnSWAP(codigo, posicionPaginaEnSWAP);
+		puts("--> The page has been succesfully overwritten! \n");
+
+		return 0;
 	}
 
 	int bitMapPosition = swap_EspacioDisponible(1); //Solo necesitamos escribir una pagina
@@ -185,7 +193,7 @@ int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
 	int escritoEnPosicion = paginas_EscribirPaginaEnSWAP(codigo, posicionEnSWAP);
 
 	if(escritoEnPosicion < 0){
-		return -1;
+		return -2;
 	}
 
 	listaControl_AgregarNodo(pid, numeroPagina, posicionEnSWAP, bitMapPosition);
@@ -194,24 +202,6 @@ int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
 	puts("--> The page has been written!");
 
 	return 0;
-}
-
-int request_SobrescrituraPagina(int pid, int numeroPagina, char* codigoNuevo){
-	printf("\n[REQUEST] Page overwriting requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
-
-	int posicionPaginaEnSWAP;
-	posicionPaginaEnSWAP = listaControl_ObtenerPosicionEnSWAP(pid, numeroPagina);
-
-	if(posicionPaginaEnSWAP < 0){
-		puts("--> An error occurred while trying to fetch the page");
-		return -1;
-	}
-
-	puts("--> Overwriting page");
-	paginas_EscribirPaginaEnSWAP(codigoNuevo, posicionPaginaEnSWAP);
-	puts("--> The page has been overwritten! \n");
-
-	return 1;
 }
 
 int request_FinalizacionPrograma(int pid){
@@ -227,8 +217,8 @@ int request_FinalizacionPrograma(int pid){
 		puts("--> Error while releasing pages");
 		return -1;
 	}
-}
 
+}
 
 /**********************
  *
@@ -244,7 +234,7 @@ int init_Config(){
 	t_config * punteroAStruct = config_create(PATH_CONF);
 
 	if(punteroAStruct != NULL) {
-		printf("%s %s", "Config file loaded:",PATH_CONF);
+		printf("%s %s", "[INFO] Config file loaded:",PATH_CONF);
 		puts("");
 
 		int cantKeys = config_keys_amount(punteroAStruct);
@@ -289,22 +279,25 @@ void init_Server(){
 
 	acceptConnection(&umcSocket, &swapSocket);
 
-	int handshakeOK = 0;
 	void* buffer = malloc(sizeof(int));
-	char handShake;
+	int handshakeOK = 0;
 	int operacion = 0;
+	char handShake;
 
-	while (1){
+	while(1){
 		if(handshakeOK){
+			free(buffer);
+			buffer = malloc(sizeof(int));
+
 			if(recv(umcSocket,buffer,1,0)<= 0)
 				break;
 
 			/****************************
-			 * Convierto el char a int!!!
+			 * Leo el codigo de operacion
+			 * y convierto el char a int
 			 ****************************/
 			char aux;
 			memcpy(&aux,buffer,1);
-			//free(buffer);
 			operacion = aux - '0';
 
 			switch (operacion) {
@@ -312,7 +305,6 @@ void init_Server(){
 					umc_escribir();
 
 					break;
-
 				case LECTURA: //pid(int), numeroPagina(int)
 					umc_leer();
 
@@ -322,27 +314,34 @@ void init_Server(){
 
 					break;
 				default:
-					puts("Algun error");
-					//printf("Error de comando\n");
+					printf("[Error] Request code unknown: %d \n", operacion);
+
+					break;
 			}
 
+			operacion = -1;
 
 		} else { //HAGO EL HANDSHAKE
-			if(recv(umcSocket, buffer,sizeof(char),0)<= 0)
+			if(recv(umcSocket, buffer,sizeof(char),0)<= 0){
 				break;
+			}
 
 			memcpy(&handShake, buffer,sizeof(char));
-			//free(buffer);
 
 			if(handShake == 'U'){ //El handshake es correcto
-				if(recv(umcSocket, buffer,sizeof(int),0)<= 0)
-					continue;
+				free(buffer);
+				buffer = malloc(sizeof(int));
+
+				if(recv(umcSocket, buffer,sizeof(int),0)<= 0){
+					break;
+				}
 
 				TAMANIO_PAGINA = atoi(buffer);
-				//free(buffer);
+				free(buffer);
 
 				init_BitMap();
 
+				//Armo la trama a responder char[]: S+cantPaginasLibres
 				int SIZE_TRAMA = 5;
 				char* respuesta = malloc(SIZE_TRAMA);
 				char tramaAEnviar[SIZE_TRAMA];
@@ -354,21 +353,20 @@ void init_Server(){
 				}
 
 				if(send(umcSocket,(void *) tramaAEnviar, SIZE_TRAMA,0) == -1){
-					perror("send");
-					exit(1);
+					puts("[ERROR] Error while trying to complete handshake");
+					break;
 				}
 
 				printf("[INFO] Handshake with UMC succesfully done. Page size received: %d \n", TAMANIO_PAGINA);
 
 				handshakeOK = 1;
 
-				free(buffer);
-				buffer = malloc(sizeof(int));
-
 				if(!init_SwapFile()){
-					puts("An error ocured while creating the swap file. Check the conf file!");
-					exit(1);
+					puts("[ERROR] SWAP file couldn't be created. Check the conf file!");
+					close_SwapProcess();
 				}
+			} else {
+				puts("[ERROR] Error while trying to complete handshake");
 			}
 		}
 
@@ -378,21 +376,20 @@ void init_Server(){
 }
 
 void umc_leer(){
-	char* buffer = malloc(sizeof(int));
-
 	int pid;
 	int numeroPagina;
 
 	char* respuesta;
+	char* buffer = malloc(sizeof(int));
 	char tramaAEnviar[TAMANIO_PAGINA];
 
 	//Recibo el PID
 	if(recv(umcSocket, buffer, 1, 0)<= 0)
 		exit(1);
 
+	//Lo convertimos a int
 	char aux;
 	memcpy(&aux,buffer,1);
-	//free(buffer);
 	pid = aux - '0';
 
 	free(buffer);
@@ -402,13 +399,12 @@ void umc_leer(){
 	if(recv(umcSocket, buffer, 1, 0)<= 0)
 		exit(1);
 
+	//Lo convertimos a int
 	memcpy(&aux,buffer,1);
-	//free(buffer);
 	numeroPagina = aux - '0';
 
 	free(buffer);
 	buffer = malloc(sizeof(char[TAMANIO_PAGINA]));
-
 
 	//Hacemos el request
 	char* resultadoRequest = request_Lectura(pid, numeroPagina);
@@ -427,19 +423,17 @@ void umc_leer(){
 			exit(1);
 		}
 
-		/*
-		free(buffer);
-		free(codigo);
-		free(respuesta);
-		*/
-
 	} else { //ENVIAMOS ERROR A UMC
-		char error = 'E';
+		char error[1] = {'E'};
 		if(send(umcSocket,(void *) error, 1,0) == -1) {
 			perror("send");
-			exit(1);
 		}
 	}
+
+	/*
+	free(buffer);
+	free(respuesta);
+	*/
 }
 
 void umc_escribir(){
@@ -508,10 +502,9 @@ void umc_escribir(){
 		*/
 
 	} else { //ENVIAMOS ERROR A UMC
-		char error = 'E';
+		char error[1] = {'E'};
 		if(send(umcSocket,(void *) error, 1,0) == -1) {
 			perror("send");
-			exit(1);
 		}
 	}
 
@@ -523,8 +516,6 @@ void umc_finalizarPrograma(){
 	char* buffer = malloc(sizeof(int));
 
 	int pid;
-	int numeroPagina;
-	char* codigo = malloc(sizeof(char[TAMANIO_PAGINA]));
 
 	char* respuesta;
 	char tramaAEnviar[SIZE_TRAMA];
@@ -612,7 +603,7 @@ int init_SwapFile(){
 		free(comandoCrearSwap);
 		return 0;
 	}else{
-		puts("SWAP file has been successfully created!");
+		puts("[INFO] SWAP file has been successfully created!");
 		free(comandoCrearSwap);
 	}
 
@@ -802,6 +793,7 @@ int swap_LiberarPrograma(int pidDelProceso){
 
 	while(current != NULL){
 		if(current->infoPagina->pid == pidDelProceso){
+			bitarray_clean_bit(bitArrayStruct, current->infoPagina->bitMapPosition);
 			listaControl_EliminarNodoIndex(i); //CUIDADO
 
 			modificaciones++;
@@ -1093,9 +1085,6 @@ int listaControl_EliminarNodoIndex(int index){
 	temp_node = current->next;
 	current->next = temp_node->next;
 
-	//Limpiamos el bit!
-	bitarray_clean_bit(bitArrayStruct, temp_node->infoPagina->bitMapPosition);
-
 	free(temp_node->infoPagina);
 	free(temp_node);
 
@@ -1151,6 +1140,10 @@ void imprimir_EstadoBitMap(){
  *		   Otras
  *
  *************************/
+char obtenerPrimerChar(void* buffer){
+
+}
+
 int mod (int a, int b){
    int ret = a % b;
 
