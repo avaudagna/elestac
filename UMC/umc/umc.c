@@ -49,6 +49,7 @@ typedef struct umc_parametros {
 typedef struct _pagina {
 	int nroPagina;
 	int presencia;
+	int modificado;
 }PAGINA;
 
 typedef struct _pidPaginas {
@@ -68,7 +69,10 @@ void AtenderKernel(int * socketBuff);
 void RecibirYAlmacenarNuevoProceso(int * socketBuff, int cantidadPaginasSolicitadas, int pid_aux);
 void DividirEnPaginas( int cantidadPaginasSolicitadas,int pid_aux, int paginasDeCodigo,char codigo[],int code_size);
 void EnviarTramaAlSwap(char trama[],int size_trama);
-void AgendarNuevaPagina(int pid,int nroPagina);
+void AgregarPagina(t_list * header,int pid,PAGINA * pagina_aux);
+t_list * ObtenerTablaDePaginasDePID(t_list *header,int pid);
+bool CompararPid(PAGINA * data,int pid);
+t_list * GetHeadListaPaginas(PIDPAGINAS * data);
 
 bool filtrarPorPid ( void * );
 bool filtrarPorNroPagina ( void *);
@@ -577,6 +581,8 @@ void DividirEnPaginas( int cantidadPaginasSolicitadas,int pid_aux, int paginasDe
 		bytes_restantes=0;
 	char * aux_code,
 		   trama[page_size+sizeof(pid_aux)+sizeof(nroDePagina)];  // PAGE SIZE !!!!!!!!!!!!!
+	PAGINA * page_node;
+
 /*Cosas a Realizar por cada pagina :
  * 1. Armo la trama para enviarle a SWAP
  * 2. Envio la trama al SWAP
@@ -601,9 +607,16 @@ void DividirEnPaginas( int cantidadPaginasSolicitadas,int pid_aux, int paginasDe
 			sprintf(&trama[sizeof(pid_aux)],"%04d",nroDePagina);
 			memcpy((void * )&trama[sizeof(pid_aux)+sizeof(nroDePagina)],aux_code,page_size);
 
+			// envio al swap la pagina
 			EnviarTramaAlSwap(trama,page_size+sizeof(pid_aux)+sizeof(nroDePagina));
 
-			AgendarNuevaPagina(pid_aux,nroDePagina);
+			page_node = (PAGINA *)malloc (sizeof(PAGINA));
+			page_node->nroPagina=nroDePagina;
+			page_node->modificado=0;
+			page_node->presencia=0;
+			// agrego pagina a la tabla de paginas asociada a ese PID
+			AgregarPagina(headerListaDePids,pid_aux,page_node);
+
 
 		}
 
@@ -620,22 +633,49 @@ void EnviarTramaAlSwap(char trama[],int size_trama){
 	}
 
 }
-void AgendarNuevaPagina(int pid,int nroPagina){
 
-	t_list *aux;
+void AgregarPagina(t_list * headerListaDePids,int pid, PAGINA *pagina_aux){
 
-	aux = list_filter(headerListaDePids,filtrarPorPid());
+	t_list * aux = NULL;
 
+	aux = ObtenerTablaDePaginasDePID(headerListaDePids,pid);
+
+	list_add(aux,pagina_aux);
+}
+
+t_list * ObtenerTablaDePaginasDePID(t_list *header,int pid){
+
+	t_link_element *aux_pointer = header->head;
+
+   while(aux_pointer != NULL){
+
+		 if (CompararPid(aux_pointer->data,pid))		// retornar puntero a lista de paginas
+			return (GetHeadListaPaginas(aux_pointer->data));
+
+	    	aux_pointer = aux_pointer->next;
+
+	}
+
+   return NULL;
 
 }
 
-bool filtrarPorPid ( void * data){
 
-	//(PIDPAGINAS *)data->pid =
-
-
-
+bool CompararPid(PAGINA * data,int pid){
+	if (data->nroPagina == pid)
+		return true;
+	else
+		return false;
 }
+
+t_list * GetHeadListaPaginas(PIDPAGINAS * data){
+
+	if (data->headListaDePaginas == NULL)
+		data->headListaDePaginas = list_create();
+
+	return data->headListaDePaginas;
+}
+
 
 
 
