@@ -1,35 +1,18 @@
 /* Kernel.c by pacevedo */
-#include <kernel.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
-#include <pthread.h>
-#include <commons/string.h>
-#include <commons/collections/list.h>
-#include <commons/collections/config.h>
-#include <commons/log.h>
-#include <parser/metadata_program.h>
-#include "socketCommons.h"
-
-int loadConfig(char*, t_setup);
-int connect2UMC();
-int RequestPages2UMC(t_metadata_program* metadata);
-void tratarSeniales(int);
-int rmvClosedClients(int *clientList, int *clientsOnline);
-int newClient(int serverSocket, int *clientSocket, int clientsOnline);
-
-char* setup;
- 
+/*
+Compilame asi:
+gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collections -o kernel socketCommons.c kernel.c -L/usr/lib -lcommons -lparser-ansisop
+*/
+#include "kernel.h"
 int main (int argc, char **argv) {
-
+	puts(" .:: Vamo a calmarno que viene el Kernel ::.");
 	if(argc==2){
 		if(loadConfig(argv[1],&setup)<0){
-    		puts("Config file can not be loaded. Please, try again.");
+    		puts(" Config file can not be loaded.\n Please, try again.\n");
     		return -1;
     	}
 	}else{
-    	printf("Usage: ./kernel setup.data \n\n");
+    	printf(" Usage: ./kernel setup.data \n\n");
     	return -1;
 	}
 
@@ -40,24 +23,32 @@ int main (int argc, char **argv) {
 	fd_set allSockets;
 
 	int serverSocket;
-	int clientSocket[MAX_CLIENTS]={0};
 	int read_size = 0;
-	int clientsOnline=0; /* CPUs and Consoles */
+	int consoleSockets[MAX_CLIENTS]={0};
+	int cpuSockets[MAX_CLIENTS]={0};
+	int cpusOnline=0;
+	int consolesOnline=0;
 	int maxSocket=0;
+	int maxCPUs=0;
+	int maxConsoles=0;
 
-	t_list kernel_cpus_conectadas = list_create();
-	t_list kernel_consolas_conectadas = list_create();
+		int clientSocket[MAX_CLIENTS]={0}; // TODO Delete
+		int clientsOnline=0; // TODO Delete
 
-	char *messageBuffer = (char*) malloc(sizeof(char)*PACKAGE_SIZE);
+
+	t_list* kernel_cpus_conectadas = list_create();
+	t_list* kernel_consolas_conectadas = list_create();
+
+	char *messageBuffer = (char*) malloc(sizeof(char)*1024); // TODO delete
 	if(messageBuffer == NULL) return (-1);
 
-
-
-
-	setServerSocket(&serverSocket, KERNEL_IP, KERNEL_PORT); // Create the server
+	setServerSocket(&serverSocket, KERNEL_IP, KERNEL_PORT);
+	printf(".:: Server created ::.\n\n");
 	while(1){
-		sleep(1);
-		maxSocket = rmvClosedClients (clientSocket, &clientsOnline); /* update clients online counter */
+		sleep(1); // TODO Delete
+		maxCPUs = rmvClosedCPUs (cpuSockets, &cpusOnline); /* update clients online counter */
+		maxConsoles = rmvClosedConsoles (consoleSockets, &consolesOnline); /* update clients online counter */
+     	maxSocket=(maxCPUs>maxConsoles)?maxCPUs:maxConsoles;
 		if(maxSocket<serverSocket) maxSocket=serverSocket;
 		FD_ZERO(&allSockets); /* Clear all sockets */
 		FD_SET(serverSocket, &allSockets);
@@ -70,13 +61,13 @@ int main (int argc, char **argv) {
 				if((read_size = recv(clientSocket[i], messageBuffer, 2, 0)) > 0){
 					if(strcmp(messageBuffer, "C0") == 0){
 						//CPU connection
-						read_size = recv(clientSocket[i], messageBuffer, PACKAGE_SIZE, 0);
+						read_size = recv(clientSocket[i], messageBuffer, 2, 0);
 						printf("CPU says:%s\n",messageBuffer);
 					}else if((strcmp(messageBuffer, "C1")) == 0 ){
 						// CPU msg 1
 						//write(clientSocket, fakePCB, strlen(fakePCB)); //send fake PCB
-						write(clientSocket, "holi", 4); //send fake PCB
-						while( (read_size = recv(clientSocket , messageBuffer , PACKAGE_SIZE , 0)) > 0 ) {
+						write(clientSocket[i], "holi", 4); //send fake PCB
+						while( (read_size = recv(clientSocket[i], messageBuffer , 2 , 0)) > 0 ) {
 							// wait for CPU to finish
 							if(messageBuffer!=NULL) puts(messageBuffer);
 							break;
@@ -128,12 +119,11 @@ int main (int argc, char **argv) {
 						int instrucciones=newPCB->instrucciones_size;
 						puts("El cod");
 						for(i=0;i<instrucciones;i++){
-							puts();
 							(newPCB->instrucciones_serializado+i)->start;
 							(newPCB->instrucciones_serializado+i)->offset;
 						}
 						//printf("Cantidad de etiquetas: %i \n\n",newPCB->cantidad_de_etiquetas);
-						if(RequestPages2UMC(newPCB)){
+						if(requestPages2UMC(newPCB)){
 							puts("Ask UMC for pages to allocate PCB");
 							//create PCB and submit to UMC for storage
 							//serialize newPCB and submit
@@ -152,12 +142,12 @@ int main (int argc, char **argv) {
 	return 0;
 }
 
-int loadConfig(char* configFile, t_setup setup){
-	if(strlen(configFile)<1){
+int loadConfig(char* configFile, t_setup *setup){
+	if(configFile == NULL){
 		return -1;
 	}
 	t_config *config = config_create(configFile);
-	puts(".:: Loading settings ::.");
+	puts(" .:: Loading settings ::.");
 
 	if(config != NULL){
 		setup->PUERTO_PROG=config_get_int_value(config,"PUERTO_PROG");
@@ -178,24 +168,25 @@ int loadConfig(char* configFile, t_setup setup){
 int connect2UMC(){
 	int clientUMC;
 	if(getClientSocket(&clientUMC, IP_UMC, PUERTO_UMC)) return (-1);
-	send(clientUMC , "0"+STACK_SIZE , 5 , 0);
-	if(recv(clientUMC , PAGE_SIZE , 4, 0) < 0) {
+	send(clientUMC, "0"+ setup.STACK_SIZE, 5 , 0);
+	if(recv(clientUMC, &setup.PAGE_SIZE , 4, 0) < 0) {
 	   puts("Mommy, UMC didn't send the PAGE_SIZE :-(");
 	}
 	return clientUMC;
 }
 
-int RequestPages2UMC(t_metadata_program* metadata){
-	msg = (char*) calloc(sizeof(char),PACKAGE_SIZE);
-	send(clientUMC , "hay espacio?" , PACKAGE_SIZE , 0);
+int requestPages2UMC(t_metadata_program* metadata){
+	int clientUMC=5; //TODO Delete
+	char* msg = (char*) calloc(sizeof(char),2);
+	send(clientUMC , "hay espacio?" , 2 , 0);
 	if( recv(clientUMC , msg , 1, 0) < 0) {
 	   puts("recv failed");
 	}
-	if( send(clientUMC , "codigo", PACKAGE_SIZE , 0) < 0) {
+	if( send(clientUMC , "codigo", 2 , 0) < 0) {
 	   puts("Send failed");
 	   return 1;
 	}
-	if( recv(clientUMC , msg , PACKAGE_SIZE , 0) < 0) {
+	if( recv(clientUMC , msg , 2 , 0) < 0) {
 		puts("recv failed");
 	}
 	puts("UMC reply :");
@@ -219,21 +210,37 @@ void tratarSeniales(int senial){
 			break;
 	}
 }
-int rmvClosedClients(int *clientList, int *clientsOnline){
-/* Removes client sockets which closed the connection.
- * Removes "-1" from the list, updates the clientsOnline.
- * Returns the ID of the last socket descriptor in the list.
- */
+int rmvClosedCPUs(int *cpuList, int *cpusOnline){
 	int i;int j=0;
-	if(*clientsOnline == 0){ return 0; }
-	for(i=0; i<(*clientsOnline); i++){
-		if(clientList[i] != -1 && clientList[i]>0){
-			clientList[j] = clientList[i];
+	if(*cpusOnline == 0) return 0;
+	for(i=0; i<(*cpusOnline); i++){
+		if (cpuList[i]==-1)	killCPU(cpuList[i]);
+		if(cpuList[i]>0){
+			cpuList[j] = cpuList[i];
 			j++;
 		}
 	}
-	*clientsOnline = j; return clientList[j];
+	*cpusOnline = j; return cpuList[j];
 }
+int rmvClosedConsoles(int *consoleList, int *consolesOnline){
+	int i;int j=0;
+	if(*consolesOnline == 0) return 0;
+	for(i=0; i<(*consolesOnline); i++){
+		if(consoleList[i] == -1) killCONSOLE(consoleList[i]);
+		if(consoleList[i]>0){	
+			consoleList[j] = consoleList[i];
+			j++;
+		}
+	}
+	*consolesOnline = j; return consoleList[j];
+}
+void killCPU(int cpu){
+	printf("Bye bye CPU %d\n", cpu);
+}
+void killCONSOLE(int console){
+	printf("Bye bye Console %d\n", console);
+}
+
 int newClient(int serverSocket, int *clientSocket, int clientsOnline){
 /* Accepts a new connection from a client.
  * Returns  0 if max clients have been reached.
