@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -45,11 +46,17 @@ typedef struct umc_parametros {
 }UMC_PARAMETERS;
 
 
-typedef struct parametros_hilos {
-	int * socketBuff;
-	char * package;
-}PARAMETROS_HILO;
+typedef struct _pagina {
+	int nroPagina;
+	int presencia;
+}PAGINA;
 
+typedef struct _pidPaginas {
+	int pid;
+	t_list * headListaDePaginas;
+}PIDPAGINAS;
+
+t_list *headerListaDePids;
 
 
 // Funciones para/con KERNEL
@@ -62,6 +69,10 @@ void RecibirYAlmacenarNuevoProceso(int * socketBuff, int cantidadPaginasSolicita
 void DividirEnPaginas( int cantidadPaginasSolicitadas,int pid_aux, int paginasDeCodigo,char codigo[],int code_size);
 void EnviarTramaAlSwap(char trama[],int size_trama);
 void AgendarNuevaPagina(int pid,int nroPagina);
+
+bool filtrarPorPid ( void * );
+bool filtrarPorNroPagina ( void *);
+
 
 #define SIZE_HANDSHAKE_KERNEL 5
 
@@ -171,6 +182,7 @@ void Init_UMC(void)
  * void Init_Parameters (char * file_conf){
  *
  * 		//leo el file y cargo la estructura Umc_Global_Parameters
+ * 		// headerListaDePids = list_create();
  *
  * }
  *
@@ -507,13 +519,12 @@ void ProcesoSolicitudNuevoProceso(int * socketBuff){
 
 	if ( cantidadDePaginasSolicitadas < paginasLibresEnSwap) {	// Se puede almacenar el nuevo proceso , respondo que SI
 
+		RecibirYAlmacenarNuevoProceso(socketBuff,cantidadDePaginasSolicitadas,pid_aux);
+
 		char trama_handshake[2]={'S','I'};
 
-		if ( send(*socketBuff,(void *)trama_handshake,2,0) == -1){
+		if ( send(*socketBuff,(void *)trama_handshake,2,0) == -1)
 			perror("send");
-		}
-		else
-			RecibirYAlmacenarNuevoProceso(socketBuff,cantidadDePaginasSolicitadas,pid_aux);
 
 	}else{
 
@@ -532,6 +543,13 @@ void RecibirYAlmacenarNuevoProceso(int * socketBuff,int cantidadPaginasSolicitad
 // obtengo code_size
 
 	int code_size;
+
+	PIDPAGINAS nuevo_pid;
+
+	nuevo_pid.pid = pid_aux;
+	nuevo_pid.headListaDePaginas = NULL;
+
+	list_add(headerListaDePids,(void *)&(nuevo_pid));		//agrego nuevo PID
 
 	if( (recv(*socketBuff, (void*) (&code_size), sizeof(code_size), 0)) <= 0){
 		perror("recv");
@@ -604,9 +622,22 @@ void EnviarTramaAlSwap(char trama[],int size_trama){
 }
 void AgendarNuevaPagina(int pid,int nroPagina){
 
+	t_list *aux;
+
+	aux = list_filter(headerListaDePids,filtrarPorPid());
 
 
 }
+
+bool filtrarPorPid ( void * data){
+
+	//(PIDPAGINAS *)data->pid =
+
+
+
+}
+
+
 
 void Init_Swap(void){
 
