@@ -1,42 +1,40 @@
 /* Kernel.c by pacevedo */
+#include <kernel.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
+#include <pthread.h>
 #include <commons/string.h>
 #include <commons/collections/list.h>
+#include <commons/collections/config.h>
 #include <commons/log.h>
 #include <parser/metadata_program.h>
 #include "socketCommons.h"
 
-typedef enum {NEW, READY, EXECUTING, BLOCKED, EXIT} t_queue;
-
-typedef struct {
-		uint32_t pid;
-		uint32_t instrucciones_serializado;
-		uint32_t instrucciones_size;
-		uint32_t program_counter;
-		uint32_t stack_base;
-		uint32_t stack_cursor;
-		uint32_t stack_size;
-		t_queue status;
-	} t_pcb;
-
-#define MAX_CLIENTS 100
-#define KERNEL_IP "127.0.0.1"
-#define LOCALHOST "127.0.0.1"
-#define UMC_IP "127.0.0.1"
-#define PROTOCOL_SIZE 2
-
-int UMC_PORT = 56793; /* defines que funcionaran como string */
-int KERNEL_PORT = 54326; /* cuando alan cambie la funcion de la common */
-
+int loadConfig(char*, t_setup);
+int connect2UMC();
 int RequestPages2UMC(t_metadata_program* metadata);
 void tratarSeniales(int);
 int rmvClosedClients(int *clientList, int *clientsOnline);
 int newClient(int serverSocket, int *clientSocket, int clientsOnline);
 
+char* setup;
+ 
 int main (int argc, char **argv) {
+
+	if(argc==2){
+		if(loadConfig(argv[1],&setup)<0){
+    		puts("Config file can not be loaded. Please, try again.");
+    		return -1;
+    	}
+	}else{
+    	printf("Usage: ./kernel setup.data \n\n");
+    	return -1;
+	}
+
+	int clientUMC=connect2UMC();	
+
 	signal (SIGINT, tratarSeniales);
 	int i;
 	fd_set allSockets;
@@ -47,11 +45,15 @@ int main (int argc, char **argv) {
 	int clientsOnline=0; /* CPUs and Consoles */
 	int maxSocket=0;
 
-	kernel_cpus_conectadas = list_create();
-	kernel_consolas_conectadas = list_create();
+	t_list kernel_cpus_conectadas = list_create();
+	t_list kernel_consolas_conectadas = list_create();
 
 	char *messageBuffer = (char*) malloc(sizeof(char)*PACKAGE_SIZE);
 	if(messageBuffer == NULL) return (-1);
+
+
+
+
 	setServerSocket(&serverSocket, KERNEL_IP, KERNEL_PORT); // Create the server
 	while(1){
 		sleep(1);
@@ -149,11 +151,41 @@ int main (int argc, char **argv) {
 	close(serverSocket);
 	return 0;
 }
-int RequestPages2UMC(t_metadata_program* metadata){
-	int clientUMC;
-	if(getClientSocket(&clientUMC, UMC_IP, UMC_PORT)) return (-1);
-	char *msg = NULL;
 
+int loadConfig(char* configFile, t_setup setup){
+	if(strlen(configFile)<1){
+		return -1;
+	}
+	t_config *config = config_create(configFile);
+	puts(".:: Loading settings ::.");
+
+	if(config != NULL){
+		setup->PUERTO_PROG=config_get_int_value(config,"PUERTO_PROG");
+		setup->PUERTO_CPU=config_get_int_value(config,"PUERTO_CPU");
+		setup->QUANTUM=config_get_int_value(config,"QUANTUM");
+		setup->QUANTUM_SLEEP=config_get_int_value(config,"QUANTUM_SLEEP");
+		setup->IO_ID=config_get_array_value(config,"IO_ID");
+		setup->IO_SLEEP=config_get_array_value(config,"IO_SLEEP");
+		setup->SEM_ID=config_get_array_value(config,"SEM_ID");
+		setup->SEM_INIT=config_get_array_value(config,"SEM_INIT");
+		setup->SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
+		setup->STACK_SIZE=config_get_int_value(config,"STACK_SIZE");
+	}
+	config_destroy(config);
+	return 0;
+}
+
+int connect2UMC(){
+	int clientUMC;
+	if(getClientSocket(&clientUMC, IP_UMC, PUERTO_UMC)) return (-1);
+	send(clientUMC , "0"+STACK_SIZE , 5 , 0);
+	if(recv(clientUMC , PAGE_SIZE , 4, 0) < 0) {
+	   puts("Mommy, UMC didn't send the PAGE_SIZE :-(");
+	}
+	return clientUMC;
+}
+
+int RequestPages2UMC(t_metadata_program* metadata){
 	msg = (char*) calloc(sizeof(char),PACKAGE_SIZE);
 	send(clientUMC , "hay espacio?" , PACKAGE_SIZE , 0);
 	if( recv(clientUMC , msg , 1, 0) < 0) {
