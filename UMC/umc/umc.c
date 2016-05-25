@@ -56,10 +56,12 @@ typedef struct parametros_hilos {
 int IdentificarOperacion(int * socketBuff);
 void HandShakeKernel(int * socketBuff);
 void ProcesoSolicitudNuevoProceso(int * socketBuff);
-void FinalizarProceso(int * socketBuff,char * package);
+void FinalizarProceso(int * socketBuff);
 void AtenderKernel(int * socketBuff);
-void RecibirYAlmacenarPaginas(int * socketBuff, int cantidadPaginasSolicitadas);
-//int EsperandoKernel(int * socketBuff);
+void RecibirYAlmacenarNuevoProceso(int * socketBuff, int cantidadPaginasSolicitadas, int pid_aux);
+void DividirEnPaginas( int cantidadPaginasSolicitadas,int pid_aux, int paginasDeCodigo,char codigo[],int code_size);
+void EnviarTramaAlSwap(char trama[],int size_trama);
+void AgendarNuevaPagina(int pid,int nroPagina);
 
 #define SIZE_HANDSHAKE_KERNEL 5
 
@@ -96,7 +98,7 @@ void Menu_UMC(void);
 void Procesar_Conexiones(void);
 //FunctionPointer QuienSos( int * _socketCliente, PARAMETROS_HILO **param);
 
-FunctionPointer QuienSos(PARAMETROS_HILO **param);
+FunctionPointer QuienSos(int * socketBuff);
 void AtenderCPU(int * socketBuff);
 
 int main(){
@@ -278,7 +280,7 @@ void Procesar_Conexiones (void)
 	socklen_t addrlen = sizeof(addr);
     pthread_t *thread_id;				// pthread pointer, por cada nueva conexion , creo uno nuevo
     FunctionPointer ConnectionHandler;
-    PARAMETROS_HILO * param = NULL;
+    //PARAMETROS_HILO * param = NULL;
 
       if( ( socketBuffer = accept(socketServidor, (struct sockaddr *) &addr, &addrlen) ) == -1 ) {
     	  perror("accept");
@@ -289,13 +291,13 @@ void Procesar_Conexiones (void)
 	    socketCliente = (int *) malloc ( sizeof(int));
 	    *socketCliente = socketBuffer;
 	    thread_id = (pthread_t * ) malloc (sizeof(pthread_t));	// new thread
-	    param = (PARAMETROS_HILO *) malloc ( sizeof(PARAMETROS_HILO));
+	    //param = (PARAMETROS_HILO *) malloc ( sizeof(PARAMETROS_HILO));
 
-	    param->socketBuff = socketCliente;
-	    ConnectionHandler = QuienSos(&param);
+	    //param->socketBuff = socketCliente;
+	    ConnectionHandler = QuienSos(socketCliente);
 	//ConnectionHandler = QuienSos(socketCliente,&param);
 
-	if( pthread_create( thread_id , NULL , (boid_function_boid_pointer) ConnectionHandler , (void*) &socketCliente) < 0)
+	if( pthread_create( thread_id , NULL , (boid_function_boid_pointer) ConnectionHandler , (void*) socketCliente) < 0)
 	  //if( pthread_create( thread_id , NULL , (boid_function_boid_pointer) ConnectionHandler , (void*) param ) < 0)
 	    {
 			perror("pthread_create");
@@ -319,10 +321,10 @@ void Menu_UMC(void)
 
 
 //FunctionPointer QuienSos( int * _socketCliente , PARAMETROS_HILO **param) {
-FunctionPointer QuienSos(PARAMETROS_HILO **param) {
+FunctionPointer QuienSos(int * socketBuff) {
 
 	FunctionPointer aux = NULL;
-	int   socketCliente					= *((*param)->socketBuff),
+	int   socketCliente					= *socketBuff,
 		  cantidad_de_bytes_recibidos 	= 0;
 	//char *package 						= NULL;
 	char package;
@@ -378,16 +380,6 @@ FunctionPointer QuienSos(PARAMETROS_HILO **param) {
 	return aux;
 
 }
-
-/*
-void AtenderKernel(int * socketBuff ){
-
-	printf("\nHola , soy el thread encargado de la comunicacion con el Kernel!! :)");
-	contConexionesNucleo--; // finaliza la comunicacion con el socket
-	close(*socketBuff); // cierro socket
-	pthread_exit(0);	// chau thread
-
-}*/
 
 void AtenderCPU(int * socketBuff){
 
@@ -490,7 +482,7 @@ void  HandShakeKernel(int * socketBuff){
 
 }
 
-/* TRAMA : 1+PID+CANTIDAD_PAGINAS
+/* TRAMA : 1+PID+CANT PAGs+CODE SIZE+CODE
  **/
 
 void ProcesoSolicitudNuevoProceso(int * socketBuff){
@@ -521,7 +513,7 @@ void ProcesoSolicitudNuevoProceso(int * socketBuff){
 			perror("send");
 		}
 		else
-			RecibirYAlmacenarPaginas(socketBuff,cantidadDePaginasSolicitadas);
+			RecibirYAlmacenarNuevoProceso(socketBuff,cantidadDePaginasSolicitadas,pid_aux);
 
 	}else{
 
@@ -533,29 +525,88 @@ void ProcesoSolicitudNuevoProceso(int * socketBuff){
 
 }
 
-void RecibirYAlmacenarPaginas(int * socketBuff,int cantidadPaginasSolicitadas){
+/*TRAMA : 1+PID+CANT PAGs+CODE SIZE+CODE
+ * */
+void RecibirYAlmacenarNuevoProceso(int * socketBuff,int cantidadPaginasSolicitadas, int pid_aux){
 
-int i = 0;
-char *package = NULL;
+// obtengo code_size
 
-package = (char *) malloc ( PAGE_SIZE + PID_SIZE );
+	int code_size;
 
-	for(i=0;i<cantidadPaginasSolicitadas ; i++){
+	if( (recv(*socketBuff, (void*) (&code_size), sizeof(code_size), 0)) <= 0){
+		perror("recv");
+	}else{
+		// obtengo codigo
+		int paginasDeCodigo = code_size / 5;  //definir parametro tamanio pagina !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		char codigo[code_size];
 
-		recv(*socketBuff,(void *) package, sizeof(package),0);
+		if( (recv(*socketBuff, (void*) (codigo), code_size, 0)) <= 0){
+				perror("recv");
+		}
+		else{
+			  DividirEnPaginas(cantidadPaginasSolicitadas,pid_aux,paginasDeCodigo,codigo,code_size);
+		}
+	}
 
-		// recibo pid + pagina
+}
 
-		// punteroHeaderPaginasPid=listaDeTablasDePaginas(pid)
+/*1+pid+numPagina+codigo*/
+void DividirEnPaginas( int cantidadPaginasSolicitadas,int pid_aux, int paginasDeCodigo,char codigo[],int code_size){
 
-		// agregarNodo(punteroHeaderPaginasPid,PID,i ( nro de pagina) )
+	int i = 0,
+		nroDePagina=0,
+		j = 0,
+		bytes_restantes=0;
+	char * aux_code,
+		   trama[page_size+sizeof(pid_aux)+sizeof(nroDePagina)];  // PAGE SIZE !!!!!!!!!!!!!
+/*Cosas a Realizar por cada pagina :
+ * 1. Armo la trama para enviarle a SWAP
+ * 2. Envio la trama al SWAP
+ * 2. Agrego a la tabla de paginas asociada a ese PID
+ * */
 
+	for ( i=0; i < paginasDeCodigo ; i++ , nroDePagina++ , j+=page_size ){
+
+		aux_code = (char * ) malloc( page_size );
+		if ( nroDePagina < (paginasDeCodigo - 1) ){
+			memcpy((void * )aux_code,&codigo[j],page_size);
+
+		}else{	// ultima pagina
+			bytes_restantes = ( paginasDeCodigo * page_size ) - code_size;
+				if (!bytes_restantes)	// si la cantidad de bytes es multiplo del tamaño de pagina , entonces la ultima pagina se llena x completo
+					memcpy((void * )aux_code,&codigo[j],page_size);
+				else
+					memcpy((void * )aux_code,&codigo[j],bytes_restantes);
+
+				// tengo : pid+nroDePagina+aux_code
+			sprintf(trama,"%04d",pid_aux);
+			sprintf(&trama[sizeof(pid_aux)],"%04d",nroDePagina);
+			memcpy((void * )&trama[sizeof(pid_aux)+sizeof(nroDePagina)],aux_code,page_size);
+
+			EnviarTramaAlSwap(trama,page_size+sizeof(pid_aux)+sizeof(nroDePagina));
+
+			AgendarNuevaPagina(pid_aux,nroDePagina);
+
+		}
 
 
 	}
 
 }
 
+void EnviarTramaAlSwap(char trama[],int size_trama){
+
+	if ( send(socketClienteSwap,(void *)trama,size_trama,0) == -1 ){
+		perror("send");
+		exit(1);
+	}
+
+}
+void AgendarNuevaPagina(int pid,int nroPagina){
+
+
+
+}
 
 void Init_Swap(void){
 
