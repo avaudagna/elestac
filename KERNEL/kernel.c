@@ -15,9 +15,13 @@ int main (int argc, char **argv) {
     	printf(" Usage: ./kernel setup.data \n\n");
     	return -1;
 	}
-
-	int clientUMC=connect2UMC();	
-
+	//int clientUMC=connect2UMC();
+	int clientUMC=100;
+	setup.PAGE_SIZE=1024;
+	if(clientUMC<0){
+		puts("Could not connect to the UMC. Please, try again.");
+		return 0;
+	}
 	signal (SIGINT, tratarSeniales);
 	int i;
 	fd_set allSockets;
@@ -43,7 +47,7 @@ int main (int argc, char **argv) {
 	if(messageBuffer == NULL) return (-1);
 
 	setServerSocket(&serverSocket, KERNEL_IP, KERNEL_PORT);
-	printf(".:: Server created ::.\n\n");
+	printf(" .:: Server created ::.\n\n");
 	while(1){
 		sleep(1); // TODO Delete
 		maxCPUs = rmvClosedCPUs (cpuSockets, &cpusOnline); /* update clients online counter */
@@ -101,7 +105,7 @@ int main (int argc, char **argv) {
 			if(aceptado>clientsOnline){
 				clientsOnline=aceptado;
 				char clientID[2];
-				sprintf(clientID, "%02d\n", (int) clientSocket[clientsOnline-1]);
+				sprintf(clientID, "%02d", (int) clientSocket[clientsOnline-1]);
 				if((read_size = recv(clientSocket[clientsOnline-1], messageBuffer, 2, 0)) > 0){
 					if(strcmp(messageBuffer, "T0") == 0){
 						puts ("A console is calling, let's handshake!");
@@ -160,18 +164,25 @@ int loadConfig(char* configFile){
 		setup.SEM_INIT=config_get_array_value(config,"SEM_INIT");
 		setup.SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
 		setup.STACK_SIZE=config_get_int_value(config,"STACK_SIZE");
+		setup.PUERTO_UMC=config_get_int_value(config,"PUERTO_UMC");
+		setup.IP_UMC=config_get_string_value(config,"IP_UMC");
 	}
-	config_destroy(config);
+	//config_destroy(config);
 	return 0;
 }
 
 int connect2UMC(){
 	int clientUMC;
-	if(getClientSocket(&clientUMC, IP_UMC, PUERTO_UMC)) return (-1);
-	send(clientUMC, "0"+ setup.STACK_SIZE, 5 , 0);
-	if(recv(clientUMC, &setup.PAGE_SIZE , 4, 0) < 0) {
-	   puts("Mommy, UMC didn't send the PAGE_SIZE :-(");
-	}
+	printf(" .:: Connecting to UMC on %s:%d ::.\n",setup.IP_UMC,setup.PUERTO_UMC);
+	if(getClientSocket(&clientUMC, setup.IP_UMC, setup.PUERTO_UMC)) return (-1);
+	sprintf(global_buffer_4, "%04d", (int) setup.STACK_SIZE);
+	char* buffer;
+	asprintf(&buffer, "%s%s", "0", global_buffer_4);
+	send(clientUMC, buffer, 5 , 0);
+	printf(" .:: Stack size (sent to UMC): %s ::.\n",global_buffer_4);
+	if(recv(clientUMC, &global_buffer_4, 4, 0) < 0) return (-1);
+	setup.PAGE_SIZE=atoi(global_buffer_4);
+	printf(" .:: Page size: (received from UMC): %d ::.\n",setup.PAGE_SIZE);
 	return clientUMC;
 }
 

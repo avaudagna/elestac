@@ -40,11 +40,23 @@ typedef struct {
 		char** 	SHARED_VARS;
 		int 	STACK_SIZE;
 		int 	PAGE_SIZE;
+		int 	PUERTO_UMC;
+		char*	IP_UMC;
 	} t_setup;
 
-#define KERNEL_IP "127.0.0.1"
-#define IP_UMC "127.0.0.1"  /* can I add this to the config file? */
-#define PUERTO_UMC 56793	/* can I add this to the config file? */
+// TODO Delete
+typedef struct {
+   int pos;
+   int cant_args;
+   char *args; //12 bytes por arg
+   int cant_vars;
+   char *vars; //13 bytes por var
+   int ret_pos;
+   int cant_ret_vars;
+   char *ret_vars;// 12 bytes por ret_var
+} t_stack_entry;
+
+#define KERNEL_IP "192.168.0.12"
 #define KERNEL_PORT 54326
 #define MAX_CLIENTS 100 /* TODO Delete this */
 
@@ -66,5 +78,6 @@ void 	killCONSOLE(int console);
 int 	newClient(int serverSocket, int *clientSocket, int clientsOnline);
 
 t_setup	setup; // GLOBAL settings
+char global_buffer_4[4];
 
 #endif

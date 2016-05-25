@@ -7,22 +7,22 @@ int getClientSocket(int* clientSocket, const char* address, const int port) {
 	server.sin_addr.s_addr = inet_addr(address);
 	server.sin_family = AF_INET;
 	server.sin_port = htons(port);
-	if (connect(*clientSocket , (struct sockaddr *)&server , sizeof(server)) < 0) {
-		perror("Connect failed.\n");
+	if(connect(*clientSocket , (struct sockaddr *)&server , sizeof(server)) < 0){
+		perror("Connect failed");
 		return (-1);
 	}
-	puts("Connected to server\n");
+	printf("\n .:: Connected to server in %s:%d ::.\n",address,port);
 	return 0;
 }
 
 int setServerSocket(int* serverSocket, const char* address, const int port) {
 	struct sockaddr_in serverConf;
-	*serverSocket = socket(AF_INET , SOCK_STREAM , 0);
+	*serverSocket = socket(AF_INET, SOCK_STREAM , 0);
 	if (*serverSocket == -1) puts("Could not create socket.");
 	serverConf.sin_family = AF_INET;
 	serverConf.sin_addr.s_addr = inet_addr(address);
 	serverConf.sin_port = htons(port);
-	if( bind(*serverSocket,(struct sockaddr *)&serverConf , sizeof(serverConf)) < 0) {
+	if( bind(*serverSocket,(struct sockaddr *)&serverConf, sizeof(serverConf)) < 0) {
 		perror("Bind failed.");
 		return (-1);
 	}
