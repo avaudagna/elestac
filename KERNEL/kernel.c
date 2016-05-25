@@ -7,7 +7,7 @@ gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collecti
 int main (int argc, char **argv) {
 	puts(" .:: Vamo a calmarno que viene el Kernel ::.");
 	if(argc==2){
-		if(loadConfig(argv[1],&setup)<0){
+		if(loadConfig(argv[1])<0){
     		puts(" Config file can not be loaded.\n Please, try again.\n");
     		return -1;
     	}
@@ -142,7 +142,7 @@ int main (int argc, char **argv) {
 	return 0;
 }
 
-int loadConfig(char* configFile, t_setup *setup){
+int loadConfig(char* configFile){
 	if(configFile == NULL){
 		return -1;
 	}
@@ -150,16 +150,16 @@ int loadConfig(char* configFile, t_setup *setup){
 	puts(" .:: Loading settings ::.");
 
 	if(config != NULL){
-		setup->PUERTO_PROG=config_get_int_value(config,"PUERTO_PROG");
-		setup->PUERTO_CPU=config_get_int_value(config,"PUERTO_CPU");
-		setup->QUANTUM=config_get_int_value(config,"QUANTUM");
-		setup->QUANTUM_SLEEP=config_get_int_value(config,"QUANTUM_SLEEP");
-		setup->IO_ID=config_get_array_value(config,"IO_ID");
-		setup->IO_SLEEP=config_get_array_value(config,"IO_SLEEP");
-		setup->SEM_ID=config_get_array_value(config,"SEM_ID");
-		setup->SEM_INIT=config_get_array_value(config,"SEM_INIT");
-		setup->SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
-		setup->STACK_SIZE=config_get_int_value(config,"STACK_SIZE");
+		setup.PUERTO_PROG=config_get_int_value(config,"PUERTO_PROG");
+		setup.PUERTO_CPU=config_get_int_value(config,"PUERTO_CPU");
+		setup.QUANTUM=config_get_int_value(config,"QUANTUM");
+		setup.QUANTUM_SLEEP=config_get_int_value(config,"QUANTUM_SLEEP");
+		setup.IO_ID=config_get_array_value(config,"IO_ID");
+		setup.IO_SLEEP=config_get_array_value(config,"IO_SLEEP");
+		setup.SEM_ID=config_get_array_value(config,"SEM_ID");
+		setup.SEM_INIT=config_get_array_value(config,"SEM_INIT");
+		setup.SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
+		setup.STACK_SIZE=config_get_int_value(config,"STACK_SIZE");
 	}
 	config_destroy(config);
 	return 0;

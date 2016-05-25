@@ -48,7 +48,7 @@ typedef struct {
 #define KERNEL_PORT 54326
 #define MAX_CLIENTS 100 /* TODO Delete this */
 
-int 	loadConfig(char*, t_setup*);
+int 	loadConfig(char*);
 int 	connect2UMC();
 int 	requestPages2UMC(t_metadata_program* metadata);
 void 	tratarSeniales(int);
@@ -65,6 +65,6 @@ void 	killCONSOLE(int console);
 
 int 	newClient(int serverSocket, int *clientSocket, int clientsOnline);
 
-t_setup	setup;
+t_setup	setup; // GLOBAL settings
 
 #endif
