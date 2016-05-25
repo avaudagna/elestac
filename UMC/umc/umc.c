@@ -47,7 +47,8 @@ typedef struct umc_parametros {
 			marcosXProc,
 			retardo,
 			entradasTLB;
-     char  *algoritmo;
+     char  *algoritmo,
+	 	   *listenningIp;
 }UMC_PARAMETERS;
 
 
@@ -216,6 +217,7 @@ void loadConfig(char* configFile){
 		puts(" .:: Loading settings ::.");
 
 		umcGlobalParameters.listenningPort=config_get_int_value(config,"PUERTO");
+		umcGlobalParameters.listenningIp=config_get_string_value(config,"IP_ESCUCHA");
 		umcGlobalParameters.ipSwap=config_get_int_value(config,"IP_SWAP");
 		umcGlobalParameters.portSwap=config_get_int_value(config,"PUERTO_SWAP");
 		umcGlobalParameters.marcos=config_get_int_value(config,"MARCOS");
@@ -264,7 +266,7 @@ void loadConfig(char* configFile){
 
 
 void Init_Socket(void){
-	setServerSocket(&socketServidor,"192.168.0.18",umcGlobalParameters.listenningPort);
+	setServerSocket(&socketServidor,umcGlobalParameters.listenningIp,umcGlobalParameters.listenningPort);
 }
 
 int setServerSocket(int* serverSocket, const char* address, const int port) {
