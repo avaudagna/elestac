@@ -2,11 +2,11 @@
 #include "stack.h"
 
 /*
- * Serializa las entradas del stack en una char*
+ * Serializa las entradas del stack en una char*.
  *
- * stack  : El stack que se quiere serializar
- * buffer : El buffer donde se quiere almacenar el stack serializado
- * buffer_size : Variable donde se almacenara el tamanio final que terminara teniendo el buffer
+ * stack  : El stack que se quiere serializar.
+ * buffer : El buffer donde se quiere almacenar el stack serializado.
+ * buffer_size : Variable donde se almacenara el tamanio final que terminara teniendo el buffer.
  */
 void serialize_stack (t_stack *stack, char **buffer, t_size *buffer_size) {
 
@@ -20,7 +20,7 @@ void serialize_stack (t_stack *stack, char **buffer, t_size *buffer_size) {
     t_link_element *link_actual = NULL;
     t_stack_entry *entrada_actual = NULL;
     char *stack_entry_item_buffer = NULL, *stack_entry_list_buffer = *buffer, *next = NULL;
-    u_int32_t int cantidad_elementos_stack = 0;
+    u_int32_t cantidad_elementos_stack = 0;
     t_stack_entry *data = NULL;
     u_int32_t indice = 0;
     t_size stack_entry_item_size = 0, stack_entry_list_buffer_size = *buffer_size;
@@ -32,9 +32,12 @@ void serialize_stack (t_stack *stack, char **buffer, t_size *buffer_size) {
     link_actual = elementos->head; //Tomo la data del primer link de la lista
     cantidad_elementos_stack = elementos->elements_count; //Cantidad de links totales en el stack
 
-    if(link_actual == NULL) {
+    if(link_actual == NULL && cantidad_elementos_stack > 0) {
         return;
     }
+    //El primer elemento que se agrega es la cantidad de elementos totales que tendra el stack
+    serialize_data(cantidad_elementos_stack,sizeof(cantidad_elementos_stack),
+                   stack_entry_list_buffer, stack_entry_list_buffer_size);
 
     for(indice = 0; indice < cantidad_elementos_stack; indice++) {
         entrada_actual = (t_stack_entry*) link_actual->data; //Tomo la data del primer link de la lista
@@ -49,12 +52,12 @@ void serialize_stack (t_stack *stack, char **buffer, t_size *buffer_size) {
 }
 
 /*
- * Agrega elementos a al buffer de stack, tiene el formato: itemSize|item
+ * Agrega elementos a al buffer de stack, tiene el formato: itemSize|item.
  *
- * list_buffer : Donde se almacena toda la lista de entradas
- * item_buffer : Elemento a agregar a la lista
- * item_size   : Tamanio del item a agregar
- * list_buffer_size : Tamanio del buffer hasta el momento
+ * list_buffer : Donde se almacena toda la lista de entradas.
+ * item_buffer : Elemento a agregar a la lista.
+ * item_size   : Tamanio del item a agregar.
+ * list_buffer_size : Tamanio del buffer hasta el momento.
  */
 void append_stack_entry(char **list_buffer, char *item_buffer, t_size item_size,
                         t_size *list_buffer_size) {
@@ -69,11 +72,13 @@ void append_stack_entry(char **list_buffer, char *item_buffer, t_size item_size,
 }
 
 /*
- * Serializa una entrada del stack a un buffer, almacenando su tamanio
+ * Serializa una entrada del stack a un buffer, almacenando su tamanio.
  *
- * entry  : La entrada que se quiere serializar
- * buffer : El buffer donde se almacenara la entrada serializada
- * buffer_size : Variable que terminara con el valor del tamanio final del buffer
+ * serialized_data format >> pos|cant_args|args|cant_vars|vars|cant_ret_vars|ret_vars.
+ *
+ * entry  : La entrada que se quiere serializar.
+ * buffer : El buffer donde se almacenara la entrada serializada.
+ * buffer_size : Variable que terminara con el valor del tamanio final del buffer.
  */
 void serialize_stack_entry(t_stack_entry *entry, char **buffer, t_size *buffer_size) {
 
@@ -86,7 +91,44 @@ void serialize_stack_entry(t_stack_entry *entry, char **buffer, t_size *buffer_s
     serialize_data(&entry->ret_vars, (t_size) entry->cant_vars, buffer, buffer_size);
 }
 
+/*
+ * Deserializa un t_stack de un conjunto de bytes.
+ *
+ * serialized_data format >> cantidadLinks|[entrySize(0)|entry(0)...entrySize(cantidadLinks-1)|entry(cantidadLinks-1)]
+ *
+ * **stack    : Donde el stack se almacenara.
+ * serialized_data : Conjunto de bytes serializados.
+ * serialized_data_size : Tamanio total del conjunto de bytes.
+ */
+void deserialize_stack(t_stack **stack, char **serialized_data, t_size *serialized_data_size) {
+    u_int32_t cantidad_links = 0, indice = 0;
+    t_stack_entry *stack_entry = NULL;
 
-void deserialize_stack(t_stack stack, char *buffer, int buffer_size) {
+    *stack = queue_create(); //Creo el stack
 
+    deserialize_data(&cantidad_links, sizeof(cantidad_links), serialized_data, serialized_data_size);
+    for(indice = 0; indice < cantidad_links; indice++) {
+        deserialize_stack_entry(&stack_entry, serialized_data, serialized_data_size);
+        queue_push(*stack, stack_entry); //Agrego elementos al stack
+    }
+}
+
+/*
+ * Deserializa un t_stack_entry de un conjunto de bytes.
+ *
+ * serialized_data format >> pos|cant_args|args|cant_vars|vars|cant_ret_vars|ret_vars
+ *
+ * **entry    : Donde el stack_entry se almacenara.
+ * serialized_data : Conjunto de bytes serializados.
+ * serialized_data_size : Tamanio total del conjunto de bytes.
+ */
+    void deserialize_stack_entry(t_stack_entry **entry, char **serialized_data, t_size *serialized_data_size) {
+
+    deserialize_data((*entry)->pos, sizeof((*entry)->pos), serialized_data, serialized_data_size);
+    deserialize_data((*entry)->cant_args, sizeof((*entry)->cant_args), serialized_data, serialized_data_size);
+    deserialize_data((*entry)->args, (t_size) (*entry)->cant_args, serialized_data, serialized_data_size);
+    deserialize_data((*entry)->cant_vars, sizeof((*entry)->cant_vars), serialized_data, serialized_data_size);
+    deserialize_data((*entry)->vars, (t_size) (*entry)->cant_vars, serialized_data, serialized_data_size);
+    deserialize_data((*entry)->cant_ret_vars, sizeof((*entry)->cant_vars), serialized_data, serialized_data_size);
+    deserialize_data((*entry)->ret_vars, (t_size) (*entry)->cant_vars, serialized_data, serialized_data_size);
 }
