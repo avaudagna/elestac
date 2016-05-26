@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include <signal.h>
 #include <pthread.h>
 #include <commons/string.h>
@@ -20,7 +21,7 @@ typedef struct {
 		int 			pid;
 		int 			program_counter;
 		int 			stack_pointer;
-		t_queue			stack_index;
+		t_queue*		stack_index;
 		enum_queue 		status;
 		t_intructions*	instrucciones_serializado;
 		t_size			instrucciones_size;
@@ -42,6 +43,7 @@ typedef struct {
 		int 	PAGE_SIZE;
 		int 	PUERTO_UMC;
 		char*	IP_UMC;
+		char*	KERNEL_IP;
 	} t_setup;
 
 // TODO Delete
@@ -56,13 +58,11 @@ typedef struct {
    char *ret_vars;// 12 bytes por ret_var
 } t_stack_entry;
 
-#define KERNEL_IP "192.168.0.12"
-#define KERNEL_PORT 54326
 #define MAX_CLIENTS 100 /* TODO Delete this */
 
 int 	loadConfig(char*);
 int 	connect2UMC();
-int 	requestPages2UMC(t_metadata_program* metadata);
+int 	requestPages2UMC(char* PID, int ansisopLen,char* code,int clientUMC);
 void 	tratarSeniales(int);
 
 

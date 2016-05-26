@@ -2,7 +2,7 @@
 #include <string.h>
 
 #define PACKET_SIZE 10
-
+/*
 int loopeo (void) {
 	char src[40];
 	char dest[PACKET_SIZE + 1];
@@ -28,4 +28,4 @@ int loopeo (void) {
 	strncpy(dest, src, 10);
 	printf("%s\n", dest);
 	return 0;
-}
+}*/
