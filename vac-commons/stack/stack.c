@@ -36,8 +36,8 @@ void serialize_stack (t_stack *stack, char **buffer, t_size *buffer_size) {
         return;
     }
     //El primer elemento que se agrega es la cantidad de elementos totales que tendra el stack
-    serialize_data(cantidad_elementos_stack,sizeof(cantidad_elementos_stack),
-                   stack_entry_list_buffer, stack_entry_list_buffer_size);
+    serialize_data(&cantidad_elementos_stack,sizeof(cantidad_elementos_stack),
+                   &stack_entry_list_buffer, &stack_entry_list_buffer_size);
 
     for(indice = 0; indice < cantidad_elementos_stack; indice++) {
         entrada_actual = (t_stack_entry*) link_actual->data; //Tomo la data del primer link de la lista
@@ -64,7 +64,7 @@ void append_stack_entry(char **list_buffer, char *item_buffer, t_size item_size,
     //Append sizeof del item
     realloc(*list_buffer, *list_buffer_size + sizeof(t_size));
     *list_buffer_size = *list_buffer_size + sizeof(t_size);
-    memcpy(*list_buffer + *list_buffer_size, sizeof(t_size), item_size );
+    memcpy(*list_buffer + *list_buffer_size, (void*) sizeof(t_size), item_size );
     //Append stack_entry
     realloc(*list_buffer, *list_buffer_size + item_size);
     *list_buffer_size = *list_buffer_size + item_size;
@@ -100,16 +100,16 @@ void serialize_stack_entry(t_stack_entry *entry, char **buffer, t_size *buffer_s
  * serialized_data : Conjunto de bytes serializados.
  * serialized_data_size : Tamanio total del conjunto de bytes.
  */
-void deserialize_stack(t_stack **stack, char **serialized_data, t_size *serialized_data_size) {
+void deserialize_stack(t_stack *stack, char **serialized_data, t_size *serialized_data_size) {
     u_int32_t cantidad_links = 0, indice = 0;
     t_stack_entry *stack_entry = NULL;
 
-    *stack = queue_create(); //Creo el stack
+    stack = queue_create(); //Creo el stack
 
     deserialize_data(&cantidad_links, sizeof(cantidad_links), serialized_data, serialized_data_size);
     for(indice = 0; indice < cantidad_links; indice++) {
         deserialize_stack_entry(&stack_entry, serialized_data, serialized_data_size);
-        queue_push(*stack, stack_entry); //Agrego elementos al stack
+        queue_push(stack, stack_entry); //Agrego elementos al stack
     }
 }
 
@@ -124,11 +124,11 @@ void deserialize_stack(t_stack **stack, char **serialized_data, t_size *serializ
  */
     void deserialize_stack_entry(t_stack_entry **entry, char **serialized_data, t_size *serialized_data_size) {
 
-    deserialize_data((*entry)->pos, sizeof((*entry)->pos), serialized_data, serialized_data_size);
-    deserialize_data((*entry)->cant_args, sizeof((*entry)->cant_args), serialized_data, serialized_data_size);
+    deserialize_data(&(*entry)->pos, sizeof((*entry)->pos), serialized_data, serialized_data_size);
+    deserialize_data(&(*entry)->cant_args, sizeof((*entry)->cant_args), serialized_data, serialized_data_size);
     deserialize_data((*entry)->args, (t_size) (*entry)->cant_args, serialized_data, serialized_data_size);
-    deserialize_data((*entry)->cant_vars, sizeof((*entry)->cant_vars), serialized_data, serialized_data_size);
+    deserialize_data(&(*entry)->cant_vars, sizeof((*entry)->cant_vars), serialized_data, serialized_data_size);
     deserialize_data((*entry)->vars, (t_size) (*entry)->cant_vars, serialized_data, serialized_data_size);
-    deserialize_data((*entry)->cant_ret_vars, sizeof((*entry)->cant_vars), serialized_data, serialized_data_size);
+    deserialize_data(&(*entry)->cant_ret_vars, sizeof((*entry)->cant_vars), serialized_data, serialized_data_size);
     deserialize_data((*entry)->ret_vars, (t_size) (*entry)->cant_vars, serialized_data, serialized_data_size);
 }

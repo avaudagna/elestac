@@ -24,7 +24,7 @@ void append_stack_entry(char **list_buffer, char *item_buffer, t_size item_size,
                         t_size *list_buffer_size);
 void serialize_stack_entry(t_stack_entry *entry, char **buffer, t_size *buffer_size);
 
-void deserialize_stack(t_stack **stack, char **serialized_data, t_size *serialized_data_size);
+void deserialize_stack(t_stack *stack, char **serialized_data, t_size *serialized_data_size);
 void deserialize_stack_entry(t_stack_entry **entry, char **serialized_data, t_size *serialized_data_size);
 
 #endif //SERIALIZATION_STACK_H
