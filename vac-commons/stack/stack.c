@@ -62,11 +62,11 @@ void serialize_stack (t_stack *stack, char **buffer, t_size *buffer_size) {
 void append_stack_entry(char **list_buffer, char *item_buffer, t_size item_size,
                         t_size *list_buffer_size) {
     //Append sizeof del item
-    realloc(*list_buffer, *list_buffer_size + sizeof(t_size));
+    list_buffer = realloc(*list_buffer, *list_buffer_size + sizeof(t_size));
     *list_buffer_size = *list_buffer_size + sizeof(t_size);
     memcpy(*list_buffer + *list_buffer_size, (void*) sizeof(t_size), item_size );
     //Append stack_entry
-    realloc(*list_buffer, *list_buffer_size + item_size);
+    list_buffer = realloc(*list_buffer, *list_buffer_size + item_size);
     *list_buffer_size = *list_buffer_size + item_size;
     memcpy( *list_buffer + *list_buffer_size, item_buffer, item_size);
 }
