@@ -15,20 +15,19 @@
 #include <parser/metadata_program.h>
 #include "socketCommons.h"
 
-typedef enum {NEW, READY, EXECUTING, BLOCKED, EXIT} enum_queue;
-
+/*
 typedef struct {
 		int 			pid;
 		int 			program_counter;
 		int 			stack_pointer;
 		t_queue*		stack_index;
 		enum_queue 		status;
+		t_size			instrucciones_size;		
 		t_intructions*	instrucciones_serializado;
-		t_size			instrucciones_size;
 		t_size			etiquetas_size;
 		char*			etiquetas;
 	} t_pcb;
-
+*/
 typedef struct {
 		int 	PUERTO_PROG,
 				PUERTO_CPU,
@@ -46,7 +45,7 @@ typedef struct {
 		char*	KERNEL_IP;
 	} t_setup;
 
-// TODO Delete
+/*/ TODO Delete
 typedef struct {
    int pos;
    int cant_args;
@@ -57,6 +56,8 @@ typedef struct {
    int cant_ret_vars;
    char *ret_vars;// 12 bytes por ret_var
 } t_stack_entry;
+
+*/
 
 #define MAX_CLIENTS 100 /* TODO Delete this */
 

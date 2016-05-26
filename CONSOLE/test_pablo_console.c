@@ -1,6 +1,7 @@
 /*
 gcc -o console socketCommons/socketCommons.c test_pablo_console.c
 */
+#include<stdlib.h> //exit(1);
 #include<stdio.h> //printf
 #include<string.h>    //strlen
 #include<sys/socket.h>    //socket
@@ -14,10 +15,10 @@ gcc -o console socketCommons/socketCommons.c test_pablo_console.c
 //#define PACKAGE_SIZE 10
 
 void tratarSeniales(int);
+int kernelSocketClient;
 int main(int argc , char *argv[])
 {
 	signal (SIGINT, tratarSeniales);
-	int kernelSocketClient;
 	char kernel_reply[2000];
 	//create kernel client
 	if(argc != 3) {
@@ -66,6 +67,9 @@ int main(int argc , char *argv[])
 	puts("Ahora espero");
 	recv(kernelSocketClient , buffer, 4, 0);
 	printf("Received: %s \n", buffer);
+
+	sleep(5);
+	send(kernelSocketClient, "2", 1, 0);
 	//send(kernelSocketClient, "#VamoACalmarno",PACKAGE_SIZE, 0);
 	//puts("Sent: #VamoACalmarno");
 	//do {
@@ -87,8 +91,11 @@ void tratarSeniales(int senial){
 	switch (senial){
 		case SIGINT:
 			// Detecta Ctrl+C y evita el cierre.
-			printf("Esto acabará con el sistema. Presione Ctrl+C una vez más para confirmar.\n\n");
-			signal (SIGINT, SIG_DFL); // solo controlo una vez.
+			//printf("Esto acabará con el sistema. Presione Ctrl+C una vez más para confirmar.\n\n");
+			//signal (SIGINT, SIG_DFL); // solo controlo una vez.
+			printf("Program execution cancelled.\n\n");
+			send(kernelSocketClient, "1", 1, 0);
+			exit(1);
 			break;
 	}
 }
