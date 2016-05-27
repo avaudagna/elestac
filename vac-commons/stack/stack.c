@@ -30,14 +30,14 @@ void serialize_stack (t_stack *stack, char **buffer, t_size *buffer_size) {
 
     //Lista de la Queue
     link_actual = elementos->head; //Tomo la data del primer link de la lista
-    cantidad_elementos_stack = elementos->elements_count; //Cantidad de links totales en el stack
+    cantidad_elementos_stack = (u_int32_t) elementos->elements_count; //Cantidad de links totales en el stack
 
     if(link_actual == NULL && cantidad_elementos_stack > 0) {
         return;
     }
     //El primer elemento que se agrega es la cantidad de elementos totales que tendra el stack
-    serialize_data(cantidad_elementos_stack,sizeof(cantidad_elementos_stack),
-                   stack_entry_list_buffer, stack_entry_list_buffer_size);
+    serialize_data(&cantidad_elementos_stack,sizeof(cantidad_elementos_stack),
+                   &stack_entry_list_buffer, &stack_entry_list_buffer_size);
 
     for(indice = 0; indice < cantidad_elementos_stack; indice++) {
         entrada_actual = (t_stack_entry*) link_actual->data; //Tomo la data del primer link de la lista
@@ -52,7 +52,7 @@ void serialize_stack (t_stack *stack, char **buffer, t_size *buffer_size) {
 }
 
 /*
- * Agrega elementos a al buffer de stack, tiene el formato: itemSize|item.
+ * Agrega elementos a al buffer de stack, tiene el formato: item.
  *
  * list_buffer : Donde se almacena toda la lista de entradas.
  * item_buffer : Elemento a agregar a la lista.
@@ -61,12 +61,12 @@ void serialize_stack (t_stack *stack, char **buffer, t_size *buffer_size) {
  */
 void append_stack_entry(char **list_buffer, char *item_buffer, t_size item_size,
                         t_size *list_buffer_size) {
-    //Append sizeof del item
-    realloc(*list_buffer, *list_buffer_size + sizeof(t_size));
-    *list_buffer_size = *list_buffer_size + sizeof(t_size);
-    memcpy(*list_buffer + *list_buffer_size, sizeof(t_size), item_size );
+//    //Append sizeof del item
+//    realloc(*list_buffer, *list_buffer_size + sizeof(t_size));
+//    *list_buffer_size = *list_buffer_size + sizeof(t_size);
+//    memcpy(*list_buffer + *list_buffer_size, &sizeof(t_size), item_size );
     //Append stack_entry
-    realloc(*list_buffer, *list_buffer_size + item_size);
+    list_buffer = realloc(*list_buffer, *list_buffer_size + item_size);
     *list_buffer_size = *list_buffer_size + item_size;
     memcpy( *list_buffer + *list_buffer_size, item_buffer, item_size);
 }
@@ -122,13 +122,13 @@ void deserialize_stack(t_stack **stack, char **serialized_data, t_size *serializ
  * serialized_data : Conjunto de bytes serializados.
  * serialized_data_size : Tamanio total del conjunto de bytes.
  */
-    void deserialize_stack_entry(t_stack_entry **entry, char **serialized_data, t_size *serialized_data_size) {
+void deserialize_stack_entry(t_stack_entry **entry, char **serialized_data, t_size *serialized_data_size) {
 
-    deserialize_data((*entry)->pos, sizeof((*entry)->pos), serialized_data, serialized_data_size);
-    deserialize_data((*entry)->cant_args, sizeof((*entry)->cant_args), serialized_data, serialized_data_size);
+    deserialize_data(&(*entry)->pos, sizeof((*entry)->pos), serialized_data, serialized_data_size);
+    deserialize_data(&(*entry)->cant_args, sizeof((*entry)->cant_args), serialized_data, serialized_data_size);
     deserialize_data((*entry)->args, (t_size) (*entry)->cant_args, serialized_data, serialized_data_size);
-    deserialize_data((*entry)->cant_vars, sizeof((*entry)->cant_vars), serialized_data, serialized_data_size);
+    deserialize_data(&(*entry)->cant_vars, sizeof((*entry)->cant_vars), serialized_data, serialized_data_size);
     deserialize_data((*entry)->vars, (t_size) (*entry)->cant_vars, serialized_data, serialized_data_size);
-    deserialize_data((*entry)->cant_ret_vars, sizeof((*entry)->cant_vars), serialized_data, serialized_data_size);
+    deserialize_data(&(*entry)->cant_ret_vars, sizeof((*entry)->cant_vars), serialized_data, serialized_data_size);
     deserialize_data((*entry)->ret_vars, (t_size) (*entry)->cant_vars, serialized_data, serialized_data_size);
 }
