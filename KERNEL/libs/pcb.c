@@ -36,15 +36,3 @@ void deserialize_pcb(t_pcb **pcb, char **serialized_data, t_size *serialized_dat
     deserialize_data(&(*pcb)->instrucciones_size, sizeof((*pcb)->instrucciones_size), serialized_data, serialized_data_size);
     deserialize_data(&(*pcb)->instrucciones_serializado, (*pcb)->instrucciones_size, serialized_data, serialized_data_size);
 }
-
-
-
-void serialize_instrucciones(t_intructions *intructions, char **buffer, t_size *buffer_size) {
-    serialize_data(&intructions->start, sizeof(intructions->start), buffer, buffer_size);
-    serialize_data(&intructions->offset, sizeof(intructions->offset), buffer, buffer_size);
-}
-
-void deserialize_instrucciones(t_intructions **intructions, char **serialized_data, t_size *serialized_data_size) {
-    deserialize_data(&(*intructions)->start, sizeof((*intructions)->start), serialized_data, serialized_data_size);
-    deserialize_data(&(*intructions)->offset, sizeof((*intructions)->offset), serialized_data, serialized_data_size);
-}
