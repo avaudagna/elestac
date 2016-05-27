@@ -30,7 +30,7 @@ void serialize_stack (t_stack *stack, char **buffer, t_size *buffer_size) {
 
     //Lista de la Queue
     link_actual = elementos->head; //Tomo la data del primer link de la lista
-    cantidad_elementos_stack = elementos->elements_count; //Cantidad de links totales en el stack
+    cantidad_elementos_stack = (u_int32_t) elementos->elements_count; //Cantidad de links totales en el stack
 
     if(link_actual == NULL && cantidad_elementos_stack > 0) {
         return;
@@ -52,7 +52,7 @@ void serialize_stack (t_stack *stack, char **buffer, t_size *buffer_size) {
 }
 
 /*
- * Agrega elementos a al buffer de stack, tiene el formato: itemSize|item.
+ * Agrega elementos a al buffer de stack, tiene el formato: item.
  *
  * list_buffer : Donde se almacena toda la lista de entradas.
  * item_buffer : Elemento a agregar a la lista.
@@ -100,16 +100,16 @@ void serialize_stack_entry(t_stack_entry *entry, char **buffer, t_size *buffer_s
  * serialized_data : Conjunto de bytes serializados.
  * serialized_data_size : Tamanio total del conjunto de bytes.
  */
-void deserialize_stack(t_stack *stack, char **serialized_data, t_size *serialized_data_size) {
+void deserialize_stack(t_stack **stack, char **serialized_data, t_size *serialized_data_size) {
     u_int32_t cantidad_links = 0, indice = 0;
     t_stack_entry *stack_entry = NULL;
 
-    stack = queue_create(); //Creo el stack
+    *stack = queue_create(); //Creo el stack
 
     deserialize_data(&cantidad_links, sizeof(cantidad_links), serialized_data, serialized_data_size);
     for(indice = 0; indice < cantidad_links; indice++) {
         deserialize_stack_entry(&stack_entry, serialized_data, serialized_data_size);
-        queue_push(stack, stack_entry); //Agrego elementos al stack
+        queue_push(*stack, stack_entry); //Agrego elementos al stack
     }
 }
 
