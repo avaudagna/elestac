@@ -15,8 +15,7 @@ int maxCPUs=0;
 int maxConsoles=0;
 t_list* PCB_NEW_list;
 t_list* cpus_conectadas;
-fd_set 	allSockets,
-		checkClientCtrlC;
+fd_set 	allSockets;
 /* END OF GLOBAL STUFF I NEED EVERYWHERE */
 
 int main (int argc, char **argv) {
@@ -44,7 +43,7 @@ int main (int argc, char **argv) {
 int start_kernel(int argc, char* configFile){
 	printf("\n\t=============================================\n");
 	printf("\t.:: Vamo a calmarno que viene el Kernel ::.");
-	printf("\n\t=============================================\n");
+	printf("\n\t=============================================\n\n");
 	if(argc==2){
 		if(loadConfig(configFile)<0){
     		puts(" Config file can not be loaded.\n Please, try again.\n");
@@ -161,7 +160,6 @@ int rmvClosedConsoles(){
 			j++;
 		}
 	}
-	printf("Voy a devolver consoleSockets[j-1]=%d\n", consoleSockets[j-1]);
 	consolesOnline = j; return consoleSockets[j-1];
 }
 
@@ -190,35 +188,25 @@ int control_clients(){
 	if(consoleServer>maxSocket) maxSocket=consoleServer;
 	if(cpuServer>maxSocket) maxSocket=cpuServer;
 	FD_ZERO(&allSockets);
-	FD_ZERO(&checkClientCtrlC);
 	FD_SET(cpuServer, &allSockets);
 	FD_SET(consoleServer, &allSockets);
-	for (i=0; i<cpusOnline; i++){
+	for (i=0; i<cpusOnline; i++)
 		FD_SET(cpuSockets[i], &allSockets);
-		FD_SET(cpuSockets[i], &checkClientCtrlC);
-	}
-	for (i=0; i<consolesOnline; i++){
+	for (i=0; i<consolesOnline; i++)
 		FD_SET(consoleSockets[i], &allSockets);
-		FD_SET(consoleSockets[i], &checkClientCtrlC);	
-	}
-	//retval=select(maxSocket+1, &allSockets, &checkClientCtrlC, NULL, &timeout);
 	retval=select(maxSocket+1, &allSockets, NULL, NULL, &timeout);
 	//printf("-----Acabo de salir del select() con %d-----\n",retval);
-	//retval==0 -> no paso nada
 	if(retval<0){
 		perror("Un signal u otro error en el select()");
 	}else if(retval>0){
 		printf("Tengo %d consolas\n", consolesOnline);
 		sleep(3);
 		for(i=0;i<consolesOnline;i++){
-			//if(FD_ISSET(consoleSockets[i], &checkClientCtrlC)){}else 
 			if(FD_ISSET(consoleSockets[i], &allSockets)){
-				// console has something to say
-				printf("aca tampoco llego\n");
 				if(recv(consoleSockets[i], buffer_4, 2, 0) > 0){
 					printf("La consola no deberia decirme nada\n");
 					if((strncmp(buffer_4, "T1",2)) == 0 ){
-						write(consoleSockets[i], "holi", 4); //send fake PCB
+						write(consoleSockets[i], "holi", 4);
 					}else{
 							printf("Caso no contemplado. Me dijeron:%s\n",buffer_4);
 					}
@@ -226,18 +214,22 @@ int control_clients(){
 					printf(" .:: A console has closed the connection. PID %04d will be terminated ::. \n", consoleSockets[i]);
 					killCONSOLE(consoleSockets[i]);
 		        	consoleSockets[i] = -1;
-		        	//return 2;
-				//printf("Consola MURIOO! \n consolesOnline=%d, i=%d, consoleSockets[%d]=%d y n es-%d-\n",consolesOnline,i,i,consoleSockets[i], n);
 				}
 			}
 		}
 		for(i=0;i<cpusOnline;i++){
-			/*if(FD_ISSET(cpuSockets[i], &checkClientCtrlC)){
-				killCPU(cpuSockets[i]);
-				cpuSockets[i] = -1;
-			}else*/ if(FD_ISSET(cpuSockets[i], &allSockets)){
-				// cpu has something to say
-				printf("Aca una CPU hablandome y yo la ignoro.\n");
+			if(FD_ISSET(cpuSockets[i], &allSockets)){
+				if(recv(cpuSockets[i], buffer_4, 2, 0) > 0){
+					if((strncmp(buffer_4, "C1",2)) == 0){
+						write(cpuSockets[i], "holi", 4);
+					}else{
+							printf("Caso no contemplado. Me dijeron:%s\n",buffer_4);
+					}
+				}else{
+					printf(" .:: A CPU has closed the connection ::. \n", consoleSockets[i]);
+					killCPU(cpuSockets[i]);
+					cpuSockets[i] = -1;
+				}
 			}
 		}
 		/* ALWAYS enters here, accepts new connections and handshakes */
