@@ -14,6 +14,10 @@
 #include <commons/config.h>
 #include <parser/metadata_program.h>
 #include "socketCommons.h"
+#include <sys/time.h>
+#include "libs/serialize.h"
+#include "libs/pcb.h"
+#include "libs/stack.h"
 
 /*
 typedef struct {
@@ -60,7 +64,7 @@ typedef struct {
 */
 
 #define MAX_CLIENTS 100 /* TODO Delete this */
-
+int		start_kernel(int argc, char* configFile);
 int 	loadConfig(char*);
 int 	connect2UMC();
 int 	requestPages2UMC(char* PID, int ansisopLen,char* code,int clientUMC);
@@ -70,8 +74,8 @@ void 	tratarSeniales(int);
 /* Removes client sockets which closed the connection.
  * Returns the ID of the last socket descriptor in the list.
  */
-int 	rmvClosedCPUs(int *cpuList, int *cpusOnline);
-int 	rmvClosedConsoles(int *consoleList, int *consolesOnline);
+int 	rmvClosedCPUs();
+int 	rmvClosedConsoles();
 
 void 	killCPU(int cpu);
 void 	killCONSOLE(int console);
@@ -79,6 +83,5 @@ void 	killCONSOLE(int console);
 int 	newClient(int serverSocket, int *clientSocket, int clientsOnline);
 
 t_setup	setup; // GLOBAL settings
-char global_buffer_4[4];
 
 #endif
