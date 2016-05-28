@@ -2,9 +2,7 @@
 #include <parser/parser.h>
 #include <parser/metadata_program.h>
 #include <commons/collections/queue.h>
-#include <commons/collections/list.h>
 #include "libs/pcb.h"
-
 
 t_metadata_program *getMetadataExample();
 t_stack *getStackExample();
@@ -81,18 +79,21 @@ int main() {
     printf("instrucciones_size: %d=%d\n", newPCB->instrucciones_size, incomingPCB->instrucciones_size);
     printInstructions(newPCB->instrucciones_serializado, newPCB->instrucciones_size, incomingPCB->instrucciones_serializado);
     printf("etiquetas_size: %d=%d\n", newPCB->etiquetas_size, incomingPCB->etiquetas_size);
-
+    printEtiquetas(newPCB->etiquetas, incomingPCB->etiquetas,  incomingPCB->etiquetas_size);
+    auxIndex+=newPCB->etiquetas_size;
+    free(newPCB);
+    free(incomingPCB);
     //Para este punto tendria que tener en incomingPCB el PCB deserializado :)
     return 0;
 }
 
 void printStackValuesVsStruct(t_stack *orig_stack, t_stack *new_stack) {
     t_list *elementos_orig = orig_stack->elements, *elementos_new = new_stack->elements;
-    t_link_element *head_orig = orig_stack->elements->head, *head_new= new_stack->elements->head;
+    t_link_element *head_orig = elementos_orig->head, *head_new = elementos_new->head;
     int cantidad_elementos_orig = elementos_orig->elements_count;
     int cantidad_elementos_new = elementos_new->elements_count;
     int indice = 0;
-    t_stack_entry *entry_orig  = head_orig->data, *entry_new = head_new->data;
+    t_stack_entry *entry_orig  = (t_stack_entry*) head_orig->data, *entry_new = (t_stack_entry*) head_new->data;
     printf("cantidad_entradas_stack: %d=%d\n", cantidad_elementos_orig, cantidad_elementos_new);
     if(cantidad_elementos_orig != cantidad_elementos_new) {
         printf("||ERROR||: cantidad de elementos distinta, no se pueden comparar las entradas\n.");

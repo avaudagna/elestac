@@ -24,14 +24,10 @@ typedef struct {
 void serialize_pcb(t_pcb *pcb, void **buffer, size_t *buffer_size);
 void deserialize_pcb(t_pcb **pcb, void *serialized_data, size_t *serialized_data_size);
 
-void serialize_t_instructions(t_intructions *intructions, void **buffer, size_t *buffer_size);
 void deserialize_instrucciones(t_intructions **intructions, t_size instrucciones_size, void **serialized_data, size_t *serialized_data_size);
-
 void serialize_instrucciones(t_intructions *instrucciones, size_t instrucciones_size, void **pVoid, size_t *pInt);
-//deserialize
 
-//serialize_etiquetas
-//deserialize_etiquetas
+void serialize_t_instructions(t_intructions *intructions, void **buffer, size_t *buffer_size);
 
 
 #endif //SERIALIZATION_PCB_H

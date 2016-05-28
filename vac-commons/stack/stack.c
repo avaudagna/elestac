@@ -1,10 +1,6 @@
 
 #include "stack.h"
 
-void serialize_logical_addr(t_arg **ptr, size_t i, void **pVoid, size_t *pInt);
-
-t_stack_entry *create_new_stack_entry();
-
 /*
  * Serializa las entradas del stack en una char*.
  *
@@ -92,9 +88,6 @@ void serialize_stack_entry(t_stack_entry *entry, void **buffer, size_t *buffer_s
     }
     serialize_data(&entry->ret_pos, sizeof(int), buffer, buffer_size);
 }
-
-//TODO: Validar que serialize bien logical_address
-
 
 /*
  * Deserializa un t_stack de un conjunto de bytes.
