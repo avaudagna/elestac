@@ -1,10 +1,18 @@
 #include <stdio.h>
 #include <parser/parser.h>
 #include <parser/metadata_program.h>
+#include <commons/collections/queue.h>
 #include "libs/pcb.h"
 
 
 t_metadata_program *getMetadataExample();
+t_stack *getStackExample();
+
+int printStackValues(t_stack *stack, void *buffer);
+void printStackEntry(t_stack_entry *entry, void *buffer, int *buffer_index);
+
+int printInstructions(t_intructions *serializado, t_size size, void *pVoid);
+int printEtiquetas(char *etiquetas, char *buffer, int cant_etiquetas);
 
 int main() {
     //1) Get metadata structure from ansisop whole program
@@ -14,34 +22,155 @@ int main() {
 
     //2) Create the PCB with the metadata information obtained, and extra information of the Kernel
     t_pcb * newPCB = malloc(sizeof(t_pcb));
-    newPCB->pid=atoi("7777");
+    newPCB->pid=7777;
     newPCB->program_counter=newMetadata->instruccion_inicio;
     newPCB->stack_pointer=10;
-    newPCB->stack_index=queue_create();
+    newPCB->stack_index= getStackExample();
     newPCB->status=NEW;
     newPCB->instrucciones_size= newMetadata->instrucciones_size;
     newMetadata->instrucciones_serializado;
-    char * instrucciones_buffer = NULL;
-    t_size instrucciones_buffer_size = 0;
-    serialize_instrucciones(newMetadata->instrucciones_serializado, &instrucciones_buffer, &instrucciones_buffer_size) ;
-    newPCB->instrucciones_serializado = instrucciones_buffer;
+    newPCB->instrucciones_serializado = newMetadata->instrucciones_serializado;
+    newPCB->etiquetas_size = newMetadata->etiquetas_size;
+    newPCB->etiquetas = newMetadata->etiquetas;
 	free(newMetadata);// let it free
 
     //3)Serializo el PCB recien creado
-    char * pcb_buffer = NULL;
-    t_size pcb_buffer_size = 0;
+    void * pcb_buffer = NULL;
+    size_t pcb_buffer_size = 0;
     serialize_pcb(newPCB, &pcb_buffer, &pcb_buffer_size);
-    free(newPCB);
 
+    int auxIndex = 0;
+    printf("pid: %d=%d\n", newPCB->pid, *(int*)(pcb_buffer+auxIndex));
+    auxIndex+=sizeof(int);
+    printf("pc: %d=%d\n", newPCB->program_counter, *(int*)(pcb_buffer+auxIndex));
+    auxIndex+=sizeof(int);
+    printf("sp: %d=%d\n", newPCB->stack_pointer, *(int*)(pcb_buffer+auxIndex));
+    auxIndex+=sizeof(int);
+    auxIndex+= printStackValues(newPCB->stack_index, pcb_buffer+auxIndex);
+    printf("status: %d=%d\n", newPCB->status, *(int*)(pcb_buffer+auxIndex));
+    auxIndex+=sizeof(int);
+    printf("instrucciones_size: %d=%d\n", newPCB->instrucciones_size, *(int*)(pcb_buffer+auxIndex));
+    auxIndex+=sizeof(int);
+    auxIndex+= printInstructions(newPCB->instrucciones_serializado, newPCB->instrucciones_size, pcb_buffer+auxIndex);
+    printf("etiquetas_size: %d=%d\n", newPCB->etiquetas_size, *(int*)(pcb_buffer+auxIndex));
+    auxIndex+=sizeof(int);
+    //auxIndex+=printEtiquetas(newPCB->etiquetas, (char*)(pcb_buffer+auxIndex),  newPCB->etiquetas_size);
+    auxIndex+=newPCB->etiquetas_size;
     //4) Lo envio por socket a donde necesite ... mide pcb_buffer_size
+    //free(newPCB);
 
     //5) Lo recibo denuevo ...
 
     //6) Lo deserializo
-    t_pcb * incomingPCB = NULL;
-    deserialize_pcb(&incomingPCB, &pcb_buffer, &pcb_buffer_size);
+    printf("Deserializacion\n");
+    t_pcb * incomingPCB = (t_pcb *)malloc(sizeof(t_pcb));
+    size_t buff_cursor = 0;
+    deserialize_pcb(&incomingPCB, pcb_buffer, &buff_cursor);
+    printf("pid: %d=%d\n", newPCB->pid, incomingPCB->pid);
+    printf("pc: %d=%d\n", newPCB->program_counter, incomingPCB->program_counter);
+    printf("sp: %d=%d\n", newPCB->stack_pointer, incomingPCB->stack_pointer);
+    //auxIndex+= printStackValues(newPCB->stack_index, pcb_buffer+auxIndex);
+    printf("status: %d=%d\n", newPCB->status, incomingPCB->status);
+    printf("instrucciones_size: %d=%d\n", newPCB->instrucciones_size, incomingPCB->instrucciones_size);
+    printInstructions(newPCB->instrucciones_serializado, newPCB->instrucciones_size, incomingPCB->instrucciones_serializado);
+    printf("etiquetas_size: %d=%d\n", newPCB->etiquetas_size, incomingPCB->etiquetas_size);
 
     //Para este punto tendria que tener en incomingPCB el PCB deserializado :)
+    return 0;
+}
+
+int printEtiquetas(char *etiquetas, char *buffer, int cant_etiquetas) {
+    int indice = 0;
+    for (indice = 0; indice < cant_etiquetas; indice++)
+    {
+        //printf("etiquetas: %c=%c", etiquetas[indice], buffer[indice]);
+        //printf("etiquetas: %c", *(etiquetas+indice));
+        printf("etiquetas\n");
+    }
+    return indice;
+}
+int printInstructions(t_intructions *instrucciones_serializado, t_size cant_instrucciones, void *buffer) {
+    int indice = 0, buffer_index = 0;
+    for(indice = 0; indice < cant_instrucciones; indice++) {
+        printf("start: %d=%d\n", (instrucciones_serializado+indice)->start, *(int *) (buffer + buffer_index));
+        buffer_index += sizeof(instrucciones_serializado->start);
+        printf("offset: %d=%d\n", (instrucciones_serializado+indice)->offset, *(int *) (buffer + buffer_index));
+        buffer_index += sizeof(instrucciones_serializado->offset);
+    }
+    return buffer_index;
+}
+
+int printStackValues(t_stack *stack, void *buffer) {
+    t_list* elementos = stack->elements;
+    t_link_element *head = stack->elements->head;
+    int cantidad_elementos = elementos->elements_count;
+    int indice = 0, buffer_index = 0;
+    for (indice = 0; indice < cantidad_elementos; indice ++) {
+        printStackEntry((t_stack_entry*) head->data, buffer, &buffer_index);
+        head = head->next;
+    }
+    return buffer_index;
+}
+
+void printStackEntry(t_stack_entry *entry, void *buffer, int *buffer_index) {
+    printf("pos: %d=%d\n", entry->pos, *(int*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->pos);
+    printf("cant_args: %d=%d\n", entry->cant_args, *(int*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->cant_args);
+    printf("args\n");
+    printf("page_number: %d=%d\n", entry->args->page_number, *(int*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->args->page_number);
+    printf("offset: %d=%d\n", entry->args->offset, *(int*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->args->offset);
+    printf("tamanio: %d=%d\n", entry->args->tamanio, *(int*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->args->tamanio);
+    printf("cant_vars: %d=%d\n", entry->cant_vars, *(int*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->cant_vars);
+    printf("vars\n");
+    printf("var_id: %d=%d\n", entry->vars->var_id, *(char*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->vars->var_id);
+    printf("page_number: %d=%d\n", entry->vars->page_number, *(int*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->vars->page_number);
+    printf("offset: %d=%d\n", entry->vars->offset, *(int*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->vars->offset);
+    printf("tamanio: %d=%d\n", entry->vars->tamanio, *(int*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->vars->tamanio);
+    printf("cant_ret_vars: %d=%d\n", entry->cant_ret_vars, *(int*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->cant_ret_vars);
+    printf("ret_vars\n");
+    printf("page_number: %d=%d\n", entry->ret_vars->page_number, *(int*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->ret_vars->page_number);
+    printf("offset: %d=%d\n", entry->ret_vars->offset, *(int*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->ret_vars->offset);
+    printf("tamanio: %d=%d\n", entry->ret_vars->tamanio, *(int*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->ret_vars->tamanio);
+    printf("ret_pos: %d=%d\n", entry->ret_pos, *(int*)(buffer+ *buffer_index));
+    *buffer_index += sizeof(entry->ret_pos);
+}
+
+t_stack *getStackExample() {
+    t_stack * stack_mock = queue_create();
+    t_stack_entry * first_entry = malloc(sizeof(t_stack_entry));
+    first_entry->pos = 0;
+    first_entry->cant_args = 1;
+    first_entry->args = malloc(sizeof(t_arg));
+    first_entry->args->page_number = 1;
+    first_entry->args->offset = 2;
+    first_entry->args->tamanio = 3;
+    first_entry->cant_vars = 1;
+    first_entry->vars = malloc(sizeof(t_var));
+    first_entry->vars->var_id = 4;
+    first_entry->vars->page_number = 5;
+    first_entry->vars->offset = 6;
+    first_entry->vars->tamanio = 7;
+    first_entry->cant_ret_vars = 1;
+    first_entry->ret_vars = malloc(sizeof(t_ret_var));
+    first_entry->ret_vars->page_number = 8;
+    first_entry->ret_vars->offset = 9;
+    first_entry->ret_vars->tamanio = 10;
+    first_entry->ret_pos = 0;
+    queue_push(stack_mock, first_entry);
+    return stack_mock;
 }
 
 t_metadata_program *getMetadataExample() {
