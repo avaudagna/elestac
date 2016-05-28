@@ -51,3 +51,5 @@ local.properties
 # Code Recommenders
 .recommenders/
 
+#intelliJ
+.idea/
