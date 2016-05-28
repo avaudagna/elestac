@@ -9,19 +9,10 @@
  * buffer : El buffer donde se almacenaran los bytes seleccionados.
  * buffer_size : El tamanio del buffer, que terminara siendo el total de bytes almacenados en buffer.
  */
-int serialize_data(void *object, size_t nBytes, void **buffer, size_t *lastIndex) {
-    void * auxiliar = NULL;
-    auxiliar  = realloc(*buffer, nBytes+*lastIndex);
-    if(auxiliar  == NULL) {
-        return -1;
-    }
-    *buffer = auxiliar;
-    if (memcpy((*buffer + *lastIndex), object, nBytes) == NULL) {
-        return -2;
-    }
-    *lastIndex += nBytes;
-    return 0;
-
+void serialize_data(void *object, t_size nBytes, char **buffer, t_size *buffer_size) {
+    *buffer = (char*) realloc(*buffer, *buffer_size + nBytes);
+    memcpy((*buffer + *buffer_size), object, nBytes);
+    *buffer_size = *buffer_size + nBytes;
 }
 
 /*
@@ -32,10 +23,9 @@ int serialize_data(void *object, size_t nBytes, void **buffer, size_t *lastIndex
  * serialized_data : Puntero al conjunto de bytes serializados.
  * serialized_data_size : La cantidad de bytes restantes de serialized_data
  */
-int deserialize_data(void *object, size_t nBytes, void *serialized_data, size_t *lastIndex) {
-    if(memcpy(object, serialized_data + *lastIndex, nBytes) == NULL) {
-        return -2;
-    }
-    *lastIndex = *lastIndex + nBytes;
-    return 0;
+void deserialize_data(void *object, t_size nBytes, char **serialized_data, t_size *serialized_data_size) {
+    object = malloc(nBytes);
+    memcpy(object, *serialized_data, nBytes);
+    *serialized_data = *serialized_data + nBytes;
+    *serialized_data_size = *serialized_data_size - nBytes;
 }
