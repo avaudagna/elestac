@@ -17,7 +17,10 @@ void print_instrucciones_size ();
 void printStackValuesVsStruct(t_stack *index, t_stack *stack_index);
 
 void printStackEntryVsEntry(t_stack_entry *orig, t_stack_entry *aNew);
-
+//
+//Compilame asi:
+// gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collections -o metadatiando libs/stack.c libs/pcb.c libs/serialize.c metadatiando.c -L/usr/lib -lcommons -lparser-ansisop
+//
 int main() {
     //1) Get metadata structure from ansisop whole program
     t_metadata_program* newMetadata = getMetadataExample();
@@ -81,8 +84,8 @@ int main() {
     printf("etiquetas_size: %d=%d\n", newPCB->etiquetas_size, incomingPCB->etiquetas_size);
     printEtiquetas(newPCB->etiquetas, incomingPCB->etiquetas,  incomingPCB->etiquetas_size);
     auxIndex+=newPCB->etiquetas_size;
-    free(newPCB);
-    free(incomingPCB);
+    //free(newPCB);
+    //free(incomingPCB);
     //Para este punto tendria que tener en incomingPCB el PCB deserializado :)
     return 0;
 }
