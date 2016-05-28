@@ -29,9 +29,9 @@ typedef struct {
     t_arg *args; //12 bytes por arg
     int cant_vars;
     t_var *vars; //13 bytes por var
-    int ret_pos;
     int cant_ret_vars;
     t_ret_var *ret_vars; // 12 bytes por ret_var
+    int ret_pos;
 } t_stack_entry;
 
 void serialize_stack (t_stack *stack, void **buffer, size_t *buffer_size);

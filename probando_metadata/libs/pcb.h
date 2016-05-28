@@ -14,7 +14,7 @@ typedef struct {
     uint32_t program_counter;
     uint32_t stack_pointer;
     t_stack  *stack_index;
-    enum_queue status;
+    int status;
     t_size instrucciones_size;
     t_intructions* instrucciones_serializado;
     t_size etiquetas_size;
