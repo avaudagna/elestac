@@ -1,37 +1,26 @@
 #ifndef KERNEL_H_
 #define KERNEL_H_
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <signal.h>
+#include <math.h>
 #include <pthread.h>
+#include <sys/time.h>
+#include <commons/log.h>
+#include <commons/config.h>
 #include <commons/string.h>
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
-#include <commons/log.h>
-#include <commons/config.h>
 #include <parser/metadata_program.h>
 #include "socketCommons.h"
-#include <sys/time.h>
 #include "libs/serialize.h"
 #include "libs/pcb.h"
 #include "libs/stack.h"
 
-/*
-typedef struct {
-		int 			pid;
-		int 			program_counter;
-		int 			stack_pointer;
-		t_queue*		stack_index;
-		enum_queue 		status;
-		t_size			instrucciones_size;		
-		t_intructions*	instrucciones_serializado;
-		t_size			etiquetas_size;
-		char*			etiquetas;
-	} t_pcb;
-*/
+#define MAX_CLIENTS 100 /* TODO Delete this */
+
 typedef struct {
 		int 	PUERTO_PROG,
 				PUERTO_CPU,
@@ -47,41 +36,27 @@ typedef struct {
 		int 	PUERTO_UMC;
 		char*	IP_UMC;
 		char*	KERNEL_IP;
-	} t_setup;
+	} t_setup; t_setup	setup; // GLOBAL settings
+typedef struct{
+	int clientID,
+		status;
+} t_Client;
 
-/*/ TODO Delete
-typedef struct {
-   int pos;
-   int cant_args;
-   char *args; //12 bytes por arg
-   int cant_vars;
-   char *vars; //13 bytes por var
-   int ret_pos;
-   int cant_ret_vars;
-   char *ret_vars;// 12 bytes por ret_var
-} t_stack_entry;
+uint32_t	requestPages2UMC(char* PID, size_t ansisopLen,char* code,int clientUMC);
+bool 		compareIntegers(void *nbr);
+int 		global_int=0;
+int			start_kernel(int argc, char* configFile);
+int 		loadConfig(char* configFile);
+int 		connect2UMC();
+int			control_clients();
+int			rmvClosedClients(int *clientsOnline, int *clientSocket);
+int 		accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista);
+int			accept_new_PCB(int newConsole);
+int 		killClient(int client,char *what);
+void 		tratarSeniales(int);
+void 		round_robin(int ultimaCPU);
+void		add2FD_SET(void *client);
+void 		check_CPU_FD_ISSET(void *client);
+void		check_CONSOLE_FD_ISSET(void *client);
 
-*/
-
-#define MAX_CLIENTS 100 /* TODO Delete this */
-int		start_kernel(int argc, char* configFile);
-int 	loadConfig(char*);
-int 	connect2UMC();
-int 	requestPages2UMC(char* PID, int ansisopLen,char* code,int clientUMC);
-void 	tratarSeniales(int);
-
-
-/* Removes client sockets which closed the connection.
- * Returns the ID of the last socket descriptor in the list.
- */
-int 	rmvClosedCPUs();
-int 	rmvClosedConsoles();
-
-void 	killCPU(int cpu);
-void 	killCONSOLE(int console);
-
-int 	newClient(int serverSocket, int *clientSocket, int clientsOnline);
-
-t_setup	setup; // GLOBAL settings
-
-#endif
+#endif /* KERNEL_H_ */
