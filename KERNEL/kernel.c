@@ -145,18 +145,6 @@ void tratarSeniales(int senial){
 	}
 }
 
-int rmvClosedClients(int *clientsOnline, int *clientSocket){
-	int i, j=0;
-	if (*clientsOnline == 0) return 0;
-	for (i=0; i < *clientsOnline; i++){
-		if (clientSocket[i]>0){
-			clientSocket[j] = clientSocket[i];
-			j++;
-		}
-	}
-	*clientsOnline = j; return clientSocket[j-1];
-}
-
 int killClient(int client,char *what){
 	close(client);
 	printf("Bye bye %s!\n", what);
@@ -168,41 +156,44 @@ bool compareIntegers(void *nbr){
 }
 
 void add2FD_SET(void *client){
-	t_Client *cliente = client;
+	t_Client *cliente=client;
 	FD_SET(cliente->clientID, &allSockets);
 }
 
 void check_CPU_FD_ISSET(void *cpu){
 	char buffer_4[4];
 	t_Client *cliente = cpu;
-	global_int=cliente->clientID;
-	if (FD_ISSET(global_int, &allSockets)) {
-		if (recv(global_int, buffer_4, 2, 0) > 0){
+	if (FD_ISSET(cliente->clientID, &allSockets)) {
+		if (recv(cliente->clientID, buffer_4, 2, 0) > 0){
 			if ((strncmp(buffer_4, "T1",2)) == 0 ){
 				// CPU said T1 -> semaforos, variables compartidas, vuelve un PCB, etc.
 			} else {
 				log_error(kernel_log,"Caso no contemplado. CPU dijo: %s",buffer_4);
 			}
 		} else {
-			printf(" .:: CPU %d has closed the connection ::. \n", global_int);
-			killClient(global_int,"CPU");
-			list_remove_by_condition(cpus_conectadas,compareIntegers);
+			printf(" .:: CPU %d has closed the connection ::. \n", cliente->clientID);
+			killClient(cliente->clientID,"CPU");
+			bool getCPUIndex(void *nbr){
+				return cliente->clientID == (int) nbr;
+			}
+			list_remove_by_condition(cpus_conectadas, getCPUIndex);
 		}
-
 	}
 }
 
 void check_CONSOLE_FD_ISSET(void *console){
 	char buffer_4[4];
 	t_Client *cliente = console;
-	global_int=cliente->clientID;
-	if (FD_ISSET(global_int, &allSockets)) {
-		if (recv(global_int, buffer_4, 2, 0) > 0){
+	if (FD_ISSET(cliente->clientID, &allSockets)) {
+		if (recv(cliente->clientID, buffer_4, 2, 0) > 0){
 			log_error(kernel_log,"Consola no deberia enviar nada pero dijo: %s",buffer_4);
 		} else {
-			printf(" .:: A console has closed the connection, the associated PID %04d will be terminated ::. \n", global_int);
-			killClient(global_int,"console");
-			list_remove_by_condition(cpus_conectadas,compareIntegers);
+			printf(" .:: A console has closed the connection, the associated PID %04d will be terminated ::. \n", cliente->clientID);
+			killClient(cliente->clientID,"console");
+			bool getConsoleIndex(void *nbr){
+				return cliente->clientID == (int) nbr;
+			}
+			list_remove_by_condition(consolas_conectadas, getConsoleIndex);
 		}
 	}
 }
@@ -276,10 +267,10 @@ int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista){
 			maxSocket=aceptado;
 			if (recv(aceptado, buffer_4, 1, 0) > 0){
 				if (strncmp(buffer_4, "0",1) == 0){
-					t_Client cliente;
-					cliente.clientID=aceptado;
-					cliente.status=0;
-					list_add(lista, &cliente);
+					t_Client *cliente=malloc(sizeof(t_Client));
+					cliente->clientID=aceptado;
+					cliente->status=0;
+					list_add(lista, cliente);
 					printf(" .:: New %s arriving ::.\n",what);
 				}
 			} else {

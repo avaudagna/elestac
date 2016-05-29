@@ -43,7 +43,6 @@ typedef struct{
 } t_Client;
 
 uint32_t	requestPages2UMC(char* PID, size_t ansisopLen,char* code,int clientUMC);
-bool 		compareIntegers(void *nbr);
 int 		global_int=0;
 int			start_kernel(int argc, char* configFile);
 int 		loadConfig(char* configFile);
