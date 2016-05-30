@@ -146,6 +146,10 @@ void tratarSeniales(int senial){
 }
 
 int killClient(int client,char *what){
+	/*
+	 * TODO IF pid status es EXECUTING -> esperar el quantum y matar el pcb
+	 * TODO si esta en cualquier otro estado -> matar el pcb
+	 */
 	close(client);
 	printf("Bye bye %s!\n", what);
 	return 0;
@@ -191,7 +195,9 @@ void check_CONSOLE_FD_ISSET(void *console){
 			printf(" .:: A console has closed the connection, the associated PID %04d will be terminated ::. \n", cliente->clientID);
 			killClient(cliente->clientID,"console");
 			bool getConsoleIndex(void *nbr){
-				return cliente->clientID == (int) nbr;
+				t_Client *unCliente = nbr;
+				return cliente->clientID == unCliente->clientID;
+
 			}
 			list_remove_by_condition(consolas_conectadas, getConsoleIndex);
 		}
