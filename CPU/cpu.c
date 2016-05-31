@@ -12,7 +12,10 @@ t_setup	setup; // GLOBAL settings
 logical_addr * armarDireccionLogica(t_intructions *actual_instruction);
 void tratarSeniales(int senial);
 
-
+//
+//Compilame asi:
+// gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collections -o cpu libs/stack.c libs/pcb.c libs/serialize.c libs/socketCommons.c cpu.c implementation_ansisop.c -L/usr/lib -lcommons -lparser-ansisop -lm
+//
 int main(int argc, char **argv) {
 
 	int i;
@@ -24,6 +27,8 @@ int main(int argc, char **argv) {
     //t_kernel_data *kernel_data = (t_kernel_data*) malloc(sizeof(t_kernel_data));
     //t_log logFile = { fopen("cpuLog.log", "r"), true, LOG_LEVEL_INFO, "CPU", 1234 };
 	u_int32_t actual_program_counter = 0;// actual_pcb->program_counter;
+
+    if (start_cpu(argc, argv[1])<0) return 0;
 
     char* kernelMessage = (char*) calloc(sizeof(char),PACKAGE_SIZE);
 	if(kernelMessage == NULL) {
@@ -44,23 +49,23 @@ int main(int argc, char **argv) {
 	//keep communicating with server
 	while(1) {
 		//Send a handshake to the kernel
-        MaquinaDeEstados();
-		if( send(kernelSocketClient , "PABLO GAAAAAAAAAYYY" , 1 , 0) < 0) {
+        //MaquinaDeEstados();
+		if( send(kernelSocketClient , "0" , 1 , 0) < 0) {
 				puts("Send failed");
 				return 1;
 		}
-        printf("\nSENT\n");
+        printf("\nSENT 0 TO KERNEL\n");
 
 		//Wait for PCB from the Kernel
 
-        //primer byte 1 ? => RecibirPcb LISTO
+        //primer byte 1 ? => recibirPcb LISTO
         //En Recibir PCB : Cada 4 bytes: Q, QSleep, pcb_size, pcb LISTO
         t_kernel_data *incoming_kernel_data_buffer = calloc(1, sizeof(t_kernel_data));
         do {
-            printf(" .:: Waiting for Kernel handshake ::.\n");
+            printf(" .:: Waiting for Kernel PCB ::.\n");
             recv(kernelSocketClient, handshake, sizeof(char), 0);
         } while (strncmp(handshake, "1", sizeof(char)) != 0);
-        RecibirPcb(kernelSocketClient, incoming_kernel_data_buffer);
+        recibirPcb(kernelSocketClient, incoming_kernel_data_buffer);
         //Deserializo el PCB que recibo LISTO
         t_pcb * actual_pcb = (t_pcb *) calloc(1,sizeof(t_pcb));
         deserialize_pcb(&actual_pcb, incoming_kernel_data_buffer->serialized_pcb, &incoming_kernel_data_buffer->pcb_size);
@@ -148,7 +153,7 @@ void MaquinaDeEstados() {
     //6)
 }
 
-void RecibirPcb(int kernelSocketClient ,t_kernel_data *kernel_data_buffer ) {
+void recibirPcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
 
         if( recv(kernelSocketClient , &kernel_data_buffer->Q , sizeof(int) , 0) < 0) {
             puts("Q recv failed\n");
@@ -175,7 +180,7 @@ logical_addr * armarDireccionLogica(t_intructions *actual_instruction) {
     return addr;
 }
 
-int start_kernel(int argc, char* configFile){
+int start_cpu(int argc, char* configFile){
     printf("\n\t=============================================\n");
     printf("\t.:: Vamo a calmarno que viene el Kernel ::.");
     printf("\n\t=============================================\n\n");
@@ -185,7 +190,7 @@ int start_kernel(int argc, char* configFile){
             return -1;
         }
     }else{
-        printf(" Usage: ./kernel setup.data \n");
+        printf(" Usage: ./cpu setup.data \n");
         return -1;
     }
     signal (SIGINT, tratarSeniales);

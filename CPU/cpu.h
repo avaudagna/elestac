@@ -54,5 +54,5 @@ typedef struct {
     char*	KERNEL_IP;
 } t_setup;
 
-void RecibirPcb(int kernelSocketClient ,t_kernel_data *kernel_data );
+void recibirPcb(int kernelSocketClient, t_kernel_data *kernel_data);
 #endif
