@@ -181,9 +181,9 @@ logical_addr * armarDireccionLogica(t_intructions *actual_instruction) {
 }
 
 int start_cpu(int argc, char* configFile){
-    printf("\n\t=============================================\n");
-    printf("\t.:: Vamo a calmarno que viene el Kernel ::.");
-    printf("\n\t=============================================\n\n");
+    printf("\n\t===========================================================\n");
+    printf("\t.:: Me llama usted, entonces voy, el CPU es quien yo soy ::.");
+    printf("\n\t===========================================================\n\n");
     if(argc==2){
         if(loadConfig(configFile)<0){
             puts(" Config file can not be loaded.\n Please, try again.\n");
