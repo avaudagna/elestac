@@ -6,7 +6,6 @@ gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collecti
  * Y la consola asi:
 gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
 */
-#include <libs/pcb.h>
 #include "kernel.h"
 
 /* BEGIN OF GLOBAL STUFF I NEED EVERYWHERE */
@@ -256,7 +255,7 @@ int accept_new_PCB(int newConsole){
 	char PID[4];
 	char buffer_4[4];
 	sprintf(PID, "%04d", (int) newConsole);
-	printf(" .:: NEW (0) program with PID=%04s arriving ::.\n", PID);
+	printf(" .:: NEW (0) program with PID=%s arriving ::.\n", PID);
 	recv(newConsole, buffer_4, 4, 0);
 	size_t ansisopLen=(size_t) atoi(buffer_4);
 	char *code = malloc(ansisopLen);
