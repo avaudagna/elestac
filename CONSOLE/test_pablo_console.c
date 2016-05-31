@@ -10,7 +10,7 @@ gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
 #include <signal.h>
 
 #define KERNEL_ADDR "127.0.0.1"
-#define KERNEL_PORT 5003
+#define KERNEL_PORT 5008
 
 void tratarSeniales(int);
 int kernelSocketClient;
@@ -68,7 +68,6 @@ void tratarSeniales(int senial){
 			//signal (SIGINT, SIG_DFL); // solo controlo una vez.
 			printf("Program execution cancelled.\n\n");
 			//send(kernelSocketClient, "1", 1, 0);
-            //close(kernelSocketClient);
 			exit(1);
 			break;
 	}

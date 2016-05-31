@@ -21,7 +21,7 @@
 
 #define MAX_CLIENTS 100 /* TODO Delete this */
 
-typedef struct {
+struct t_setup {
 		int 	PUERTO_PROG,
 				PUERTO_CPU,
 				QUANTUM,
@@ -36,7 +36,7 @@ typedef struct {
 		int 	PUERTO_UMC;
 		char*	IP_UMC;
 		char*	KERNEL_IP;
-	} t_setup; t_setup	setup; // GLOBAL settings
+	} setup; //t_setup	setup; // GLOBAL settings
 typedef struct{
 	int clientID,
 		status;
