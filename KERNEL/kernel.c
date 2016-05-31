@@ -5,67 +5,71 @@ gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collecti
 #include "kernel.h"
 
 /* BEGIN OF GLOBAL STUFF I NEED EVERYWHERE */
-int consoleServer, cpuServer;
-int consoleSockets[MAX_CLIENTS]={0};
-int cpuSockets[MAX_CLIENTS]={0};
-int cpusOnline=0;
-int consolesOnline=0;
+int consoleServer, cpuServer, clientUMC;
 int maxSocket=0;
-int maxCPUs=0;
-int maxConsoles=0;
-t_list* PCB_NEW_list;
-t_list* cpus_conectadas;
+t_queue	*PCB_READY_Q, *PCB_BLOCKED_Q, *PCB_EXIT_Q; /* I think I don't need queues 4 NEW & EXECUTING */
+t_list *cpus_conectadas, *consolas_conectadas;
 fd_set 	allSockets;
+t_log* kernel_log;
 /* END OF GLOBAL STUFF I NEED EVERYWHERE */
 
-int main (int argc, char **argv) {
-	if(start_kernel(argc, argv[1])<0) return 0; //load settings
-	//int clientUMC=connect2UMC();
-	int clientUMC=100;setup.PAGE_SIZE=1024; //TODO Delete -> lo hace connect2UMC()
-	if(clientUMC<0){
-		puts("Could not connect to the UMC. Please, try again.");
+int main (int argc, char **argv){
+	kernel_log = log_create("kernel.log", "Elestac-KERNEL", true, LOG_LEVEL_TRACE);
+	if (start_kernel(argc, argv[1])<0) return 0; //load settings
+	//clientUMC=connect2UMC();
+	clientUMC=100;setup.PAGE_SIZE=1024; //TODO Delete -> lo hace connect2UMC()
+	if (clientUMC<0){
+		log_error(kernel_log, "Could not connect to the UMC. Please, try again.");
 		return 0;
 	}
-	PCB_NEW_list = list_create();
+	PCB_READY_Q = queue_create();
 	cpus_conectadas = list_create();
-	setServerSocket(&consoleServer, setup.KERNEL_IP, setup.PUERTO_PROG);
-	setServerSocket(&cpuServer, setup.KERNEL_IP, setup.PUERTO_CPU);
+	consolas_conectadas= list_create();
+	if(setServerSocket(&consoleServer, setup.KERNEL_IP, setup.PUERTO_PROG)<0){
+		log_error(kernel_log,"Error while creating the CONSOLE server.");
+		return 0;
+	}
+	if(setServerSocket(&cpuServer, setup.KERNEL_IP, setup.PUERTO_CPU)<0){
+		log_error(kernel_log,"Error while creating the CPU server.");
+		return 0;
+	}
+	maxSocket=cpuServer;
 	printf(" .:: Servers to CPUs and consoles up and running ::.\n");
 	printf(" .:: Waiting for incoming connections ::.\n\n");
-	while(control_clients());
-	puts("Bye bye kernel");//TODO Delete
+	while (control_clients());
+	log_error(kernel_log, "Closing kernel");
 	close(consoleServer);
 	close(cpuServer);
 	//close(clientUMC); // TODO un-comment when real UMC is present
+	log_destroy(kernel_log);
 	return 0;
 }
 
 int start_kernel(int argc, char* configFile){
-	printf("\n\t=============================================\n");
+	printf("\n\t===========================================\n");
 	printf("\t.:: Vamo a calmarno que viene el Kernel ::.");
-	printf("\n\t=============================================\n\n");
-	if(argc==2){
-		if(loadConfig(configFile)<0){
+	printf("\n\t===========================================\n\n");
+	if (argc==2){
+		if (loadConfig(configFile)<0){
     		puts(" Config file can not be loaded.\n Please, try again.\n");
+			log_error(kernel_log, "Config file can not be loaded. Please, try again.");
     		return -1;
     	}
-	}else{
+	} else {
     	printf(" Usage: ./kernel setup.data \n");
+		log_error(kernel_log, "Config file was not provided.");
     	return -1;
 	}
 	signal (SIGINT, tratarSeniales);
-	signal (SIGPIPE, tratarSeniales);	
+	signal (SIGPIPE, tratarSeniales);
 	return 0;
 }
 
 int loadConfig(char* configFile){
-	if(configFile == NULL){
-		return -1;
-	}
+	if (configFile == NULL)	return -1;
 	t_config *config = config_create(configFile);
 	printf(" .:: Loading settings ::.\n");
-
-	if(config != NULL){
+	if (config != NULL){
 		setup.PUERTO_PROG=config_get_int_value(config,"PUERTO_PROG");
 		setup.PUERTO_CPU=config_get_int_value(config,"PUERTO_CPU");
 		setup.QUANTUM=config_get_int_value(config,"QUANTUM");
@@ -89,12 +93,12 @@ int connect2UMC(){
 	char* buffer=NULL;
 	char* buffer_4=NULL;
 	printf(" .:: Connecting to UMC on %s:%d ::.\n",setup.IP_UMC,setup.PUERTO_UMC);
-	if(getClientSocket(&clientUMC, setup.IP_UMC, setup.PUERTO_UMC)) return (-1);
+	if (getClientSocket(&clientUMC, setup.IP_UMC, setup.PUERTO_UMC)) return (-1);
 	sprintf(buffer_4, "%04d", (int) setup.STACK_SIZE);
 	asprintf(&buffer, "%s%s", "0", buffer_4);
 	send(clientUMC, buffer, 5 , 0);
 	printf(" .:: Stack size (sent to UMC): %s ::.\n",buffer_4);
-	if(recv(clientUMC, &buffer_4, 4, 0) < 0) return (-1);
+	if (recv(clientUMC, &buffer_4, 4, 0) < 0) return (-1);
 	setup.PAGE_SIZE=atoi(buffer_4);
 	printf(" .:: Page size: (received from UMC): %d ::.\n",setup.PAGE_SIZE);
 	free(buffer);
@@ -102,7 +106,7 @@ int connect2UMC(){
 	return clientUMC;
 }
 
-int	requestPages2UMC(char* PID, int ansisopLen,char* code,int clientUMC){
+uint32_t requestPages2UMC(char* PID, size_t ansisopLen,char* code,int clientUMC){
 	/*
 	This function MUST be in a thread
 	Because the recv() is BLOCKER and it can be delayed when waiting
@@ -111,12 +115,12 @@ int	requestPages2UMC(char* PID, int ansisopLen,char* code,int clientUMC){
 	*/
 	char* buffer;
 	char buffer_4[4];
-	int bufferLen=1+4+4+4+ansisopLen; //1+PID+req_pages+size+code
+	size_t bufferLen=1+4+4+4+ansisopLen; //1+PID+req_pages+size+code
 	sprintf(buffer_4, "%04d", (int) (ansisopLen/setup.PAGE_SIZE)+1);
 	asprintf(&buffer, "%d%s%s%04d%s", 1,PID,buffer_4, ansisopLen,code);
 	send(clientUMC, buffer, bufferLen, 0);
 	recv(clientUMC, buffer_4, 4, 0);
-	int code_pages=atoi(buffer_4);
+	uint32_t code_pages = (uint32_t) atoi(buffer_4);
 	free(buffer);
 	return code_pages;
 }
@@ -125,225 +129,185 @@ void tratarSeniales(int senial){
 	printf("\t\tSystem received the signal: %d",senial);
 	printf("\n\t=============================================\n");
 	switch (senial){
-		case SIGINT:
-			// Detecta Ctrl+C y evita el cierre.
-			printf("Esto acabará con el sistema. Presione Ctrl+C una vez más para confirmar.\n\n");
-			signal (SIGINT, SIG_DFL); // solo controlo una vez.
-			break;
-		case SIGPIPE:
-			// Trato de escribir en un socket que cerro la conexion.
-			printf("La consola o el CPU con el que estabas hablando se murió. Llamá al 911.\n\n");
-			signal (SIGPIPE, tratarSeniales);
-			break;
-		default:
-			printf("Otra senial\n");
-			break;
+	case SIGINT:
+		// Detecta Ctrl+C y evita el cierre.
+		printf("Esto acabará con el sistema. Presione Ctrl+C una vez más para confirmar.\n\n");
+		signal (SIGINT, SIG_DFL); // solo controlo una vez.
+		break;
+	case SIGPIPE:
+		// Trato de escribir en un socket que cerro la conexion.
+		printf("La consola o el CPU con el que estabas hablando se murió. Llamá al 911.\n\n");
+		signal (SIGPIPE, tratarSeniales);
+		break;
+	default:
+		printf("Otra senial\n");
+		break;
 	}
-}
-int rmvClosedCPUs(){
-	int i, j=0;
-	if(cpusOnline == 0) return 0;
-	for(i=0; i<cpusOnline; i++){
-		if(cpuSockets[i]>0){
-			cpuSockets[j] = cpuSockets[i];
-			j++;
-		}
-	}
-	cpusOnline = j; return cpuSockets[j-1];
-}
-int rmvClosedConsoles(){
-	int i, j=0;
-	if(consolesOnline == 0) return 0;
-	for(i=0; i<consolesOnline; i++){
-		if(consoleSockets[i]>0){	
-			consoleSockets[j] = consoleSockets[i];
-			j++;
-		}
-	}
-	consolesOnline = j; return consoleSockets[j-1];
 }
 
-void killCPU(int cpu){
-	close(cpu);
-	printf("Bye bye CPU %d\n", cpu);
-	return;
+int killClient(int client,char *what){
+	/*
+	 * TODO IF pid status es EXECUTING -> esperar el quantum y matar el pcb
+	 * TODO si esta en cualquier otro estado -> matar el pcb
+	 */
+	close(client);
+	printf("Bye bye %s!\n", what);
+	return 0;
 }
-void killCONSOLE(int console){
-	close(console);
-	printf("Bye bye Console %d\n", console);
-	return;
+
+bool compareIntegers(void *nbr){
+	return global_int == (int) nbr;
+}
+
+void add2FD_SET(void *client){
+	t_Client *cliente=client;
+	FD_SET(cliente->clientID, &allSockets);
+}
+
+void check_CPU_FD_ISSET(void *cpu){
+	char buffer_4[4];
+	t_Client *cliente = cpu;
+	if (FD_ISSET(cliente->clientID, &allSockets)) {
+		if (recv(cliente->clientID, buffer_4, 2, 0) > 0){
+			if ((strncmp(buffer_4, "T1",2)) == 0 ){
+				// CPU said T1 -> semaforos, variables compartidas, vuelve un PCB, etc.
+			} else {
+				log_error(kernel_log,"Caso no contemplado. CPU dijo: %s",buffer_4);
+			}
+		} else {
+			printf(" .:: CPU %d has closed the connection ::. \n", cliente->clientID);
+			killClient(cliente->clientID,"CPU");
+			bool getCPUIndex(void *nbr){
+				return cliente->clientID == (int) nbr;
+			}
+			list_remove_by_condition(cpus_conectadas, getCPUIndex);
+		}
+	}
+}
+
+void check_CONSOLE_FD_ISSET(void *console){
+	char buffer_4[4];
+	t_Client *cliente = console;
+	if (FD_ISSET(cliente->clientID, &allSockets)) {
+		if (recv(cliente->clientID, buffer_4, 2, 0) > 0){
+			log_error(kernel_log,"Consola no deberia enviar nada pero dijo: %s",buffer_4);
+		} else {
+			printf(" .:: A console has closed the connection, the associated PID %04d will be terminated ::. \n", cliente->clientID);
+			killClient(cliente->clientID,"console");
+			bool getConsoleIndex(void *nbr){
+				t_Client *unCliente = nbr;
+				return cliente->clientID == unCliente->clientID;
+
+			}
+			list_remove_by_condition(consolas_conectadas, getConsoleIndex);
+		}
+	}
 }
 
 int control_clients(){
+	int i, newConsole,newCPU;
 	char buffer_4[4];
-	buffer_4[0]='\0';
-	int retval=-3;
-	struct timeval timeout;
-	timeout.tv_sec = 3;
-	timeout.tv_usec = 0;
-	int i;
-	maxCPUs = rmvClosedCPUs();
-	maxConsoles = rmvClosedConsoles();
-	maxSocket=(maxCPUs>maxConsoles)?maxCPUs:maxConsoles;
-	if(consoleServer>maxSocket) maxSocket=consoleServer;
-	if(cpuServer>maxSocket) maxSocket=cpuServer;
+	struct timeval timeout = {.tv_sec = 3};
+	int consolesOnline=list_size(consolas_conectadas);
+	int cpusOnline=list_size(cpus_conectadas);
 	FD_ZERO(&allSockets);
 	FD_SET(cpuServer, &allSockets);
 	FD_SET(consoleServer, &allSockets);
-	for (i=0; i<cpusOnline; i++)
-		FD_SET(cpuSockets[i], &allSockets);
-	for (i=0; i<consolesOnline; i++)
-		FD_SET(consoleSockets[i], &allSockets);
-	retval=select(maxSocket+1, &allSockets, NULL, NULL, &timeout);
-	//printf("-----Acabo de salir del select() con %d-----\n",retval);
-	if(retval<0){
-		perror("Un signal u otro error en el select()");
-	}else if(retval>0){
+	list_iterate(consolas_conectadas,add2FD_SET);
+	list_iterate(cpus_conectadas,add2FD_SET);
+	int retval=select(maxSocket+1, &allSockets, NULL, NULL, &timeout); // (retval < 0) <=> signal
+	if (retval>0) {
 		printf("Tengo %d consolas\n", consolesOnline);
-		sleep(3);
-		for(i=0;i<consolesOnline;i++){
-			if(FD_ISSET(consoleSockets[i], &allSockets)){
-				if(recv(consoleSockets[i], buffer_4, 2, 0) > 0){
-					printf("La consola no deberia decirme nada\n");
-					if((strncmp(buffer_4, "T1",2)) == 0 ){
-						write(consoleSockets[i], "holi", 4);
-					}else{
-							printf("Caso no contemplado. Me dijeron:%s\n",buffer_4);
-					}
-				}else{
-					printf(" .:: A console has closed the connection. PID %04d will be terminated ::. \n", consoleSockets[i]);
-					killCONSOLE(consoleSockets[i]);
-		        	consoleSockets[i] = -1;
-				}
-			}
-		}
-		for(i=0;i<cpusOnline;i++){
-			if(FD_ISSET(cpuSockets[i], &allSockets)){
-				if(recv(cpuSockets[i], buffer_4, 2, 0) > 0){
-					if((strncmp(buffer_4, "C1",2)) == 0){
-						write(cpuSockets[i], "holi", 4);
-					}else{
-							printf("Caso no contemplado. Me dijeron:%s\n",buffer_4);
-					}
-				}else{
-					printf(" .:: A CPU has closed the connection ::. \n", consoleSockets[i]);
-					killCPU(cpuSockets[i]);
-					cpuSockets[i] = -1;
-				}
-			}
-		}
-		/* ALWAYS enters here, accepts new connections and handshakes */
-		/*
-			desde el FD_ISSET para CPU y Consola hasta el primer strncmp
-			que lee "0" podria estar todo en una funcion generica
-		*/
-		if(FD_ISSET(cpuServer, &allSockets)){
-			int aceptado=acceptConnection(cpuServer);
-			if (aceptado<1){
-				perror("Accept failed :(");
-			}else{
-				cpuSockets[cpusOnline]=aceptado;
-				cpusOnline++;
-				if(recv(aceptado, buffer_4, 1, 0)>0){
-					if(strncmp(buffer_4, "0",1) == 0){
-						// Aca agrego la cpu a la lista
-						// En vez de agregar solo el CPU ID podria
-						// agregar algo copado como un struct
-						// que tenga el cpu_status
-						// las CPUs van en un queue!!!
-						// cuando le mando un PCB hago un pop()
-						// cuando me lo devuelve queda libre entonces hago
-						// push() y la meto de nuevo en la cola
-						list_add(cpus_conectadas,&aceptado);
-						printf(" .:: New CPU arriving ::.\n");
-
-						
-						t_pcb *tuPCB;
-						tuPCB=(list_get(PCB_NEW_list,0));
-						tuPCB->status=EXECUTING;
-						printf(" .:: Le mando a CPU el PCB %d ::.\n",tuPCB->pid);
-						//serializo y mando
-						send(aceptado,"pbc_serializado",5,0);
-						//list_find(PCB_NEW_list, (void*) _is_chuck_norris);
-					}
-				}else{
-					printf(" .:: CPU leaving ::.\n");
-				}
-			}
-		}
-		if(FD_ISSET(consoleServer, &allSockets)){
-			int aceptado=acceptConnection(consoleServer);
-			if(aceptado<1) perror("Accept failed :(");
-			else{
-				consoleSockets[consolesOnline]=aceptado;
-				consolesOnline++;
-				if(recv(aceptado, buffer_4, 1, 0)>0){
-					if (strncmp(buffer_4, "0",1) == 0){
-						/*
-							Launch a thread here
-							Because if a new console arrives and we request UMC
-							pages to store the program code but SWAP is compacting,
-							we have to wait... and we can't run RoundRobin while waiting.
-
-							Consider making cpuSockets and consoleSockets, global variables
-							because you don't want to serialize them to send them to the
-							threads.
-							And you don't want to put them into a struct.
-						*/
-						printf(" .:: New console arriving ::.\n");
-						char PID[4];
-						sprintf(PID, "%04d", (int) aceptado);
-						recv(aceptado, buffer_4, 4, 0);
-						int ansisopLen=atoi(buffer_4);
-						char *code = malloc(ansisopLen);
-						recv(aceptado, code, ansisopLen, 0);
-						//printf("El codigo ansisop recibido es:\n%s\n",code);
-						//int code_pages=requestPages2UMC(PID,ansisopLen,code,clientUMC);
-						//TODO DELETEEE
-						int code_pages=3;
-						//END TODO deLETEEE
-						if(code_pages>0){
-							send(aceptado,PID,4,0);
-							t_metadata_program* metadata = metadata_desde_literal(code);
-							t_pcb newPCB;
-							newPCB.pid=atoi(PID);
-							newPCB.program_counter=metadata->instruccion_inicio;
-							newPCB.stack_pointer=code_pages;
-							newPCB.stack_index=queue_create();
-							newPCB.status=NEW;
-							newPCB.instrucciones_size=metadata->instrucciones_size;
-							char * instrucciones_buffer = NULL;
-	    					t_size instrucciones_buffer_size = 0;
-	    					/*
-	    					serialize_instrucciones(newMetadata->instrucciones_serializado, &instrucciones_buffer, &instrucciones_buffer_size) ;
-	    					newPCB.instrucciones_serializado = instrucciones_buffer;
-	    					*/
-							//newPCB.instrucciones_serializado=metadata->instrucciones_serializado;
-						//	newPCB.etiquetas_size=metadata->etiquetas_size;
-						//	newPCB.etiquetas=metadata->etiquetas;
-
-							list_add(PCB_NEW_list,&newPCB);
-							//newPCB.status=EXECUTING;
-							printf(" .:: The program with PID=%04d is now READY (%d) ::.\n", newPCB.pid, newPCB.status);
-						}else{
-							send(aceptado,"0000",4,0);
-							printf(" .:: The program with PID=%s could not be started. System run out of memory ::.\n", PID);
-							killCONSOLE(aceptado);
-							consoleSockets[consolesOnline-1]=-1;
-						}
-						free(code); // let it free
-					}else{
-						printf(" .:: Consola dijo algo que no es handshake: %s\n", buffer_4);
-					}
-				}else{
-					printf("Se fue una consola? Tenia %d consolas\n", consolesOnline);
-					killCONSOLE(aceptado);
-					consoleSockets[consolesOnline-1]=-1;
-					printf("Me quedaron %d consolas\n", consolesOnline);
-				}
-			}
-			printf("Consolas despues de aceptar: %d\n", consolesOnline);
-		}
+		list_iterate(consolas_conectadas,check_CONSOLE_FD_ISSET);
+		list_iterate(cpus_conectadas,check_CPU_FD_ISSET);
+		newCPU=accept_new_client("CPU", &cpuServer, &allSockets, cpus_conectadas);
+		if (list_size(cpus_conectadas) > 1) round_robin(newCPU);
+		if ((newConsole=accept_new_client("console", &consoleServer, &allSockets, consolas_conectadas)) > 1)
+			accept_new_PCB(newConsole);
 	}
 	return 1;
+}
+
+int accept_new_PCB(int newConsole){
+	char PID[4];
+	char buffer_4[4];
+	sprintf(PID, "%04d", (int) newConsole);
+	printf(" .:: NEW (0) program with PID=%04s arriving ::.\n", PID);
+	recv(newConsole, buffer_4, 4, 0);
+	size_t ansisopLen=(size_t) atoi(buffer_4);
+	char *code = malloc(ansisopLen);
+	recv(newConsole, code, ansisopLen, 0);
+	//uint32_t code_pages=requestPages2UMC(PID,ansisopLen,code,clientUMC);
+	uint32_t code_pages=3;//TODO DELETE when using a real UMC
+	if (code_pages>0){
+		send(newConsole,PID,4,0);
+		t_metadata_program* metadata = metadata_desde_literal(code);
+		t_pcb newPCB;
+		newPCB.pid=atoi(PID);
+		newPCB.program_counter=metadata->instruccion_inicio;
+		newPCB.stack_pointer=code_pages;
+		newPCB.stack_index=queue_create();
+		newPCB.status=READY;
+		newPCB.instrucciones_size= metadata->instrucciones_size;
+		newPCB.instrucciones_serializado = metadata->instrucciones_serializado;
+		newPCB.etiquetas_size = metadata->etiquetas_size;
+		newPCB.etiquetas = metadata->etiquetas;
+		queue_push(PCB_READY_Q,&newPCB);
+		printf(" .:: The program with PID=%04d is now READY (%d) ::.\n", newPCB.pid, newPCB.status);
+		printf("Consolas despues de aceptar: %d\n", queue_size(PCB_READY_Q));
+	} else {
+		send(newConsole,"0000",4,0);
+		printf(" .:: The program with PID=%s could not be started. System run out of memory ::.\n", PID);
+		killClient(newConsole,"console");
+	}
+	free(code); // let it free
+}
+
+int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista){
+	int aceptado=0;
+	char buffer_4[4];
+	if (FD_ISSET(*server, &*sockets)){
+		if ((aceptado=acceptConnection(*server)) < 1){
+			log_error(kernel_log,"Error while trying to Accept() a new %s.",what);
+		} else {
+			maxSocket=aceptado;
+			if (recv(aceptado, buffer_4, 1, 0) > 0){
+				if (strncmp(buffer_4, "0",1) == 0){
+					t_Client *cliente=malloc(sizeof(t_Client));
+					cliente->clientID=aceptado;
+					cliente->status=0;
+					list_add(lista, cliente);
+					printf(" .:: New %s arriving ::.\n",what);
+				}
+			} else {
+				log_error(kernel_log,"Error while trying to read from a newly accepted %s.",what);
+				killClient(aceptado,what);
+				return -1;
+			}
+		}
+	}
+	return aceptado;
+}
+
+void round_robin(int ultimaCPU){
+	char quantum[4];
+	char quantum_sleep[4];
+	void * pcb_buffer = NULL;
+	size_t pcb_buffer_size = 0;
+	printf(" .:: Agregando la CPU %d a mi RoundRobin ::.\n", ultimaCPU);
+	if (queue_size(PCB_READY_Q) > 0){
+		t_pcb *tuPCB;
+		tuPCB=queue_pop(PCB_READY_Q);
+		tuPCB->status=EXECUTING;
+		printf(" .:: Le mando a CPU %d el PCB del proceso %d ::.\n",ultimaCPU, tuPCB->pid);
+		sprintf(quantum, "%04d", (int) setup.QUANTUM);
+		sprintf(quantum_sleep, "%04d", (int) setup.QUANTUM_SLEEP);
+		serialize_data(&quantum, 4, &pcb_buffer, &pcb_buffer_size);
+		serialize_data(&quantum_sleep, 4, &pcb_buffer, &pcb_buffer_size);
+		serialize_pcb(tuPCB, &pcb_buffer, &pcb_buffer_size);
+		/* envio 4+4+pcb_size --> quantum + quantum_sleep + pcb_serializado */
+		send(ultimaCPU, pcb_buffer, pcb_buffer_size,0);
+		/* cada CPU esta en cpus_conectadas en un t_Client (con campo STATUS para indicar si la CPU esta en uso) */
+	}
+	return;
 }

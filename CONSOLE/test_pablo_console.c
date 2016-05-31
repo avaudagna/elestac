@@ -1,5 +1,5 @@
 /*
-gcc -o console socketCommons/socketCommons.c test_pablo_console.c
+gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
 */
 #include<stdlib.h> //exit(1);
 #include<stdio.h> //printf
@@ -10,7 +10,7 @@ gcc -o console socketCommons/socketCommons.c test_pablo_console.c
 #include <signal.h>
 
 #define KERNEL_ADDR "127.0.0.1"
-#define KERNEL_PORT 5007
+#define KERNEL_PORT 5003
 
 void tratarSeniales(int);
 int kernelSocketClient;
