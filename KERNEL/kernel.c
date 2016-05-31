@@ -60,7 +60,12 @@ int start_kernel(int argc, char* configFile){
     		return -1;
     	}
 	} else {
-    	printf(" Usage: ./kernel setup.data \n");
+		int i = 0;
+		for (i = 0; i < 10001; i++){
+			usleep(400);
+			printf("\r\e[?25l Loading... %d", i/100);
+		}
+    	printf("\r Usage: ./kernel setup.data \n");
 		log_error(kernel_log, "Config file was not provided.");
     	return -1;
 	}

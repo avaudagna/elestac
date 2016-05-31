@@ -18,3 +18,14 @@
 [ERROR] 02:40:18:744 Elestac-KERNEL/(30157:30157): Error while creating the CONSOLE server.
 [ERROR] 02:40:33:985 Elestac-KERNEL/(30219:30219): Error while creating the CPU server.
 [ERROR] 02:45:49:331 Elestac-KERNEL/(31208:31208): Error while creating the CONSOLE server.
+[ERROR] 15:19:06:568 Elestac-KERNEL/(5076:5076): Config file was not provided.
+[ERROR] 15:19:26:190 Elestac-KERNEL/(5134:5134): Config file was not provided.
+[ERROR] 15:19:31:325 Elestac-KERNEL/(5144:5144): Config file was not provided.
+[ERROR] 15:19:32:803 Elestac-KERNEL/(5145:5145): Config file was not provided.
+[ERROR] 15:19:34:88 Elestac-KERNEL/(5155:5155): Config file was not provided.
+[ERROR] 15:19:35:349 Elestac-KERNEL/(5156:5156): Config file was not provided.
+[ERROR] 15:19:56:920 Elestac-KERNEL/(5211:5211): Config file was not provided.
+[ERROR] 15:20:16:356 Elestac-KERNEL/(5256:5256): Config file was not provided.
+[ERROR] 15:20:42:363 Elestac-KERNEL/(5320:5320): Config file was not provided.
+[ERROR] 15:21:32:524 Elestac-KERNEL/(5443:5443): Config file was not provided.
+[ERROR] 15:22:18:89 Elestac-KERNEL/(5548:5548): Config file was not provided.
