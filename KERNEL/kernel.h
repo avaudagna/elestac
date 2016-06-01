@@ -19,9 +19,7 @@
 #include "libs/pcb.h"
 #include "libs/stack.h"
 
-#define MAX_CLIENTS 100 /* TODO Delete this */
-
-struct t_setup {
+struct {
 		int 	PUERTO_PROG,
 				PUERTO_CPU,
 				QUANTUM,
@@ -36,24 +34,23 @@ struct t_setup {
 		int 	PUERTO_UMC;
 		char*	IP_UMC;
 		char*	KERNEL_IP;
-	} setup; //t_setup	setup; // GLOBAL settings
+	} setup;
 typedef struct{
-	int clientID,
-		status;
+	int 	clientID,
+			status;
+	pid_t	pid;
 } t_Client;
 
 uint32_t	requestPages2UMC(char* PID, size_t ansisopLen,char* code,int clientUMC);
-int 		global_int=0;
 int			start_kernel(int argc, char* configFile);
 int 		loadConfig(char* configFile);
 int 		connect2UMC();
 int			control_clients();
-int			rmvClosedClients(int *clientsOnline, int *clientSocket);
 int 		accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista);
 int			accept_new_PCB(int newConsole);
 int 		killClient(int client,char *what);
 void 		tratarSeniales(int);
-void 		round_robin(int ultimaCPU);
+void 		round_robin();
 void		add2FD_SET(void *client);
 void 		check_CPU_FD_ISSET(void *client);
 void		check_CONSOLE_FD_ISSET(void *client);
