@@ -6,11 +6,7 @@
 #include "cpu.h"
 #include "libs/pcb.h"
 
-void MaquinaDeEstados();
-
 t_setup	setup; // GLOBAL settings
-logical_addr * armarDireccionLogica(t_intructions *actual_instruction);
-void tratarSeniales(int senial);
 
 //
 //Compilame asi:
@@ -30,16 +26,16 @@ int main(int argc, char **argv) {
 
     if (start_cpu(argc, argv[1])<0) return 0;
 
-    char* kernelMessage = (char*) calloc(sizeof(char),PACKAGE_SIZE);
-	if(kernelMessage == NULL) {
-		puts("===Error in kernelMessage malloc===");
-		return (-1);
-	}
-	char* umcMessage = (char*) calloc(sizeof(char),PACKAGE_SIZE);
-	if(umcMessage  == NULL) {
-		puts("===Error in umcMessage  malloc===");
-		return (-1);
-	}
+//    char* kernelMessage = (char*) calloc(sizeof(char),PACKAGE_SIZE);
+//	if(kernelMessage == NULL) {
+//		puts("===Error in kernelMessage malloc===");
+//		return (-1);
+//	}
+//	char* umcMessage = (char*) calloc(sizeof(char),PACKAGE_SIZE);
+//	if(umcMessage  == NULL) {
+//		puts("===Error in umcMessage  malloc===");
+//		return (-1);
+//	}
 
 	//Crete UMC client
 	//TODO: getClientSocket(&umcSocketClient, UMC_ADDR , UMC_PORT);
@@ -60,15 +56,28 @@ int main(int argc, char **argv) {
 
         //primer byte 1 ? => recibirPcb LISTO
         //En Recibir PCB : Cada 4 bytes: Q, QSleep, pcb_size, pcb LISTO
+        
+        printf(" .:: Waiting for Kernel handshake ::.\n");
+        if( recv(kernelSocketClient , handshake , sizeof(char) , 0) < 0) {
+              puts(".:: kernel handshake receive failed ::.");
+              break;
+        }
+        if(strncmp(handshake, "1", sizeof(char)) != 0) {
+            puts(".:: wrong kernel handshake received ::.");
+            return -1;
+        }
+
         t_kernel_data *incoming_kernel_data_buffer = calloc(1, sizeof(t_kernel_data));
-        do {
-            printf(" .:: Waiting for Kernel PCB ::.\n");
-            recv(kernelSocketClient, handshake, sizeof(char), 0);
-        } while (strncmp(handshake, "1", sizeof(char)) != 0);
-        recibirPcb(kernelSocketClient, incoming_kernel_data_buffer);
+        puts(".:: Waiting for kernel PCB and Quantum data ::.");
+        if( recibir_pcb(kernelSocketClient, incoming_kernel_data_buffer) < 0) {
+            return -1;
+        }
+
+        //Success!!  
         //Deserializo el PCB que recibo LISTO
         t_pcb * actual_pcb = (t_pcb *) calloc(1,sizeof(t_pcb));
-        deserialize_pcb(&actual_pcb, incoming_kernel_data_buffer->serialized_pcb, &incoming_kernel_data_buffer->pcb_size);
+        size_t  last_buffer_index = 0;
+        deserialize_pcb(&actual_pcb, incoming_kernel_data_buffer->serialized_pcb, &last_buffer_index);
         //Le paso el pid a la umc
 //        if( send(umcSocketClient , &actual_pcb->pid , sizeof(actual_pcb->pid ), 0) < 0) {
 //            puts("Send failed");
@@ -80,7 +89,6 @@ int main(int argc, char **argv) {
             //Dentro del for leo el PC, con el valor (ej 3)
             logical_addr * intruction_addr = armarDireccionLogica(actual_pcb->instrucciones_serializado+actual_pcb->program_counter);
             //TODO: MANDARLE ESTO A MARIAN!
-
         }
 
 			//Yo voy a recibir los bytes que le vaya pidiendo y los voy metiendo en un buffer hasta que termino
@@ -153,21 +161,29 @@ void MaquinaDeEstados() {
     //6)
 }
 
-void recibirPcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
-
-        if( recv(kernelSocketClient , &kernel_data_buffer->Q , sizeof(int) , 0) < 0) {
+int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
+        void * buffer = calloc(4,1);
+        if( recv(kernelSocketClient , buffer , sizeof(int) , 0) < 0) {
             puts("Q recv failed\n");
+            return -1;
         }
-        if( recv(kernelSocketClient , &kernel_data_buffer->QSleep , sizeof(kernel_data_buffer->QSleep) , 0) < 0) {
+        kernel_data_buffer->Q = atoi(buffer);
+        if( recv(kernelSocketClient , buffer , sizeof(int) , 0) < 0) {
             puts("QSleep recv failed\n");
+            return -1;
         }
-        if( recv(kernelSocketClient , &kernel_data_buffer->pcb_size , sizeof(kernel_data_buffer->pcb_size) , 0) < 0) {
+        kernel_data_buffer->QSleep = atoi(buffer);
+        if( recv(kernelSocketClient ,buffer , sizeof(size_t) , 0) < 0) {
             puts("pcb_size recv failed\n");
+            return -1;
         }
+        kernel_data_buffer->pcb_size = atoi(buffer);
         kernel_data_buffer->serialized_pcb = calloc(1, kernel_data_buffer->pcb_size);
         if( recv(kernelSocketClient , &kernel_data_buffer->serialized_pcb , kernel_data_buffer->pcb_size , 0) < 0) {
             puts("serialized_pcb recv failed\n");
+            return -1;
         }
+        return 0;
 }
 
 logical_addr * armarDireccionLogica(t_intructions *actual_instruction) {

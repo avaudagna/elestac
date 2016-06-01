@@ -20,6 +20,7 @@
 #include "implementation_ansisop.h"
 
 #include "libs/socketCommons.h"
+#include "libs/stack.h"
 
 
 AnSISOP_funciones functions = {
@@ -37,7 +38,7 @@ typedef struct {
     int Q;
     int QSleep;
     size_t pcb_size;
-    char *serialized_pcb;
+    void *serialized_pcb;
 } t_kernel_data;
 
 typedef struct {
@@ -54,5 +55,9 @@ typedef struct {
     char*	KERNEL_IP;
 } t_setup;
 
-void recibirPcb(int kernelSocketClient, t_kernel_data *kernel_data);
+int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer);
+logical_addr * armarDireccionLogica(t_intructions *actual_instruction);
+void tratarSeniales(int senial);
+void MaquinaDeEstados();
+
 #endif
