@@ -49,27 +49,22 @@ HANDSHAKE										0+code_size+cod (1+4+codigo bytes)
 HANDSHAKE_RTA			PID or 0000 (4 bytes)
 FINALIZACION_PROCESO	   							2+PID
 
+/***************************************************************************
+          UMC <--> CPU
+***************************************************************************/ 
+OPERACION			CPU->UMC					UMC->CPU
+HANDSHAKE 			0+PID 						
+HANDSHAKE_RTA									PAGE_SIZE (4 bytes)
+PEDIDO_BYTES		1+PAGINA+OFFSET+TAMAÑO (13 bytes)
+PEDIDO_BYTES_RTA								PAGINA+OFFSET+TAMAÑO+CODIGO ( 12 + sizeof(CODIGO))
+ALMACENAR_BYTES		PAGINA+OFFSET+TAMAÑO+CODIGO ( 12 + sizeof(CODIGO))
+
+
+
+
+
 
 	********************************
 	***ESTRUCTURAS DE INTERCAMBIO***
 	********************************
 
------------- Estructuras entre CPU-UMC --------------
-A continuar se detallan las 2 estructuras para intercambiar datos con la CPU
-
-struct request_data{
-
-	int pid;
-	int page;
-	int offset;
-	int size_data;
-}
-
-struct save_data{
-	
-	int pid;
-	int page;
-   	int offset;
-   	int size_data;
-	void * data;
-} 
