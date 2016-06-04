@@ -22,7 +22,7 @@
 
 /*MACROS */
 #define BACKLOG 10			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
-#define RETARDO 1
+#define RETARDO 123
 #define DUMP    2
 #define FLUSH   3
 #define SALIR   (-1)
@@ -50,15 +50,15 @@
 
 typedef struct umc_parametros {
      int	listenningPort,
-	       	ipSwap,
 			portSwap,
 			marcos,
 			marcosSize,
 			marcosXProc,
 			retardo,
 			entradasTLB;
-     char  *algoritmo,
-	 	   *listenningIp;
+     char   *algoritmo,
+		    *ipSwap,
+			*listenningIp;
 }UMC_PARAMETERS;
 
 
@@ -161,12 +161,6 @@ int main(int argc , char **argv){
         	Procesar_Conexiones();
          }	
 
-	//close(socketCliente);
-	close(socketServidor);
-
-	/* See ya! */
-
-	return 0;
 }
 
 void Init_UMC(char * configFile)
@@ -174,7 +168,7 @@ void Init_UMC(char * configFile)
     Init_Parameters(configFile);
     Init_MemoriaPrincipal();
 	//Init_Swap(); // socket con swap
-	// HandShake_Swap();
+	//HandShake_Swap();
 	Init_Socket(); // socket de escucha
 }
 
@@ -211,8 +205,8 @@ void loadConfig(char* configFile){
 
 		umcGlobalParameters.listenningPort=config_get_int_value(config,"PUERTO");
 		umcGlobalParameters.listenningIp=config_get_string_value(config,"IP_ESCUCHA");
-		umcGlobalParameters.ipSwap=config_get_int_value(config,"IP_SWAP");
-		umcGlobalParameters.portSwap=config_get_int_value(config,"PUERTO_SWAP");
+		umcGlobalParameters.ipSwap=config_get_string_value(config,"IP_SWAP");
+		umcGlobalParameters.portSwap=config_get_string_value(config,"PUERTO_SWAP");
 		umcGlobalParameters.marcos=config_get_int_value(config,"MARCOS");
 		umcGlobalParameters.marcosSize=config_get_int_value(config,"MARCO_SIZE");
 		umcGlobalParameters.marcosXProc=config_get_int_value(config,"MARCO_X_PROC");
@@ -224,39 +218,6 @@ void loadConfig(char* configFile){
 
 	}
 }
-
-
-//void Init_Socket(void)
-//{
-//	struct addrinfo hints;
-//	struct addrinfo *serverInfo;
-//	memset(&hints, 0, sizeof(hints));
-//	hints.ai_family = AF_UNSPEC;		// No importa si uso IPv4 o IPv6
-//	hints.ai_flags = AI_PASSIVE;		// Asigna el address del localhost: 127.0.0.1
-//	hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
-//	getaddrinfo("192.168.0.17", (char *)umcGlobalParameters.listenningPort, &hints, &serverInfo); // Notar que le pasamos NULL como IP, ya que le indicamos que use localhost en AI_PASSIVE
-//
-//	//if ( ( socketServidor = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol) ) == -1 ) {
-//	if ( ( socketServidor = socket(AF_INET, SOCK_STREAM, 0) ) == -1 ) {
-//	perror("socket");
-//	   exit(1);
-//	  }
-//
-//	if ( bind(socketServidor,serverInfo->ai_addr, serverInfo->ai_addrlen) == -1 ) {
-//	   perror("bind");
-//	   exit(1);
-//	  }
-//	freeaddrinfo(serverInfo); // Ya no lo vamos a necesitar
-//
-//	printf("\n.::Escuchando conexiones.. ::.\n");
-//	if ( listen(socketServidor, BACKLOG) == -1 ) {		// IMPORTANTE: listen() es una syscall BLOQUEANTE.
-//	   perror("listen");
-// 	   exit(1);
-//	  }
-//
-//
-//}
-
 
 void Init_Socket(void){
 	setServerSocket(&socketServidor,umcGlobalParameters.listenningIp,umcGlobalParameters.listenningPort);
@@ -434,9 +395,6 @@ void CambioProcesoActivo(int * socket,int * pid){
 		perror("recv");
 
 }
-
-
-
 
 void AtenderKernel(int * socketBuff){
 
@@ -700,7 +658,7 @@ void SwapUpdate(void){
 
 }
 
-void Init_Swap(void){
+/*void Init_Swap(void){
 
 		struct addrinfo hints;
 		struct addrinfo *serverInfo;
@@ -709,7 +667,7 @@ void Init_Swap(void){
 		hints.ai_family = AF_UNSPEC;		// Permite que la maquina se encargue de verificar si usamos IPv4 o IPv6
 		hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
 
-		getaddrinfo(IP_SWAP, PUERTO_SWAP, &hints, &serverInfo);	// Carga en serverInfo los datos de la conexion
+		getaddrinfo(umcGlobalParameters.ipSwap, umcGlobalParameters.portSwap, &hints, &serverInfo);	// Carga en serverInfo los datos de la conexion
 
 		socketClienteSwap = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
 
@@ -749,7 +707,7 @@ void HandShake_Swap(void){
 	package = (char *) malloc(sizeof(char) * SIZE_HANDSHAKE_SWAP) ;
 	if ( recv(socketClienteSwap, (void*) package, SIZE_HANDSHAKE_SWAP, 0) > 0 ){
 
-		if ( package[0] == '1'){
+		if ( package[0] == 'S'){
 			//  paginasLibresEnSwap = los 4 bytes que quedan
 			char *aux=NULL;
 			aux = (char *) malloc(4);
@@ -764,6 +722,6 @@ void HandShake_Swap(void){
 		exit(1);
 	}
 
-}
+}*/
 
 
