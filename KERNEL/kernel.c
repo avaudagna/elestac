@@ -363,9 +363,12 @@ void round_robin(){
 		sprintf(quantum, "%04d", setup.QUANTUM);
 		sprintf(quantum_sleep, "%04d", setup.QUANTUM_SLEEP);
 		serialize_pcb(tuPCB, &pcb_buffer, &pcb_buffer_size);
-		tmp_buffer_size=1+4+4+4+pcb_buffer_size;
-		asprintf(&tmp_buffer, "%d%s%s%04d%s", 1,quantum,quantum_sleep, pcb_buffer_size,pcb_buffer);
-		send(laCPU->clientID, tmp_buffer, tmp_buffer_size,0);
+		tmp_buffer_size=1+4+4+4;
+        tmp_buffer = malloc(tmp_buffer_size+pcb_buffer_size);
+		asprintf(&tmp_buffer, "%d%s%s%04d", 1,quantum,quantum_sleep, pcb_buffer_size);
+        memcpy(tmp_buffer+tmp_buffer_size, pcb_buffer, pcb_buffer_size);
+        tmp_buffer_size = tmp_buffer_size + pcb_buffer_size;
+		send(ultimaCPU, tmp_buffer, tmp_buffer_size,0);
 		/* cada CPU esta en cpus_conectadas en un t_Client (con campo STATUS para indicar si la CPU esta en uso)
 		 * en t_Client podria agregar un campo que me diga que PID esta ejecutando
 		 * luego en la funcion match_PCB que uso para matar el PCB cuando una consola cierra la conexion
