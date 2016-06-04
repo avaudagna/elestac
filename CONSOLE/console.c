@@ -6,18 +6,21 @@
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>
+#include <commons/config.h>
 
-#define KERNEL_ADDR "127.0.0.1"
-#define KERNEL_PORT 54326
-
-#define PACKAGE_SIZE 10
+struct {
+		int 	PUERTO_KERNEL;
+		char*	IP_KERNEL;
+	} setup;
 
 
 void tratarSeniales(int);
-int main(int argc, char *argv[]) {
+int loadConfig(char* configFile);
 
-	char pid_console[4];
+int main(int argc, char *argv[]) {
+	signal(SIGINT, tratarSeniales);
 	char path[1024];
+
 	if (getcwd(path, sizeof(path)) != NULL) {
 		fprintf(stdout, "Current working dir: %s\n", path);
 	} else {
@@ -26,49 +29,24 @@ int main(int argc, char *argv[]) {
 
 	strcat(path, "/console.config");
 
-	FILE * config;
-	config = fopen(path, "r");
-	if (!config) {
-		printf("Failed to open config file\n");
-		exit(1);
-	}
+	if (loadConfig(path)<0) return -1;
 
-	signal(SIGINT, tratarSeniales);
 	int kernelSocketClient;
-	char kernel_reply[2000];
+	char *kernel_reply = malloc(4);
 	//create kernel client
 	if (argc != 2) {
 		puts("usage: console file");
 		return -1;
 	}
-	getClientSocket(&kernelSocketClient, KERNEL_ADDR, KERNEL_PORT);
 
-	/*le voy a mandar al kernel una T0 (terminal),
-	 y me va a devolver el client_id (un número) que me represente con el cual él me conoce
-	 Luego T1+ sizeMsj en 4B +(el código como viene)*/
-	//receive a reply from the kernel
-	send(kernelSocketClient, "T0", PACKAGE_SIZE, 0);
+	getClientSocket(&kernelSocketClient, setup.IP_KERNEL, setup.PUERTO_KERNEL);
 
-	do {
-		if (recv(kernelSocketClient, kernel_reply, 4, 0) < 0) {
-			puts("recv failed");
-			break;
-		}
-		puts("Kernel reply :");
-		puts(kernel_reply);
-		*pid_console = kernel_reply;
-
-
-	}
-	/*
-	 * OJO con este while, ya no recibo "kernel"...
-	 */
-	while (strcmp(kernel_reply, "kernel"));
-
-	// le envío a kernel T1+sizeMsj en 4B+mensaje
+	printf("se cargó el setup\n");
+	/*le voy a mandar al kernel un 0 para iniciar el handshake + sizeMsj en 4B + (el código como viene),
+	 y me va a devolver el client_id (un número) que me represente con el cual él me conoce*/
 
 	FILE * fp;
-	fp = fopen(fp, "r");
+	fp = fopen(argv[1], "r");
 	if (!fp) {
 		printf("Failed to open text file\n");
 		exit(1);
@@ -85,16 +63,34 @@ int main(int argc, char *argv[]) {
 	fread(prog, sz + 1, 1, fp);
 	fclose(fp);
 
-	int sizeMsj = strlen("T1") + 5 + (int) sz; //T1 no se lo voy a enviar más... sacar
+	int sizeMsj = strlen("0") + 5 + (int) sz; //T1 no se lo voy a enviar más... sacar
 	char* mensaje = (char*) malloc(sizeMsj);
 
 	char buffer[20];
 	sprintf(buffer, "%04d", (int) sz);
 
-	strcpy(mensaje, "T1");
+	strcpy(mensaje, "0");
 	strcat(mensaje, buffer);
 	strcat(mensaje, prog);
 	send(kernelSocketClient, mensaje, sizeMsj, 0);
+
+	do {
+		if (recv(kernelSocketClient, kernel_reply, 4, 0) < 0) {
+			puts("recv failed");
+			break;
+		} else if(!strcmp(kernel_reply, "0000")){
+			printf("No hay suficiente espacio en memoria para ejecutar el programa\n");
+		} else{
+			printf("Vamo a calmarno. Su programa se está ejecutando\n");
+			puts("Kernel reply :");
+			puts(kernel_reply);
+		}
+
+	}
+	/*
+	 * OJO con este while, ya no recibo "kernel"...
+	 */
+	while (1);
 
 	do {
 		if (recv(kernelSocketClient, kernel_reply, 2, 0) < 0) {
@@ -104,11 +100,13 @@ int main(int argc, char *argv[]) {
 		recv(kernelSocketClient, kernel_reply, 2, 0);
 		if (!strcmp(kernel_reply, "ID")) {
 			//recibo luego 5 -> 1 variable + 4 valor_variable
-			char var[1];
-			char valor[4];
+			char *var = malloc(1);
+			char *valor = malloc(4);
 			recv(kernelSocketClient, var, 1, 0);
 			recv(kernelSocketClient, valor, 4, 0);
 			printf("El valor de la variable %s es: %s", var, valor);//controlar este printf
+			free(var);
+			free(valor);
 
 		} else if(!strcmp(kernel_reply, "IT")) {
 			//recibo 4 del tamaño + texto
@@ -123,9 +121,9 @@ int main(int argc, char *argv[]) {
 	}
 	while(1);
 
+	free(kernel_reply);
 	close(kernelSocketClient);
-	puts("Terminated console: ");
-	puts(pid_console);
+	puts("Terminated console.");
 	return 0;
 
 }
@@ -138,10 +136,9 @@ int loadConfig(char* configFile){
 	puts(" .:: Loading settings ::.");
 
 	if(config != NULL){
-		setup.KERNEL_PORT=config_get_int_value(config,"PUERTO_KERNEL");
-		setup.KERNEL_ADDR=config_get_string_value(config,"IP_KERNEL");
+		setup.PUERTO_KERNEL=config_get_int_value(config,"PUERTO_KERNEL");
+		setup.IP_KERNEL=config_get_string_value(config,"IP_KERNEL");
 	}
-	//config_destroy(config);
 	return 0;
 }
 
@@ -156,14 +153,6 @@ void tratarSeniales(int senial) {
 		signal(SIGINT, SIG_DFL); // solo controlo una vez.
 		break;
 	}
-}
 
-/*
- 1) ./ejemplo.ansisop(porAhoraHola)
- 2) consola ("consola") -> kernel ("kernell") -> consola (porAhoraHola) -> kernel
- 3) kernel -> cpu
- 4)kernel (porAhoraHola) -> umc (porAhoraHola NO) -> kernel (porAhoraHola NO) -> consola
- 5) CPU (porAhoraHola) -> UMC
- 6) UMC (porAhoraHola) -> swap
- */
+}
 
