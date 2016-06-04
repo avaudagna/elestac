@@ -6,7 +6,6 @@ gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collecti
  * Y la consola asi:
 gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
 */
-#include <libs/pcb.h>
 #include "kernel.h"
 
 /* BEGIN OF GLOBAL STUFF I NEED EVERYWHERE */
@@ -21,8 +20,8 @@ t_log* kernel_log;
 int main (int argc, char **argv){
 	kernel_log = log_create("kernel.log", "Elestac-KERNEL", true, LOG_LEVEL_TRACE);
 	if (start_kernel(argc, argv[1])<0) return 0; //load settings
-	//clientUMC=connect2UMC();
-	clientUMC=100;setup.PAGE_SIZE=1024; //TODO Delete -> lo hace connect2UMC()
+	clientUMC=connect2UMC();
+	//clientUMC=100;setup.PAGE_SIZE=1024; //TODO Delete -> lo hace connect2UMC()
 	if (clientUMC<0){
 		log_error(kernel_log, "Could not connect to the UMC. Please, try again.");
 		return 0;
@@ -45,7 +44,7 @@ int main (int argc, char **argv){
 	log_error(kernel_log, "Closing kernel");
 	close(consoleServer);
 	close(cpuServer);
-	//close(clientUMC); // TODO un-comment when real UMC is present
+	close(clientUMC); // TODO un-comment when real UMC is present
 	log_destroy(kernel_log);
 	return 0;
 }
@@ -156,10 +155,6 @@ void tratarSeniales(int senial){
 }
 
 int killClient(int client,char *what){
-	/*
-	 * TODO IF pid status es EXECUTING -> esperar el quantum y matar el pcb
-	 * TODO si esta en cualquier otro estado -> matar el pcb
-	 */
 	close(client);
 	printf("Bye bye %s!\n", what);
 	return 0;
@@ -256,7 +251,7 @@ void check_CONSOLE_FD_ISSET(void *console){
 				t_Client *unCliente = nbr;
 				return cliente->clientID == unCliente->clientID;
 			}
-			list_remove_by_condition(consolas_conectadas, getConsoleIndex);
+			//list_remove_by_condition(consolas_conectadas, getConsoleIndex); // TODO Fix this
 		}
 	}
 }
@@ -277,8 +272,11 @@ int control_clients(){
 		if ((newConsole=accept_new_client("console", &consoleServer, &allSockets, consolas_conectadas)) > 1)
 			accept_new_PCB(newConsole);
 		newCPU=accept_new_client("CPU", &cpuServer, &allSockets, cpus_conectadas);
-		log_info(kernel_log,"New CPU accepted with ID %d",newCPU);
-		if (list_size(cpus_conectadas) > 0) round_robin();
+		if(newCPU>0) log_info(kernel_log,"New CPU accepted with ID %d",newCPU);
+		if (list_size(cpus_conectadas) > 0 && list_size(PCB_READY) > 0 ){
+			round_robin();
+		}
+		// if (list_size(PCB_BLOCKED) > 0) sarasa(); // TODO coso
 	}
 	return 1;
 }
@@ -368,13 +366,9 @@ void round_robin(){
 		asprintf(&tmp_buffer, "%d%s%s%04d", 1,quantum,quantum_sleep, pcb_buffer_size);
         memcpy(tmp_buffer+tmp_buffer_size, pcb_buffer, pcb_buffer_size);
         tmp_buffer_size = tmp_buffer_size + pcb_buffer_size;
-		send(ultimaCPU, tmp_buffer, tmp_buffer_size,0);
-		/* cada CPU esta en cpus_conectadas en un t_Client (con campo STATUS para indicar si la CPU esta en uso)
-		 * en t_Client podria agregar un campo que me diga que PID esta ejecutando
-		 * luego en la funcion match_PCB que uso para matar el PCB cuando una consola cierra la conexion
-		 * podria revisar la lista de cpu_conectadas y ver cual tiene el PID, asi cuando vuelve mato el PCB.
-		 * (podria poner que si matchea el pcb, status cambia a 5 y cuando recibo el pcb, reviso el status de la cpu
-		 */
+		log_info(kernel_log,"Submitting to CPU %d the PID %d with pcb_buffer_size=%zu",laCPU->clientID, tuPCB->pid,pcb_buffer_size);
+		log_info(kernel_log,"The PCB is %s",tmp_buffer);
+		send(laCPU->clientID, tmp_buffer, tmp_buffer_size,0);
 	}
 	return;
 }

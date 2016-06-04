@@ -26,7 +26,7 @@ void serialize_stack (t_stack *stack, void **buffer, size_t *buffer_size) {
     size_t stack_entry_item_size = 0, stack_entry_list_buffer_size = *buffer_size;
 
     //Stack / Queue
-    t_list *elementos = stack-> elements; //Tomo la lista de elementos de la queue
+    t_list *elementos = stack->elements; //Tomo la lista de elementos de la queue
     //t_link_element *element = elementos->head; //Tomo el primer elemento de la lista
 
     //Lista de la Queue
