@@ -10,7 +10,7 @@
 
 typedef enum {NEW, READY, EXECUTING, BLOCKED, EXIT} enum_queue;
 typedef struct {
-    pid_t pid;
+    int pid;
     uint32_t program_counter;
     uint32_t stack_pointer;
     t_stack  *stack_index;
