@@ -54,3 +54,8 @@
 [ERROR] 15:44:50:7 Elestac-KERNEL/(9723:9723): Error while creating the CONSOLE server.
 [ERROR] 15:45:02:552 Elestac-KERNEL/(9751:9751): Error while creating the CONSOLE server.
 [INFO] 15:53:11:731 Elestac-KERNEL/(10207:10207): New CPU accepted with ID 7
+[ERROR] 16:30:36:540 Elestac-KERNEL/(4000:4000): Could not connect to the UMC. Please, try again.
+[ERROR] 16:37:35:484 Elestac-KERNEL/(4713:4713): Could not connect to the UMC. Please, try again.
+[ERROR] 16:47:22:570 Elestac-KERNEL/(4906:4906): Config file was not provided.
+[ERROR] 16:47:32:510 Elestac-KERNEL/(4907:4907): Config file was not provided.
+[ERROR] 18:29:10:174 Elestac-KERNEL/(7268:7268): Could not connect to the UMC. Please, try again.

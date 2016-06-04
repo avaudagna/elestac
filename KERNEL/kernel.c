@@ -99,15 +99,15 @@ int loadConfig(char* configFile){
 
 int connect2UMC(){
 	int clientUMC;
-	char* buffer=NULL;
-	char* buffer_4=NULL;
+	char* buffer=malloc(5);
+	char* buffer_4=malloc(4);
 	printf(" .:: Connecting to UMC on %s:%d ::.\n",setup.IP_UMC,setup.PUERTO_UMC);
 	if (getClientSocket(&clientUMC, setup.IP_UMC, setup.PUERTO_UMC)) return (-1);
 	sprintf(buffer_4, "%04d", setup.STACK_SIZE);
 	asprintf(&buffer, "%s%s", "0", buffer_4);
 	send(clientUMC, buffer, 5 , 0);
 	printf(" .:: Stack size (sent to UMC): %s ::.\n",buffer_4);
-	if (recv(clientUMC, &buffer_4, 4, 0) < 0) return (-1);
+	if (recv(clientUMC, buffer_4, 4, 0) < 0) return (-1);
 	setup.PAGE_SIZE=atoi(buffer_4);
 	printf(" .:: Page size: (received from UMC): %d ::.\n",setup.PAGE_SIZE);
 	free(buffer);
