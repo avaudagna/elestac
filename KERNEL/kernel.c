@@ -3,6 +3,8 @@
 gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collections -o kernel socketCommons.c libs/stack.c libs/pcb.c libs/serialize.c kernel.c -L/usr/lib -lcommons -lparser-ansisop
  * El CPU compilalo asi:
 gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collections -o cpu implementation_ansisop.c libs/socketCommons.c libs/stack.c libs/pcb.c libs/serialize.c cpu.c -L/usr/lib -lcommons -lparser-ansisop -lm
+ * La UMC compilala asi:
+gcc -I/usr/include/commons -I/usr/include/commons/collections -o umc umc.c -L/usr/lib -pthread -lcommons
  * Y la consola asi:
 gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
 */
@@ -317,8 +319,8 @@ int accept_new_PCB(int newConsole){
 	size_t ansisopLen=(size_t) atoi(buffer_4);
 	char *code = malloc(ansisopLen);
 	recv(newConsole, code, ansisopLen, 0);
-	//uint32_t code_pages=requestPages2UMC(PID,ansisopLen,code,clientUMC);
-	uint32_t code_pages=3;//TODO DELETE when using a real UMC
+	uint32_t code_pages=requestPages2UMC(PID,ansisopLen,code,clientUMC);
+	//uint32_t code_pages=3;//TODO DELETE when using a real UMC
 	if (code_pages>0){
 		send(newConsole,PID,4,0);
 		t_metadata_program* metadata = metadata_desde_literal(code);

@@ -437,11 +437,13 @@ void AtenderKernel(int * socketBuff){
 
 int IdentificarOperacion(int * socketBuff){
 
-	int package;
+	int retorno;
+	char *buffer=malloc(2);
 
-	while ( (recv(*socketBuff, (void*) (&package), 1, 0)) < 0 );	// levanto byte que indica que tipo de operacion se va a llevar a cabo
+	while ( (recv(*socketBuff, (void *) (buffer), 1, 0)) < 0 );	// levanto byte que indica que tipo de operacion se va a llevar a cabo
 
-	return package;
+	retorno = atoi(buffer);
+	return retorno;
 
 }
 
