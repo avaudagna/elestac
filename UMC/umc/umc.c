@@ -50,7 +50,6 @@
 
 typedef struct umc_parametros {
      int	listenningPort,
-			portSwap,
 			marcos,
 			marcosSize,
 			marcosXProc,
@@ -58,7 +57,8 @@ typedef struct umc_parametros {
 			entradasTLB;
      char   *algoritmo,
 		    *ipSwap,
-			*listenningIp;
+			*listenningIp,
+			*portSwap;
 }UMC_PARAMETERS;
 
 
@@ -97,7 +97,7 @@ bool CompararPid(PAGINA * data,int pid);
 t_list * GetHeadListaPaginas(PIDPAGINAS * data);
 
 bool filtrarPorPid ( void * );
-bool filtrarPorNroPagina ( void *);
+bool filtrarPorNroPagina ( t_list *headerTablaPaginas);
 
 
 #define SIZE_HANDSHAKE_KERNEL 5
@@ -167,8 +167,8 @@ void Init_UMC(char * configFile)
 {
     Init_Parameters(configFile);
     Init_MemoriaPrincipal();
-	//Init_Swap(); // socket con swap
-	//HandShake_Swap();
+	Init_Swap(); // socket con swap
+	HandShake_Swap();
 	Init_Socket(); // socket de escucha
 }
 
@@ -371,7 +371,7 @@ void AtenderCPU(int * socketBuff){
 			estado = IDENTIFICADOR_OPERACION;
 			break;
 		case PEDIDO_BYTES:
-			//PedidoBytes(socketBuff,&pid_actual);
+			PedidoBytes(socketBuff,&pid_actual);
 			estado = IDENTIFICADOR_OPERACION;
 			break;
 		case ALMACENAMIENTO_BYTES:
@@ -496,16 +496,17 @@ void ProcesoSolicitudNuevoProceso(int * socketBuff){
 
 		RecibirYAlmacenarNuevoProceso(socketBuff,cantidadDePaginasSolicitadas,pid_aux);
 
-		char trama_handshake[2]={'S','I'};
+		char trama_handshake[4];
+		sprintf(trama_handshake,"%04d",cantidadDePaginasSolicitadas);
 
-		if ( send(*socketBuff,(void *)trama_handshake,2,0) == -1)
+		if ( send(*socketBuff,(void *)trama_handshake,4,0) == -1)
 			perror("send");
 
 	}else{
 
-		char trama_handshake[2]={'N','O'};
+		//char trama_handshake[2]={'N','O'};
 
-		if ( send(*socketBuff,(void *)trama_handshake,2,0) == -1 )
+		if ( send(*socketBuff,(void *)"0000",4,0) == -1 )
 			perror("send");
 	}
 
@@ -551,7 +552,7 @@ void DividirEnPaginas( int cantidadPaginasSolicitadas,int pid_aux, int paginasDe
 		j = 0,
 		bytes_restantes=0;
 	char * aux_code,
-		   trama[umcGlobalParameters.marcosSize+sizeof(pid_aux)+sizeof(nroDePagina)];  // PAGE SIZE !!!!!!!!!!!!!
+		   trama[umcGlobalParameters.marcosSize+sizeof(pid_aux)+sizeof(nroDePagina)];
 	PAGINA * page_node;
 
 /*Cosas a Realizar por cada pagina :
@@ -560,19 +561,20 @@ void DividirEnPaginas( int cantidadPaginasSolicitadas,int pid_aux, int paginasDe
  * 2. Agrego a la tabla de paginas asociada a ese PID
  * */
 
-	for ( i=0; i < paginasDeCodigo ; i++ , nroDePagina++ , j+=umcGlobalParameters.marcosSize ){
+	for ( i=0,j=0; i < paginasDeCodigo ; i++ , nroDePagina++ , j+=umcGlobalParameters.marcosSize ){
 
 		aux_code = (char * ) malloc( umcGlobalParameters.marcosSize );
 		if ( nroDePagina < (paginasDeCodigo - 1) ){
 			memcpy((void * )aux_code,&codigo[j],umcGlobalParameters.marcosSize);
 
-		}else{	// ultima pagina
-			bytes_restantes = ( paginasDeCodigo * umcGlobalParameters.marcosSize ) - code_size;
-				if (!bytes_restantes)	// si la cantidad de bytes es multiplo del tamaño de pagina , entonces la ultima pagina se llena x completo
-					memcpy((void * )aux_code,&codigo[j],umcGlobalParameters.marcosSize);
-				else
-					memcpy((void * )aux_code,&codigo[j],bytes_restantes);	// LO QUE NO SE LLENA CON INFO, SE DEJA EN GARBAGE
-
+		}else {    // ultima pagina
+			bytes_restantes = (paginasDeCodigo * umcGlobalParameters.marcosSize) - code_size;
+			if (!bytes_restantes)    // si la cantidad de bytes es multiplo del tamaño de pagina , entonces la ultima pagina se llena x completo
+				memcpy((void *) aux_code, &codigo[j], umcGlobalParameters.marcosSize);
+			else
+				memcpy((void *) aux_code, &codigo[j],
+					   bytes_restantes);    // LO QUE NO SE LLENA CON INFO, SE DEJA EN GARBAGE
+		}
 				// tengo : pid+nroDePagina+aux_code
 			sprintf(trama,"%04d",pid_aux);
 			sprintf(&trama[sizeof(pid_aux)],"%04d",nroDePagina);
@@ -588,7 +590,7 @@ void DividirEnPaginas( int cantidadPaginasSolicitadas,int pid_aux, int paginasDe
 			page_node->presencia=0;
 			// agrego pagina a la tabla de paginas asociada a ese PID
 			AgregarPagina(headerListaDePids,pid_aux,page_node);
-		}
+
 	}
 }
 
@@ -658,7 +660,7 @@ void SwapUpdate(void){
 
 }
 
-/*void Init_Swap(void){
+void Init_Swap(void){
 
 		struct addrinfo hints;
 		struct addrinfo *serverInfo;
@@ -722,6 +724,40 @@ void HandShake_Swap(void){
 		exit(1);
 	}
 
-}*/
+}
+
+// 2+PAGINA+OFFSET+TAMAÑO
+/* 1- Levanto toda la trama
+ * 2- Voy a la tabla de paginas correspondiente
+ * 3- Me fijo si la tabla esta o no
+ * 4-
+ */
+void PedidoBytes(int * socketBuff,int *pid_actual){
+
+	int _pagina,_offset,_tamanio;
+	char buffer[4];
+	t_list *headerTablaDePaginas = NULL;
+
+	// levanto nro de pagina
+	if(recv(*socketBuff, (void*) buffer, 4, 0) <= 0 )
+		perror("recv");
+
+	_pagina=atoi(buffer);
+
+	if(recv(*socketBuff, (void*) buffer, 4, 0) <= 0 )
+		perror("recv");
+
+	_offset=atoi(buffer);
+
+	if(recv(*socketBuff, (void*) buffer, 4, 0) <= 0 )
+		perror("recv");
+
+	_tamanio=atoi(buffer);
+
+	headerTablaDePaginas = ObtenerTablaDePaginasDePID(headerListaDePids,*pid_actual);
 
 
+
+
+
+}
