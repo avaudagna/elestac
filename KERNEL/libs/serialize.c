@@ -9,7 +9,7 @@
  * buffer : El buffer donde se almacenaran los bytes seleccionados.
  * buffer_size : El tamanio del buffer, que terminara siendo el total de bytes almacenados en buffer.
  */
-int serialize_data(void *object, size_t nBytes, void **buffer, size_t *lastIndex) {
+int serialize_data(void *object, size_t nBytes, void **buffer, int *lastIndex) {
     void * auxiliar = NULL;
     auxiliar  = realloc(*buffer, nBytes+*lastIndex);
     if(auxiliar  == NULL) {
@@ -32,7 +32,7 @@ int serialize_data(void *object, size_t nBytes, void **buffer, size_t *lastIndex
  * serialized_data : Puntero al conjunto de bytes serializados.
  * serialized_data_size : La cantidad de bytes restantes de serialized_data
  */
-int deserialize_data(void *object, size_t nBytes, void *serialized_data, size_t *lastIndex) {
+int deserialize_data(void *object, size_t nBytes, void *serialized_data, int *lastIndex) {
     if(memcpy(object, serialized_data + *lastIndex, nBytes) == NULL) {
         return -2;
     }

@@ -10,16 +10,24 @@
 
 typedef enum {NEW, READY, EXECUTING, BLOCKED, EXIT} enum_queue;
 typedef struct {
-    uint32_t pid;
-    uint32_t program_counter;
-    uint32_t stack_pointer;
-    t_list stack_index;
-    enum_queue status;
-    t_size instrucciones_size;
-    char* instrucciones_serializado;
+    int pid;
+    int program_counter;
+    int stack_pointer;
+    t_stack  *stack_index;
+    int status;
+    int instrucciones_size;
+    t_intructions* instrucciones_serializado;
+    int etiquetas_size;
+    char* etiquetas;
 } t_pcb;
 
-void serialize_pcb(t_pcb *pcb, char **buffer, t_size *buffer_size);
-void deserialize_pcb(t_pcb **pcb, char **serialized_data, t_size *serialized_data_size);
+void serialize_pcb(t_pcb *pcb, void **buffer, int *buffer_size);
+void deserialize_pcb(t_pcb **pcb, void *serialized_data, int *serialized_data_index);
+
+void deserialize_instrucciones(t_intructions **intructions, int instrucciones_size, void **serialized_data, int *serialized_data_size);
+void serialize_instrucciones(t_intructions *instrucciones, int instrucciones_size, void **pVoid, int *pInt);
+
+void serialize_t_instructions(t_intructions *intructions, void **buffer, int *buffer_size);
+
 
 #endif //SERIALIZATION_PCB_H

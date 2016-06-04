@@ -10,24 +10,24 @@
 
 typedef enum {NEW, READY, EXECUTING, BLOCKED, EXIT} enum_queue;
 typedef struct {
-    pid_t pid;
-    uint32_t program_counter;
-    uint32_t stack_pointer;
+    int pid;
+    int program_counter;
+    int stack_pointer;
     t_stack  *stack_index;
     int status;
-    t_size instrucciones_size;
+    int instrucciones_size;
     t_intructions* instrucciones_serializado;
-    t_size etiquetas_size;
+    int etiquetas_size;
     char* etiquetas;
 } t_pcb;
 
-void serialize_pcb(t_pcb *pcb, void **buffer, size_t *buffer_size);
-void deserialize_pcb(t_pcb **pcb, void *serialized_data, size_t *serialized_data_index);
+void serialize_pcb(t_pcb *pcb, void **buffer, int *buffer_size);
+void deserialize_pcb(t_pcb **pcb, void *serialized_data, int *serialized_data_index);
 
-void deserialize_instrucciones(t_intructions **intructions, t_size instrucciones_size, void **serialized_data, size_t *serialized_data_size);
-void serialize_instrucciones(t_intructions *instrucciones, size_t instrucciones_size, void **pVoid, size_t *pInt);
+void deserialize_instrucciones(t_intructions **intructions, int instrucciones_size, void **serialized_data, int *serialized_data_size);
+void serialize_instrucciones(t_intructions *instrucciones, int instrucciones_size, void **pVoid, int *pInt);
 
-void serialize_t_instructions(t_intructions *intructions, void **buffer, size_t *buffer_size);
+void serialize_t_instructions(t_intructions *intructions, void **buffer, int *buffer_size);
 
 
 #endif //SERIALIZATION_PCB_H

@@ -1,9 +1,10 @@
 #ifndef SERIALIZATION_SERIALIZE_H
 #define SERIALIZATION_SERIALIZE_H
 
-#include <parser/parser.h>
+#include <string.h>
+#include <stdlib.h>
 
-void serialize_data(void *object, t_size nBytes, char **buffer, t_size *buffer_size);
-void deserialize_data(void *object, t_size nBytes, char **serialized_data, t_size *serialized_data_size);
+int serialize_data(void *object, size_t nBytes, void **buffer, int *lastIndex);
+int deserialize_data(void *object, size_t nBytes, void *serialized_data, int *lastIndex);
 
 #endif //SERIALIZATION_SERIALIZE_H
