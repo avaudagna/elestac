@@ -9,7 +9,7 @@
 typedef struct {
     int page_number;
     int offset;
-    int len;
+    int tamanio;
 } logical_addr;
 
 typedef struct {

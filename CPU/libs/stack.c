@@ -33,12 +33,13 @@ void serialize_stack (t_stack *stack, void **buffer, size_t *buffer_size) {
     link_actual = elementos->head; //Tomo la data del primer link de la lista
     cantidad_elementos_stack = (u_int32_t) elementos->elements_count; //Cantidad de links totales en el stack
 
-    if(link_actual == NULL || cantidad_elementos_stack == 0) {
-        return;
-    }
     //El primer elemento que se agrega es la cantidad de elementos totales que tendra el stack
     serialize_data(&cantidad_elementos_stack,sizeof(int),
                    buffer, buffer_size);
+
+    if(link_actual == NULL || cantidad_elementos_stack == 0) {
+        return;
+    }
 
     for(indice = 0; indice < cantidad_elementos_stack; indice++) {
         entrada_actual = (t_stack_entry*) link_actual->data; //Tomo la data del primer link de la lista
@@ -69,7 +70,7 @@ void serialize_stack_entry(t_stack_entry *entry, void **buffer, size_t *buffer_s
     for(i = 0; i < entry->cant_args; i++) {
         serialize_data(&entry->args->page_number, (size_t) sizeof(int), buffer, buffer_size);
         serialize_data(&entry->args->offset, (size_t) sizeof(int), buffer, buffer_size);
-        serialize_data(&entry->args->len, (size_t) sizeof(int), buffer, buffer_size);
+        serialize_data(&entry->args->tamanio, (size_t) sizeof(int), buffer, buffer_size);
     }
     serialize_data(&entry->cant_vars, sizeof(int), buffer, buffer_size);
     //serialize_data(&entry->vars, (size_t) sizeof(t_var)*entry->cant_vars, buffer, buffer_size);
@@ -84,7 +85,7 @@ void serialize_stack_entry(t_stack_entry *entry, void **buffer, size_t *buffer_s
     for(i = 0; i < entry->cant_ret_vars; i++) {
         serialize_data(&entry->ret_vars->page_number, (size_t) sizeof(int), buffer, buffer_size);
         serialize_data(&entry->ret_vars->offset, (size_t) sizeof(int), buffer, buffer_size);
-        serialize_data(&entry->ret_vars->len, (size_t) sizeof(int), buffer, buffer_size);
+        serialize_data(&entry->ret_vars->tamanio, (size_t) sizeof(int), buffer, buffer_size);
     }
     serialize_data(&entry->ret_pos, sizeof(int), buffer, buffer_size);
 }
@@ -102,7 +103,7 @@ void deserialize_stack(t_stack **stack, void **serialized_data, size_t *serializ
     u_int32_t cantidad_links = 0, indice = 0;
     t_stack_entry *stack_entry = NULL;
 
-    *stack = queue_create(); //Creo el stack asd
+    *stack = queue_create(); //Creo el stack
 
     deserialize_data(&cantidad_links, sizeof(int), serialized_data, serialized_data_size);
     for(indice = 0; indice < cantidad_links; indice++) {
@@ -137,7 +138,7 @@ void deserialize_stack_entry(t_stack_entry **entry, void **serialized_data, size
     //deserialize_data((*entry)->args, (size_t) (*entry)->cant_args, serialized_data, serialized_data_size);
     deserialize_data(&(*entry)->args->page_number, sizeof(int), serialized_data, serialized_data_size);
     deserialize_data(&(*entry)->args->offset, sizeof(int), serialized_data, serialized_data_size);
-    deserialize_data(&(*entry)->args->len, sizeof(int), serialized_data, serialized_data_size);
+    deserialize_data(&(*entry)->args->tamanio, sizeof(int), serialized_data, serialized_data_size);
     deserialize_data(&(*entry)->cant_vars, sizeof(int), serialized_data, serialized_data_size);
     //deserialize_data((*entry)->vars, (size_t) (*entry)->cant_vars, serialized_data, serialized_data_size);
     deserialize_data(&(*entry)->vars->var_id, sizeof(unsigned char), serialized_data, serialized_data_size);
@@ -148,6 +149,6 @@ void deserialize_stack_entry(t_stack_entry **entry, void **serialized_data, size
     //deserialize_data((*entry)->ret_vars, (size_t) (*entry)->cant_vars, serialized_data, serialized_data_size);
     deserialize_data(&(*entry)->ret_vars->page_number, sizeof(int), serialized_data, serialized_data_size);
     deserialize_data(&(*entry)->ret_vars->offset, sizeof(int), serialized_data, serialized_data_size);
-    deserialize_data(&(*entry)->ret_vars->len, sizeof(int), serialized_data, serialized_data_size);
+    deserialize_data(&(*entry)->ret_vars->tamanio, sizeof(int), serialized_data, serialized_data_size);
     deserialize_data(&(*entry)->ret_pos, sizeof(int), serialized_data, serialized_data_size);
 }
