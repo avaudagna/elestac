@@ -33,12 +33,13 @@ void serialize_stack (t_stack *stack, void **buffer, size_t *buffer_size) {
     link_actual = elementos->head; //Tomo la data del primer link de la lista
     cantidad_elementos_stack = (u_int32_t) elementos->elements_count; //Cantidad de links totales en el stack
 
-    if(link_actual == NULL || cantidad_elementos_stack == 0) {
-        return;
-    }
     //El primer elemento que se agrega es la cantidad de elementos totales que tendra el stack
     serialize_data(&cantidad_elementos_stack,sizeof(int),
                    buffer, buffer_size);
+
+    if(link_actual == NULL || cantidad_elementos_stack == 0) {
+        return;
+    }
 
     for(indice = 0; indice < cantidad_elementos_stack; indice++) {
         entrada_actual = (t_stack_entry*) link_actual->data; //Tomo la data del primer link de la lista

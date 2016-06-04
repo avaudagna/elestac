@@ -10,7 +10,7 @@
  */
 void serialize_pcb(t_pcb *pcb, void **buffer, size_t *buffer_size) {
 
-    serialize_data(&pcb->pid, sizeof(pid_t), buffer, buffer_size);
+    serialize_data(&pcb->pid, sizeof(int), buffer, buffer_size);
     serialize_data(&pcb->program_counter, sizeof(uint32_t), buffer, buffer_size);
     serialize_data(&pcb->stack_pointer, sizeof(uint32_t), buffer, buffer_size);
     serialize_stack(pcb->stack_index, buffer, buffer_size);
@@ -38,7 +38,7 @@ void serialize_instrucciones(t_intructions *instrucciones, size_t instrucciones_
 
 //void deserialize_data(void *object, size_t nBytes, void **serialized_data, size_t *lastIndex)
 void deserialize_pcb(t_pcb **pcb, void *serialized_data, size_t *serialized_data_index) {
-    deserialize_data(&(*pcb)->pid, sizeof(pid_t), serialized_data, serialized_data_index);
+    deserialize_data(&(*pcb)->pid, sizeof(int), serialized_data, serialized_data_index);
     deserialize_data(&(*pcb)->program_counter, sizeof(uint32_t), serialized_data, serialized_data_index);
     deserialize_data(&(*pcb)->stack_pointer, sizeof(uint32_t), serialized_data, serialized_data_index);
     (*pcb)->stack_index = queue_create(); //TODO: Por que se necesita esto aca y en deserialize_stack TAMBIEN?
