@@ -20,13 +20,14 @@
 
 #define IDENTIFICADOR_MODULO 1
 
-/*MACROS y TIPOS DE DATOS*/
+/*MACROS */
 #define BACKLOG 10			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
-#define PACKAGESIZE 1024	// Define cual va a ser el size maximo del paquete a enviar
 #define RETARDO 1
 #define DUMP    2
 #define FLUSH   3
 #define SALIR   (-1)
+#define LIBRE 	0
+#define OCUPADO 1
 
 /* COMUNICACION/OPERACIONES CON KERNEL*/
 #define REPOSO 3
@@ -37,6 +38,15 @@
 #define EXIT (-1)
 #define PID_SIZE 4
 #define SIZE_OF_PAGE_SIZE 4
+
+/* COMUNICACION/OPERACIONES CON CPU */
+
+#define PEDIDO_BYTES 2
+#define ALMACENAMIENTO_BYTES 3
+#define FIN_COMUNICACION_CPU 0
+#define CAMBIO_PROCESO_ACTIVO 1
+
+
 
 typedef struct umc_parametros {
      int	listenningPort,
@@ -63,6 +73,11 @@ typedef struct _pidPaginas {
 	int pid;
 	t_list * headListaDePaginas;
 }PIDPAGINAS;
+
+typedef struct _marco {
+	void *comienzoMarco;
+	unsigned char estado;
+}MARCO;
 
 
 
@@ -107,16 +122,19 @@ int socketServidor;
 int socketClienteSwap;
 UMC_PARAMETERS umcGlobalParameters;
 int contConexionesNucleo = 0;
-//int contConexionesCPU = 0;
+int contConexionesCPU = 0;
 int paginasLibresEnSwap = 0;
 int stack_size;
 t_list *headerListaDePids;
+void *memoriaPrincipal = NULL;
+MARCO *vectorMarcos = NULL;
 
-void *  connection_handler(void * socketCliente);
+/*FUNCIONES DE INICIALIZACION*/
 void Init_UMC(char *);
 void Init_Socket(void);
 void Init_Parameters(char * configFile);
 void loadConfig(char* configFile);
+void Init_MemoriaPrincipal(void);
 //void Init_Parameters(void);
 void *  funcion_menu(void * noseusa);
 void Imprimir_Menu(void);
@@ -125,6 +143,8 @@ void Procesar_Conexiones(void);
 FunctionPointer QuienSos(int * socketBuff);
 void AtenderCPU(int * socketBuff);
 int setServerSocket(int* serverSocket, const char* address, const int port);
+void CambioProcesoActivo(int * socket,int * pid);
+void PedidoBytes(int * socketBuff,int *pid_actual);
 
 int main(int argc , char **argv){
 
@@ -149,49 +169,10 @@ int main(int argc , char **argv){
 	return 0;
 }
 
-void *  connection_handler(void * _socket)
-{
- int   socketCliente			= *( (int *) _socket),
-       cantidad_de_bytes_recibidos 	= 0,
-       done				= 0;
- char *package 				= NULL;
- 
- 		
-	//  close(socketServidor);  // NO LO CIERRO PORQUE LOS FILE DESCRIPTOR SE COMPARTEN ENTRE LOS THREADS
-		       printf("Cliente conectado. Esperando mensajes:\n");
-	    	do
-	     	  {
-
-			package = (char *) malloc(sizeof(char) * PACKAGESIZE ) ;
-			cantidad_de_bytes_recibidos = recv(socketCliente, (void*) package, PACKAGESIZE, 0);
-			if ( cantidad_de_bytes_recibidos <= 0 ) {
-				if ( cantidad_de_bytes_recibidos < 0 ) perror("recv");
-				done = 1;
-			  }	
-			if (!done) {
-				package[cantidad_de_bytes_recibidos]='\0';
-		   		printf("\nCliente: ");
-				printf("%s", package);
-				if(!strcmp(package,"Adios"))break;
-				fflush(stdin);
-				printf("\nServidor: ");
-				fgets(package,PACKAGESIZE,stdin);
-				package[strlen(package) - 1] = '\0';
-		    		if ( send(socketCliente,package,strlen(package)+1,0) == -1 ) { 			
-			 	perror("send");
-			 	exit(1);
-		       		}
-			 free(package);
-			}	
-		
-	     	  }while(!done);
-	close(socketCliente);
-	pthread_exit(0);
-}
-
 void Init_UMC(char * configFile)
 {
     Init_Parameters(configFile);
+    Init_MemoriaPrincipal();
 	//Init_Swap(); // socket con swap
 	// HandShake_Swap();
 	Init_Socket(); // socket de escucha
@@ -202,6 +183,18 @@ void Init_Parameters (char * configFile){
 
 	loadConfig(configFile);
 	headerListaDePids = list_create();
+}
+
+
+void Init_MemoriaPrincipal(void){
+	int i=0;
+	memoriaPrincipal = malloc(umcGlobalParameters.marcosSize * umcGlobalParameters.marcos);	// inicializo memoria principal
+	vectorMarcos = (MARCO *) malloc (sizeof(MARCO) * umcGlobalParameters.marcos) ;
+
+	for(i=0;i<umcGlobalParameters.marcos;i++){
+		vectorMarcos[i].estado=LIBRE;
+		vectorMarcos[i].comienzoMarco = memoriaPrincipal+(i*umcGlobalParameters.marcosSize);
+	}
 }
 
 
@@ -390,47 +383,69 @@ FunctionPointer QuienSos(int * socketBuff) {
 
 	}
 
-	// if (( strcmp(package,"C") ) == 0 ){   //CPU
+   if ( package == '1' ){   //CPU
 
-		if ( package == 'C' ) {	// CPU
-			// FALTA GESTIONAR CONEXION CPU
-		 if ( send(socketCliente,(void *)"a=b+3",PACKAGESIZE,0) == -1 ) {
-	 	 	 perror("send");
-	 	 	 exit(1);
- 	 	  }
+	   contConexionesCPU++;
+	   aux = AtenderCPU;
+	   return aux;
 
-			 aux = AtenderCPU;
-			 return aux;
 	}
 
-	//free(package);
 	return aux;
 
 }
 
 void AtenderCPU(int * socketBuff){
 
-	printf("\nHola , soy el thread encargado de la comunicacion con el CPU!! :)");
+	int pid_actual,estado=CAMBIO_PROCESO_ACTIVO;
 
+	while(estado != EXIT ){
+		switch(estado){
+
+		case IDENTIFICADOR_OPERACION:
+			estado = IdentificarOperacion(socketBuff);
+			break;
+		case CAMBIO_PROCESO_ACTIVO:
+			CambioProcesoActivo(socketBuff,&pid_actual);
+			estado = IDENTIFICADOR_OPERACION;
+			break;
+		case PEDIDO_BYTES:
+			//PedidoBytes(socketBuff,&pid_actual);
+			estado = IDENTIFICADOR_OPERACION;
+			break;
+		case ALMACENAMIENTO_BYTES:
+			//AlmacenarBytes(socketBuff,&pid_actual);
+			estado = IDENTIFICADOR_OPERACION;
+			break;
+		case FIN_COMUNICACION_CPU:
+			estado = EXIT;
+			break;
+		}
+
+	}
+	contConexionesCPU--;
 	close(*socketBuff);		// cierro socket
 	pthread_exit(0);		// chau thread
+}
+
+void CambioProcesoActivo(int * socket,int * pid){
+
+	if ( (recv(*socket, (void*) (pid), 4, 0)) <= 0 )	// levanto byte que indica que tipo de operacion se va a llevar a cabo
+		perror("recv");
 
 }
 
 
+
+
 void AtenderKernel(int * socketBuff){
 
-	printf("\nHola , soy el thread encargado de la comunicacion con el Kernel!! :)");
-	int estado = HANDSHAKE;	// la primera vez que entra,es porque ya recibi una 'K'
+	int estado = HANDSHAKE;	// la primera vez que entra,es porque ya recibi un 0 indicando handshake
 
 	while(estado != EXIT)
 	{
 		switch(estado)
 		{
-		/*case REPOSO:
-			estado = EsperandoKernel();		// A la espera de algun tipo de operacion
-			break;
-		*/
 		case IDENTIFICADOR_OPERACION:
 			estado = IdentificarOperacion(socketBuff);
 			break;
@@ -466,7 +481,7 @@ int IdentificarOperacion(int * socketBuff){
 
 	int package;
 
-	while ( (recv(*socketBuff, (void*) (&package), 1, 0)) <= 0 );	// levanto byte que indica que tipo de operacion se va a llevar a cabo
+	while ( (recv(*socketBuff, (void*) (&package), 1, 0)) < 0 );	// levanto byte que indica que tipo de operacion se va a llevar a cabo
 
 	return package;
 
