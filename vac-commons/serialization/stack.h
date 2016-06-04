@@ -34,10 +34,10 @@ typedef struct {
     int ret_pos;
 } t_stack_entry;
 
-void serialize_stack (t_stack *stack, void **buffer, size_t *buffer_size);
-void serialize_stack_entry(t_stack_entry *entry, void **buffer, size_t *buffer_size);
+void serialize_stack (t_stack *stack, void **buffer, int *buffer_size);
+void serialize_stack_entry(t_stack_entry *entry, void **buffer, int *buffer_size);
 t_stack_entry *create_new_stack_entry();
-void deserialize_stack(t_stack **stack, void **serialized_data, size_t *serialized_data_size);
-void deserialize_stack_entry(t_stack_entry **entry, void **serialized_data, size_t *serialized_data_size);
+void deserialize_stack(t_stack **stack, void **serialized_data, int *serialized_data_size);
+void deserialize_stack_entry(t_stack_entry **entry, void **serialized_data, int *serialized_data_size);
 
 #endif //SERIALIZATION_STACK_H
