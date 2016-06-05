@@ -37,8 +37,8 @@ struct {
 	} setup;
 typedef struct{
 	int 	clientID,
-			status;
-	pid_t	pid;
+			status,
+		    pid;
 } t_Client;
 
 uint32_t	requestPages2UMC(char* PID, size_t ansisopLen,char* code,int clientUMC);
@@ -48,7 +48,6 @@ int 		connect2UMC();
 int			control_clients();
 int 		accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista);
 int			accept_new_PCB(int newConsole);
-int 		killClient(int client,char *what);
 void 		tratarSeniales(int);
 void 		round_robin();
 void		add2FD_SET(void *client);

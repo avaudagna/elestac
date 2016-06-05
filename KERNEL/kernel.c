@@ -213,7 +213,11 @@ void check_CPU_FD_ISSET(void *cpu){
 			close(laCPU->clientID);
 			bool getCPUIndex(void *nbr){
 				t_Client *unCliente = nbr;
-				return laCPU->clientID == unCliente->clientID;
+				bool matchea = (laCPU->clientID == unCliente->clientID);
+				if (matchea){
+					/* si matchea entonces matar el PCB y enviar error a consola */
+				}
+				return matchea;
 			}
 			list_remove_by_condition(cpus_conectadas, getCPUIndex);
 		}
@@ -357,8 +361,8 @@ void round_robin(){
 	char quantum_sleep[4];
 	void * pcb_buffer = NULL;
 	void * tmp_buffer = NULL;
-	size_t tmp_buffer_size = 0;
-	size_t pcb_buffer_size = 0;
+	int tmp_buffer_size = 0;
+	int pcb_buffer_size = 0;
 	if (list_size(PCB_READY) > 0){
 		t_pcb *tuPCB;
 		tuPCB=list_remove(PCB_READY,0);
@@ -374,8 +378,7 @@ void round_robin(){
 		asprintf(&tmp_buffer, "%d%s%s%04d", 1,quantum,quantum_sleep, pcb_buffer_size);
         memcpy(tmp_buffer+tmp_buffer_size, pcb_buffer, pcb_buffer_size);
         tmp_buffer_size = tmp_buffer_size + pcb_buffer_size;
-		log_info(kernel_log,"Submitting to CPU %d the PID %d with pcb_buffer_size=%zu",laCPU->clientID, tuPCB->pid,pcb_buffer_size);
-		log_info(kernel_log,"The PCB is %s",tmp_buffer);
+		log_info(kernel_log,"Submitting to CPU %d the PID %d",laCPU->clientID, tuPCB->pid);
 		send(laCPU->clientID, tmp_buffer, tmp_buffer_size,0);
 	}
 	return;
