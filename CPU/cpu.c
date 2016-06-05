@@ -7,17 +7,20 @@
 #include "libs/pcb.h"
 
 t_setup	setup; // GLOBAL settings
+t_log* cpu_log;
 
 //
 //Compilame asi:
 // gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collections -o cpu libs/stack.c libs/pcb.c libs/serialize.c libs/socketCommons.c cpu.c implementation_ansisop.c -L/usr/lib -lcommons -lparser-ansisop -lm
 //
+int loadConfig(char* configFile);
+
 int main(int argc, char **argv) {
 
 	int i;
     char *handshake = (char*) calloc(1, sizeof(char));
 	int umcSocketClient = 0, kernelSocketClient = 0;
-	char kernelHandShake[] = "Existo";
+	char kernelHandShake[2] = "0";
 
 
     //t_kernel_data *kernel_data = (t_kernel_data*) malloc(sizeof(t_kernel_data));
@@ -25,6 +28,7 @@ int main(int argc, char **argv) {
 	u_int32_t actual_program_counter = 0;// actual_pcb->program_counter;
 
     if (start_cpu(argc, argv[1])<0) return 0;
+    cpu_log = log_create("cpu.log", "Elestac-CPU", true, LOG_LEVEL_TRACE);
 
 //    char* kernelMessage = (char*) calloc(sizeof(char),PACKAGE_SIZE);
 //	if(kernelMessage == NULL) {
@@ -38,51 +42,60 @@ int main(int argc, char **argv) {
 //	}
 
 	//Crete UMC client
-	//TODO: getClientSocket(&umcSocketClient, UMC_ADDR , UMC_PORT);
+//    if (getClientSocket(&umcSocketClient, setup.IP_UMC , setup.PUERTO_UMC) == 0) {
+//        log_info(cpu_log,"New KERNEL socket obtained");
+//    }
 	//Crete Kernel client
-	getClientSocket(&kernelSocketClient, setup.KERNEL_IP, setup.PUERTO_KERNEL);
-
+	if (getClientSocket(&kernelSocketClient, setup.KERNEL_IP, setup.PUERTO_KERNEL) == 0) {
+        log_info(cpu_log,"New KERNEL socket obtained");
+    }
+    else {
+        log_error(cpu_log, "Could not obtain KERNEL socket");
+        return -1;
+    }
 	//keep communicating with server
 	while(1) {
 		//Send a handshake to the kernel
         //MaquinaDeEstados();
-		if( send(kernelSocketClient , "0" , 1 , 0) < 0) {
-				puts("Send failed");
+		if( send(kernelSocketClient, kernelHandShake, 1, 0) < 0) {
+            log_error(cpu_log, "Error sending handshake to KERNEL");
 				return 1;
 		}
         printf("\nSENT 0 TO KERNEL\n");
+        log_info(cpu_log, "Sent handshake :''%s'' to KERNEL", kernelHandShake);
 
 		//Wait for PCB from the Kernel
 
         //primer byte 1 ? => recibirPcb LISTO
         //En Recibir PCB : Cada 4 bytes: Q, QSleep, pcb_size, pcb LISTO
         
-        printf(" .:: Waiting for Kernel handshake ::.\n");
+        printf(" .:: Waiting for Kernel handshake response ::.\n");
         if( recv(kernelSocketClient , handshake , sizeof(char) , 0) < 0) {
-              puts(".:: kernel handshake receive failed ::.");
-              break;
+              log_error(cpu_log, "KERNEL handshake response receive failed");
+              return -1;
         }
         if(strncmp(handshake, "1", sizeof(char)) != 0) {
-            puts(".:: wrong kernel handshake received ::.");
+            log_error(cpu_log, "Wrong KERNEL handshake response received");
             return -1;
         }
 
         t_kernel_data *incoming_kernel_data_buffer = calloc(1, sizeof(t_kernel_data));
-        puts(".:: Waiting for kernel PCB and Quantum data ::.");
+        log_info(cpu_log, "Waiting for kernel PCB and Quantum data");
         if( recibir_pcb(kernelSocketClient, incoming_kernel_data_buffer) < 0) {
+            log_error(cpu_log, "Error receiving PCB and Quantum data from KERNEL");
             return -1;
         }
 
         //Success!!  
         //Deserializo el PCB que recibo LISTO
         t_pcb * actual_pcb = (t_pcb *) calloc(1,sizeof(t_pcb));
-        size_t  last_buffer_index = 0;
+        int  last_buffer_index = 0;
         deserialize_pcb(&actual_pcb, incoming_kernel_data_buffer->serialized_pcb, &last_buffer_index);
         //Le paso el pid a la umc
-//        if( send(umcSocketClient , &actual_pcb->pid , sizeof(actual_pcb->pid ), 0) < 0) {
-//            puts("Send failed");
-//            return 1;
-//        }
+        if( send(umcSocketClient , &actual_pcb->pid , sizeof(actual_pcb->pid ), 0) < 0) {
+            puts("Send failed");
+            return 1;
+        }
         //Vuelvo a mi siguiente linea y hago un for de 0 a Quantum
         for(i = 0; i < incoming_kernel_data_buffer->Q; i++) {
             usleep((u_int32_t ) incoming_kernel_data_buffer->QSleep*1000);
@@ -162,27 +175,42 @@ void MaquinaDeEstados() {
 }
 
 int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
-        void * buffer = calloc(4,1);
+        void * buffer = calloc(1,sizeof(int));
         if( recv(kernelSocketClient , buffer , sizeof(int) , 0) < 0) {
-            puts("Q recv failed\n");
+            log_info(cpu_log, "Q recv failed");
             return -1;
         }
         kernel_data_buffer->Q = atoi(buffer);
-        if( recv(kernelSocketClient , buffer , sizeof(int) , 0) < 0) {
-            puts("QSleep recv failed\n");
+        log_info(cpu_log, "Q: %d", kernel_data_buffer->Q);
+
+    if( recv(kernelSocketClient , buffer , sizeof(int) , 0) < 0) {
+            log_info(cpu_log, "QSleep recv failed");
             return -1;
         }
         kernel_data_buffer->QSleep = atoi(buffer);
-        if( recv(kernelSocketClient ,buffer , sizeof(size_t) , 0) < 0) {
-            puts("pcb_size recv failed\n");
+        log_info(cpu_log, "QSleep: %d", kernel_data_buffer->QSleep);
+
+    if( recv(kernelSocketClient ,buffer , sizeof(int) , 0) < 0) {
+            log_info(cpu_log, "pcb_size recv failed");
             return -1;
         }
         kernel_data_buffer->pcb_size = atoi(buffer);
-        kernel_data_buffer->serialized_pcb = calloc(1, kernel_data_buffer->pcb_size);
-        if( recv(kernelSocketClient , &kernel_data_buffer->serialized_pcb , kernel_data_buffer->pcb_size , 0) < 0) {
-            puts("serialized_pcb recv failed\n");
+        log_info(cpu_log, "pcb_size: %d", kernel_data_buffer->pcb_size);
+
+    kernel_data_buffer->serialized_pcb = calloc(1, (size_t ) kernel_data_buffer->pcb_size);
+        if( recv(kernelSocketClient , kernel_data_buffer->serialized_pcb , (size_t )  kernel_data_buffer->pcb_size , 0) < 0) {
+            log_info(cpu_log, "serialized_pcb recv failed");
             return -1;
         }
+//        char log_buffer[kernel_data_buffer->pcb_size*2];
+//        bzero(log_buffer, kernel_data_buffer->pcb_size*2);
+//        int i = 0;
+//        for (i = 0; i < kernel_data_buffer->pcb_size; i++)
+//        {
+//            asprintf(&log_buffer, "%02X", *(char*)(kernel_data_buffer->serialized_pcb+i));
+//        }
+//        log_info(cpu_log, "serialized_pcb: %s", log_buffer);
+
         return 0;
 }
 
@@ -192,7 +220,7 @@ logical_addr * armarDireccionLogica(t_intructions *actual_instruction) {
     float actual_position = ((int) actual_instruction->start + 1)/ setup.PAGE_SIZE;
     addr->page_number = (int) ceilf(actual_position);
     addr->offset = (int) actual_instruction->start - (int) round(actual_position);
-    addr->len = actual_instruction->offset;
+    addr->tamanio = actual_instruction->offset;
     return addr;
 }
 
@@ -244,16 +272,16 @@ void tratarSeniales(int senial){
     switch (senial){
         case SIGINT:
             // Detecta Ctrl+C y evita el cierre.
-            printf("Esto acabará con el sistema. Presione Ctrl+C una vez más para confirmar.\n\n");
+            printf("This will end the CPU. Press Ctrl+C again to confirm.\n\n");
             signal (SIGINT, SIG_DFL); // solo controlo una vez.
             break;
         case SIGPIPE:
             // Trato de escribir en un socket que cerro la conexion.
-            printf("La consola o el CPU con el que estabas hablando se murió. Llamá al 911.\n\n");
+            printf("The KERNEL or UMC connection droped down.\n\n");
             signal (SIGPIPE, tratarSeniales);
             break;
         default:
-            printf("Otra senial\n");
+            printf("Other signal received\n");
             break;
     }
 }
