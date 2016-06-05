@@ -37,7 +37,7 @@ AnSISOP_kernel kernel_functions = { };
 typedef struct {
     int Q;
     int QSleep;
-    size_t pcb_size;
+    int pcb_size;
     void *serialized_pcb;
 } t_kernel_data;
 
