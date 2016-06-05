@@ -3,7 +3,7 @@
 #include <parser/metadata_program.h>
 #include <commons/collections/queue.h>
 //TODO: DESCOMENTAR ESTA LINEA EN CASO DE QUERER DEBUGGEAR Y VER QUE IMPRIME PARA ENCONTRAR EL ERROR
-//#define NDEBUG
+#define NDEBUG
 #include <assert.h>
 #include "libs/pcb.h"
 
@@ -15,7 +15,7 @@ t_stack *getStackExample();
 int printStackValuesVsBuffer(t_stack *stack, void *buffer);
 void printStackEntryVsBuffer(t_stack_entry *entry, void *buffer, int *buffer_index);
 
-int printInstructions(t_intructions *serializado, t_size size, void *pVoid);
+int printInstructions(t_intructions *serializado, int size, void *pVoid);
 int printEtiquetas(char *etiquetas, char *buffer, int cant_etiquetas);
 void print_instrucciones_size ();
 
@@ -23,7 +23,7 @@ void printStackValuesVsStruct(t_stack *index, t_stack *stack_index);
 
 void printStackEntryVsEntry(t_stack_entry *orig, t_stack_entry *aNew);
 
-void printOldPCBvsNewPCB(t_pcb *newPCB, t_pcb *incomingPCB);
+void testOldPCBvsNewPCB(t_pcb *newPCB, t_pcb *incomingPCB);
 
 void testSerializedPCB(t_pcb *newPCB, void *pcb_buffer);
 
@@ -53,7 +53,7 @@ int main() {
 
     //3)Serializo el PCB recien creado
     void * pcb_buffer = NULL;
-    size_t pcb_buffer_size = 0;
+    int pcb_buffer_size = 0;
     serialize_pcb(newPCB, &pcb_buffer, &pcb_buffer_size);
 
     testSerializedPCB(newPCB, pcb_buffer);
@@ -65,16 +65,16 @@ int main() {
     //6) Lo deserializo
 
     t_pcb * incomingPCB = (t_pcb *)calloc(1,sizeof(t_pcb));
-    size_t buff_cursor = 0;
+    int buff_cursor = 0;
     deserialize_pcb(&incomingPCB, pcb_buffer, &buff_cursor);
-    printOldPCBvsNewPCB(newPCB, incomingPCB);
+    testOldPCBvsNewPCB(newPCB, incomingPCB);
     //free(newPCB);
     //free(incomingPCB);
     //Para este punto tendria que tener en incomingPCB el PCB deserializado :)
     return 0;
 }
 
-void printOldPCBvsNewPCB(t_pcb *newPCB, t_pcb *incomingPCB) {
+void testOldPCBvsNewPCB(t_pcb *newPCB, t_pcb *incomingPCB) {
     printf("\n===(2)Loaded PCB vs Deserialized PCB===\n");
     printf("pid: %d=%d\n", newPCB->pid, incomingPCB->pid);
     assert(newPCB->pid == incomingPCB->pid);
@@ -200,7 +200,7 @@ int printEtiquetas(char *etiquetas, char *buffer, int cant_etiquetas) {
     }
     return indice;
 }
-int printInstructions(t_intructions *instrucciones_serializado, t_size cant_instrucciones, void *buffer) {
+int printInstructions(t_intructions *instrucciones_serializado, int cant_instrucciones, void *buffer) {
     int indice = 0, buffer_index = 0;
     for(indice = 0; indice < cant_instrucciones; indice++) {
         printf("start: %d=%d\n", (instrucciones_serializado+indice)->start, *(int *) (buffer + buffer_index));
