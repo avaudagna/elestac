@@ -41,17 +41,17 @@ typedef struct{
 		    pid;
 } t_Client;
 
-uint32_t	requestPages2UMC(char* PID, size_t ansisopLen,char* code,int clientUMC);
-int			start_kernel(int argc, char* configFile);
-int 		loadConfig(char* configFile);
-int 		connect2UMC();
-int			control_clients();
-int 		accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista);
-int			accept_new_PCB(int newConsole);
-void 		tratarSeniales(int);
-void 		round_robin();
-void		add2FD_SET(void *client);
-void 		check_CPU_FD_ISSET(void *client);
-void		check_CONSOLE_FD_ISSET(void *client);
+int     requestPages2UMC(char* PID, int ansisopLen,char* code,int clientUMC);
+int		start_kernel(int argc, char* configFile);
+int 	loadConfig(char* configFile);
+int 	connect2UMC();
+int		control_clients();
+int 	accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista);
+int		accept_new_PCB(int newConsole);
+void 	tratarSeniales(int);
+void 	round_robin();
+void	add2FD_SET(void *client);
+void 	check_CPU_FD_ISSET(void *client);
+void	check_CONSOLE_FD_ISSET(void *client);
 
 #endif /* KERNEL_H_ */

@@ -119,7 +119,7 @@ int connect2UMC(){
 	return clientUMC;
 }
 
-uint32_t requestPages2UMC(char* PID, size_t ansisopLen,char* code,int clientUMC){
+int requestPages2UMC(char* PID, int ansisopLen,char* code,int clientUMC){
 	/*
 	This function MUST be in a thread
 	Because the recv() is BLOCKER and it can be delayed when waiting
@@ -128,12 +128,12 @@ uint32_t requestPages2UMC(char* PID, size_t ansisopLen,char* code,int clientUMC)
 	*/
 	char* buffer;
 	char buffer_4[4];
-	size_t bufferLen=1+4+4+4+ansisopLen; //1+PID+req_pages+size+code
+	int bufferLen=1+4+4+4+ansisopLen; //1+PID+req_pages+size+code
 	sprintf(buffer_4, "%04d", (int) (ansisopLen/setup.PAGE_SIZE)+1);
 	asprintf(&buffer, "%d%s%s%04d%s", 1,PID,buffer_4, ansisopLen,code);
 	send(clientUMC, buffer, bufferLen, 0);
 	recv(clientUMC, buffer_4, 4, 0);
-	uint32_t code_pages = (uint32_t) atoi(buffer_4);
+	int code_pages = atoi(buffer_4);
 	free(buffer);
 	return code_pages;
 }
@@ -166,7 +166,7 @@ void add2FD_SET(void *client){
 void check_CPU_FD_ISSET(void *cpu){
 	char cpu_protocol[1];
 	t_Client *laCPU = cpu;
-	size_t pcb_size;
+	int pcb_size;
 	void *pcb_serializado;
 	char tmp_buff[4];
 	t_pcb *incomingPCB;
@@ -323,14 +323,14 @@ int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista){
 int accept_new_PCB(int newConsole){
 	char PID[4];
 	char buffer_4[4];
-	sprintf(PID, "%04d", (int) newConsole);
+	sprintf(PID, "%04d", newConsole);
 	printf(" .:: NEW (0) program with PID=%s arriving ::.\n", PID);
 	recv(newConsole, buffer_4, 4, 0);
-	size_t ansisopLen=(size_t) atoi(buffer_4);
+	int ansisopLen = atoi(buffer_4);
 	char *code = malloc(ansisopLen);
 	recv(newConsole, code, ansisopLen, 0);
-	//uint32_t code_pages=requestPages2UMC(PID,ansisopLen,code,clientUMC);
-	uint32_t code_pages=3;//TODO DELETE when using a real UMC
+	//int code_pages=requestPages2UMC(PID,ansisopLen,code,clientUMC);
+	int code_pages=3;//TODO DELETE when using a real UMC
 	if (code_pages>0){
 		send(newConsole,PID,4,0);
 		t_metadata_program* metadata = metadata_desde_literal(code);
