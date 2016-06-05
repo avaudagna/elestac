@@ -111,7 +111,7 @@ PAGINA * obtenerPaginaDeTablaDePaginas(t_list *headerTablaPaginas, int nroPagina
 #define SIZE_HANDSHAKE_SWAP 5 // 'U' 1 Y 4 BYTES PARA LA CANTIDAD DE PAGINAS
 //#define PAGE_SIZE 1024
 
-#define PAGINA_INVALIDA 2
+
 
 // Funciones para operar con el swap
 void init_Swap(void);
@@ -159,6 +159,10 @@ void pedidoDePaginaInvalida(int *socketBuff);
 void resolverEnMP(int *socketBuff, PAGINA *pPagina, int offset, int tamanio);
 
 void pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina);
+
+void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[]);
+
+void *obtenerMarcoLibreEnMP();
 
 int main(int argc , char **argv){
 
@@ -861,31 +865,62 @@ void pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina) {
 			buff_pid[4];
 	int __pid;
 
-	sprintf(buffer,"1%04d%04d",pid_actual,nroPagina);
+	sprintf(buffer,"1%04d%04d",*pid_actual,nroPagina);
 
 	if ( send(socketClienteSwap,buffer,9,0) <= 0)
 		perror("send");
 
 	// respuesta swap : pid+PAGINA
 
-	if(recv(socketBuff,buff_pid,4, 0) <= 0 )
+	if(recv(*socketBuff,(void * )buff_pid,4, 0) <= 0 )
 		perror("recv");
 
 	__pid = atoi(buff_pid);
 
-	if (__pid == pid_actual){	// valido que la pagina que me respondio swap se corresponda a la que pedi
+	if (__pid == *pid_actual){	// valido que la pagina que me respondio swap se corresponda a la que pedi
 
-		if(recv(socketBuff,aux,umcGlobalParameters.marcosSize, 0) <= 0 )
+		if(recv(*socketBuff,aux,umcGlobalParameters.marcosSize, 0) <= 0 )
 			perror("recv");
 
 		// ¿ Hay marcos libres ? ¿ El proceso tiene marcos disponibles ?
+		// si  y si --> almaceno la pagina en MP y actualizo bit de presencia + TLB !!!!!
 
+		//if ( ( cantPagDisponiblesxPID(pid_actual) > 0 ) && marcosDisponiblesEnMP > 0 )
+			almacenoPaginaEnMP(pid_actual,nroPagina,aux);
 
+		// si  y no --> algoritmo de reemplazo
 
+		// CLOCK() / CLOCK_MODIFICADO()
+
+		// no y no --> algoritmo de reemplazo
+
+		// CLOCK() / CLOCK_MODIFICADO()
+
+		// no y si --> espero a que finalice otro proceso
+
+		// ESPERAR A QUE marcosDisponiblesEnMP > 0
 
 	}
 
 
+}
+
+void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[]) {
+
+	void *comienzoPaginaLibre = NULL;
+
+	comienzoPaginaLibre = obtenerMarcoLibreEnMP();
+}
+
+void *obtenerMarcoLibreEnMP() {
+
+	int i = 0;
+
+	while(i<umcGlobalParameters.marcos){
+		if ( vectorMarcos[i].estado == LIBRE)
+			return vectorMarcos[i].comienzoMarco;
+	}
+	return NULL;
 }
 
 void resolverEnMP(int *socketBuff, PAGINA *pPagina, int offset, int tamanio) {
@@ -902,7 +937,7 @@ void resolverEnMP(int *socketBuff, PAGINA *pPagina, int offset, int tamanio) {
 
 void pedidoDePaginaInvalida(int *socketBuff) {
 
-	if ( send(*socketBuff,PAGINA_INVALIDA,1,0) == -1 )
+	if ( send(*socketBuff,"2",1,0) == -1 )
 		perror("send");
 }
 
