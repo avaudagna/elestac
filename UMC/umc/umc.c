@@ -67,6 +67,7 @@ typedef struct _pagina {
 	int nroPagina;
 	int presencia;
 	int modificado;
+	int nroDeMarco;
 }PAGINA;
 
 typedef struct _pidPaginas {
@@ -93,11 +94,12 @@ void dividirEnPaginas(int pid_aux, int paginasDeCodigo, char codigo[], int code_
 void enviarPaginaAlSwap(char *trama, int size_trama);
 void agregarPagina(t_list * header,int pid,PAGINA * pagina_aux);
 t_list * obtenerTablaDePaginasDePID(t_list *header,int pid);
-bool compararPid(PAGINA * data,int pid);
+bool compararPid(PIDPAGINAS * data,int pid);
+
 t_list * getHeadListaPaginas(PIDPAGINAS * data);
 
-bool filtrarPorPid ( void * );
-bool filtrarPorNroPagina ( t_list *headerTablaPaginas);
+
+PAGINA * obtenerPaginaDeTablaDePaginas(t_list *headerTablaPaginas, int nroPagina);
 
 
 #define SIZE_HANDSHAKE_KERNEL 5
@@ -106,8 +108,10 @@ bool filtrarPorNroPagina ( t_list *headerTablaPaginas);
 // TODO LO QUE ES CON SWAP
 #define PUERTO_SWAP "6500"
 #define IP_SWAP "127.0.0.1"
-#define SIZE_handShake_Swap 5 // 'U' 1 Y 4 BYTES PARA LA CANTIDAD DE PAGINAS
+#define SIZE_HANDSHAKE_SWAP 5 // 'U' 1 Y 4 BYTES PARA LA CANTIDAD DE PAGINAS
 //#define PAGE_SIZE 1024
+
+#define PAGINA_INVALIDA 2
 
 // Funciones para operar con el swap
 void init_Swap(void);
@@ -124,6 +128,7 @@ UMC_PARAMETERS umcGlobalParameters;
 int contConexionesNucleo = 0;
 int contConexionesCPU = 0;
 int paginasLibresEnSwap = 0;
+int marcosDisponiblesEnMP = 0;
 int stack_size;
 t_list *headerListaDePids;
 void *memoriaPrincipal = NULL;
@@ -146,6 +151,14 @@ void cambioProcesoActivo(int *socket, int *pid);
 void pedidoBytes(int *socketBuff, int *pid_actual);
 void enviarPaginasDeStackAlSwap(int _pid, int nroDePaginaInicial);
 void indexarPaginasDeStack(int _pid, int nroDePagina);
+
+bool comparaNroDePagina(PAGINA *pagina, int nroPagina);
+
+void pedidoDePaginaInvalida(int *socketBuff);
+
+void resolverEnMP(int *socketBuff, PAGINA *pPagina, int offset, int tamanio);
+
+void pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina);
 
 int main(int argc , char **argv){
 
@@ -590,6 +603,7 @@ void dividirEnPaginas(int pid_aux, int paginasDeCodigo, char codigo[], int code_
 			page_node->nroPagina=nroDePagina;
 			page_node->modificado=0;
 			page_node->presencia=0;
+			page_node->nroDeMarco=-1;
 			// agrego pagina a la tabla de paginas asociada a ese PID
 			agregarPagina(headerListaDePids,pid_aux,page_node);
 
@@ -606,6 +620,7 @@ void indexarPaginasDeStack(int _pid, int nroDePagina) {
 	page_node->nroPagina=nroDePagina;
 	page_node->modificado=0;
 	page_node->presencia=0;
+	page_node->nroDeMarco=-1;
 	// agrego pagina a la tabla de paginas asociada a ese PID
 	agregarPagina(headerListaDePids,_pid,page_node);
 }
@@ -620,8 +635,9 @@ void enviarPaginasDeStackAlSwap(int _pid, int nroDePaginaInicial) {
 
 	for(i=0;i<stack_size;i++,nroDePaginaInicial++){
 
-		sprintf(&trama[sizeof(pid_aux)],"%04d",nroDePaginaInicial);
+		sprintf(&trama[sizeof(_pid)],"%04d",nroDePaginaInicial);
 		enviarPaginaAlSwap(trama,umcGlobalParameters.marcosSize + ( sizeof(_pid) * 2 ) ) ;
+		swapUpdate();
 		indexarPaginasDeStack(_pid,nroDePaginaInicial);
 	}
 
@@ -663,8 +679,8 @@ t_list * obtenerTablaDePaginasDePID(t_list *header,int pid){
 }
 
 
-bool compararPid(PAGINA * data,int pid){
-	if (data->nroPagina == pid)
+bool compararPid(PIDPAGINAS * data,int pid){
+	if (data->pid == pid)
 		return true;
 	else
 		return false;
@@ -678,18 +694,38 @@ t_list * getHeadListaPaginas(PIDPAGINAS * data){
 	return data->headListaDePaginas;
 }
 
+PAGINA * obtenerPaginaDeTablaDePaginas(t_list *headerTablaPaginas, int nroPagina) {
+
+	t_link_element *aux = headerTablaPaginas->head;
+
+	while (aux != NULL) {
+		if (comparaNroDePagina(aux->data, nroPagina))
+			return aux->data;
+
+		aux = aux->next;
+	}
+
+	return NULL;
+}
+
+bool comparaNroDePagina(PAGINA *pagina, int nroPagina) {
+
+	if (pagina->nroPagina == nroPagina)
+		return true;
+	else
+		return false;
+}
+
 void swapUpdate(void){
 // 1+CANTIDAD_DE_PAGINAS_LIBRES ( 5 bytes )
 
 	char package[5];
 
-	if ( recv(socketClienteSwap, (void*) package, SIZE_handShake_Swap, 0) > 0 ){
+	if ( recv(socketClienteSwap, (void*) package, SIZE_HANDSHAKE_SWAP, 0) > 0 ){
 		if ( package[0] == '1')
 			paginasLibresEnSwap = atoi(package+1);
 	}else
 		perror("recv");
-
-
 
 }
 
@@ -721,8 +757,8 @@ void handShake_Swap(void){
 
 	char *package = NULL;	// recepcion
 	char *buffer= NULL;
-	char trama_handshake[SIZE_handShake_Swap];
-	buffer = (char * )malloc (SIZE_handShake_Swap);
+	char trama_handshake[SIZE_HANDSHAKE_SWAP];
+	buffer = (char * )malloc (SIZE_HANDSHAKE_SWAP);
 
 	sprintf(buffer,"U%d",umcGlobalParameters.marcosSize);
 
@@ -730,17 +766,17 @@ void handShake_Swap(void){
 
 	// le quito el \0 al final
 
-	for(i=0;i<SIZE_handShake_Swap;i++){
+	for(i=0;i<SIZE_HANDSHAKE_SWAP;i++){
 		trama_handshake[i]=buffer[i];
 	}
 
-	if ( send(socketClienteSwap,(void *)trama_handshake,SIZE_handShake_Swap,0) == -1 ) {
+	if ( send(socketClienteSwap,(void *)trama_handshake,SIZE_HANDSHAKE_SWAP,0) == -1 ) {
 			perror("send");
 			exit(1);
 		}
 	// SWAP me responde 1+CANTIDAD_DE_PAGINAS_LIBRES ( 1 byte + 4 de cantidad de paginas libres )
-	package = (char *) malloc(sizeof(char) * SIZE_handShake_Swap) ;
-	if ( recv(socketClienteSwap, (void*) package, SIZE_handShake_Swap, 0) > 0 ){
+	package = (char *) malloc(sizeof(char) * SIZE_HANDSHAKE_SWAP) ;
+	if ( recv(socketClienteSwap, (void*) package, SIZE_HANDSHAKE_SWAP, 0) > 0 ){
 
 		if ( package[0] == 'S'){
 			//  paginasLibresEnSwap = los 4 bytes que quedan
@@ -769,7 +805,11 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 
 	int _pagina,_offset,_tamanio;
 	char buffer[4];
-	t_list *headerTablaDePaginas = NULL;
+	t_list * headerTablaDePaginas;
+	PAGINA *aux;
+
+	aux = NULL;
+	headerTablaDePaginas = NULL;
 
 	// levanto nro de pagina
 	if(recv(*socketBuff, (void*) buffer, 4, 0) <= 0 )
@@ -787,10 +827,83 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 
 	_tamanio=atoi(buffer);
 
+	//  VALIDAR QUE ESTE EN TLB !!!
+
 	headerTablaDePaginas = obtenerTablaDePaginasDePID(headerListaDePids,*pid_actual);
 
+	aux = obtenerPaginaDeTablaDePaginas(headerTablaDePaginas,_pagina);
 
+	if ( aux == NULL ){
+		pedidoDePaginaInvalida(socketBuff);
+	}
+	else{
 
+		if ( aux->presencia == 0) {	// La pagina NO se encuentra en memoria principal
+
+			 pedirPaginaSwap(socketBuff,pid_actual,aux->nroPagina);
+			 //1- Pedir pagina a Swap
+			 // 2- ¿ El proceso tiene marcos disponibles ? SI , OK ALMACENO , ¿NO? APLICO ALGORITMO
+			//pedirPaginaASwap(aux);
+		}
+		else 	// pagina en memoria principal
+			resolverEnMP(socketBuff,aux, _offset,_tamanio);
+
+	}
 
 
 }
+
+void pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina) {
+
+	// Le pido al swap la pagina : 3+pid+nroPagina
+	char 	buffer[9],
+			aux[umcGlobalParameters.marcosSize],
+			buff_pid[4];
+	int __pid;
+
+	sprintf(buffer,"1%04d%04d",pid_actual,nroPagina);
+
+	if ( send(socketClienteSwap,buffer,9,0) <= 0)
+		perror("send");
+
+	// respuesta swap : pid+PAGINA
+
+	if(recv(socketBuff,buff_pid,4, 0) <= 0 )
+		perror("recv");
+
+	__pid = atoi(buff_pid);
+
+	if (__pid == pid_actual){	// valido que la pagina que me respondio swap se corresponda a la que pedi
+
+		if(recv(socketBuff,aux,umcGlobalParameters.marcosSize, 0) <= 0 )
+			perror("recv");
+
+		// ¿ Hay marcos libres ? ¿ El proceso tiene marcos disponibles ?
+
+
+
+
+	}
+
+
+}
+
+void resolverEnMP(int *socketBuff, PAGINA *pPagina, int offset, int tamanio) {
+// 1+CODIGO
+	char buffer[tamanio+1];
+	buffer[0]='1';
+
+	memcpy(buffer,vectorMarcos[pPagina->nroDeMarco].comienzoMarco,tamanio);
+
+	if (send(*socketBuff,buffer,tamanio+1,0) <= 0)
+		perror("send");
+
+}
+
+void pedidoDePaginaInvalida(int *socketBuff) {
+
+	if ( send(*socketBuff,PAGINA_INVALIDA,1,0) == -1 )
+		perror("send");
+}
+
+
