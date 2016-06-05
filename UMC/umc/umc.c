@@ -411,8 +411,16 @@ void atenderCPU(int *socketBuff){
 
 void cambioProcesoActivo(int *socket, int *pid){
 
-	if ( (recv(*socket, (void*) (pid), 4, 0)) <= 0 )	// levanto byte que indica que tipo de operacion se va a llevar a cabo
+	char buffer[5];
+
+	if ( (recv(*socket, (void*) (buffer), 4, 0)) <= 0 )
 		perror("recv");
+	*pid = atoi(buffer);
+
+	sprintf(buffer,"0%04d",umcGlobalParameters.marcosSize);
+
+	if ( send(*socket,(void *)buffer,4,0) == -1 )
+		perror("send");
 
 }
 
