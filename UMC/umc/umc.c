@@ -128,7 +128,6 @@ UMC_PARAMETERS umcGlobalParameters;
 int contConexionesNucleo = 0;
 int contConexionesCPU = 0;
 int paginasLibresEnSwap = 0;
-int marcosDisponiblesEnMP = 0;
 int stack_size;
 t_list *headerListaDePids;
 void *memoriaPrincipal = NULL;
@@ -163,6 +162,10 @@ void pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina);
 void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[]);
 
 void *obtenerMarcoLibreEnMP();
+
+int marcosDisponiblesEnMP();
+
+int cantPagDisponiblesxPID(int *pInt);
 
 int main(int argc , char **argv){
 
@@ -417,9 +420,10 @@ void cambioProcesoActivo(int *socket, int *pid){
 		perror("recv");
 	*pid = atoi(buffer);
 
+	// 0+PAGE_SIZE
 	sprintf(buffer,"0%04d",umcGlobalParameters.marcosSize);
 
-	if ( send(*socket,(void *)buffer,4,0) == -1 )
+	if ( send(*socket,(void *)buffer,5,0) == -1 )
 		perror("send");
 
 }
@@ -892,11 +896,17 @@ void pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina) {
 
 		// ¿ Hay marcos libres ? ¿ El proceso tiene marcos disponibles ?
 		// si  y si --> almaceno la pagina en MP y actualizo bit de presencia + TLB !!!!!
+		if ( marcosDisponiblesEnMP() > 0 ) {
+			if ( ( cantPagDisponiblesxPID(pid_actual) > 0 ){
+					almacenoPaginaEnMP(pid_actual, nroPagina, aux);
+				}else{ // si  y no --> algoritmo de reemplazo
+					// ALGORITMO DE REEMPLAZO
+				}
+		} else{
 
-		//if ( ( cantPagDisponiblesxPID(pid_actual) > 0 ) && marcosDisponiblesEnMP > 0 )
-			almacenoPaginaEnMP(pid_actual,nroPagina,aux);
+		}
 
-		// si  y no --> algoritmo de reemplazo
+
 
 		// CLOCK() / CLOCK_MODIFICADO()
 
@@ -911,6 +921,14 @@ void pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina) {
 	}
 
 
+}
+
+int cantPagDisponiblesxPID(int *pInt) {
+	return 0;
+}
+
+int marcosDisponiblesEnMP() {
+	return 0;
 }
 
 void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[]) {
