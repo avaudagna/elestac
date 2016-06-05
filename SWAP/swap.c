@@ -21,8 +21,9 @@
 
 #define PATH_CONF "swapConf"
 #define PACKAGE_SIZE 1024
-#define IPSWAP "127.0.0.1"
-#define PUERTOSWAP	45005
+//#define IPSWAP "127.0.0.1"
+#define IPSWAP "192.168.0.28"
+#define PUERTOSWAP 45008
 
 
 /************************
@@ -74,6 +75,8 @@ char* RETARDO_COMPACTACION;
  **********************/
 
 //PEDIDOS UMC
+int umc_handshake();
+
 char* request_Lectura(int pid, int numeroPagina);
 void umc_leer();
 
@@ -124,8 +127,7 @@ char obtenerPrimerChar(void* buffer);
 int mod (int a, int b);
 
 int main() {
-	puts(".:: INITIALIZING SWAP ::.");
-	puts("");
+	puts(".:: INITIALIZING SWAP ::. \n");
 
 	if(!init_Config()){
     	puts("Config file can not be loaded");
@@ -136,7 +138,7 @@ int main() {
 
     init_Server();
 
-	close_SwapProcess();
+    close_SwapProcess();
 
 	return 0;
 }
@@ -147,8 +149,76 @@ int main() {
  *		PEDIDOS UMC
  *
  **********************/
+int umc_handshake(){
+	int handshakeOK = 0;
+	char handShake;
+	int tamanioTrama = sizeof(char)+sizeof(int);
+
+	void* buffer = malloc(tamanioTrama);
+
+	if(recv(umcSocket, buffer,tamanioTrama,0)<= 0){
+		free(buffer);
+		return handshakeOK;
+	}
+
+	//Obtenemos el primer caracter
+	memcpy(&handShake, buffer,sizeof(char));
+
+	if(handShake == 'U'){ //El handshake es correcto
+		char aux[20], aux2[20];
+
+		memcpy(&aux, buffer, tamanioTrama);
+		int i, j=0;
+		for(i = 0; i < 20;i++){
+			if( aux[i] >= '0' && aux[i] <= '9' ){
+				aux2[j] = aux[i];
+				j++;
+			}
+		}
+
+		TAMANIO_PAGINA = atoi(aux2);
+
+		init_BitMap();
+
+		//Armo la trama a responder char[]: S+cantPaginasLibres
+		int SIZE_TRAMA = 5;
+		char* respuesta = malloc(SIZE_TRAMA);
+		char tramaAEnviar[SIZE_TRAMA];
+		sprintf(respuesta,"S%d", paginas_CantidadPaginasLibres());
+
+		// Le quito el \0 al final
+		for(i=0; i < SIZE_TRAMA; i++){
+			tramaAEnviar[i]=respuesta[i];
+		}
+
+		free(respuesta);
+
+		if(send(umcSocket,(void *) tramaAEnviar, SIZE_TRAMA,0) == -1){
+			puts("[ERROR] Error while trying to complete handshake");
+			return handshakeOK;
+		}
+
+		printf("[INFO] Handshake with UMC succesfully done. Page size received: %d \n", TAMANIO_PAGINA);
+
+		handshakeOK = 1;
+
+		if(!init_SwapFile()){
+			puts("[ERROR] SWAP file couldn't be created. Check the conf file!");
+			close_SwapProcess();
+		}
+	} else {
+		char tramaRecibida[100];
+		memcpy(&tramaRecibida, buffer, tamanioTrama);
+
+		printf("[ERROR] Error while trying to complete handshake. Code recieved: %s \n", tramaRecibida);
+	}
+
+	free(buffer);
+	return handshakeOK;
+}
+
 char* request_Lectura(int pid, int numeroPagina){
-	printf("\n[REQUEST] Page requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
+	printf("[REQUEST] Page requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
 
 	char* paginaObtenida = NULL;
 	paginaObtenida = swap_ObtenerPagina(pid, numeroPagina);
@@ -164,7 +234,7 @@ char* request_Lectura(int pid, int numeroPagina){
 }
 
 int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
-	printf("\n[REQUEST] Page writing requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
+	printf("[REQUEST] Page writing requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
 
 	char* paginaObtenida = NULL;
 	paginaObtenida = swap_ObtenerPagina(pid, numeroPagina);
@@ -205,7 +275,7 @@ int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
 }
 
 int request_FinalizacionPrograma(int pid){
-	printf("\n[REQUEST] Program finalization requested by UMC [PID: %d] \n", pid);
+	printf("[REQUEST] Program finalization requested by UMC [PID: %d] \n", pid);
 
 	int paginasLiberadas = 0;
 	paginasLiberadas = swap_LiberarPrograma(pid);
@@ -229,7 +299,7 @@ int init_Config(){
 	//ARCHIVO DE CONFIGURACION
     char* keys[7] = {"IP_SWAP","PUERTO_ESCUCHA","NOMBRE_SWAP","PATH_SWAP","CANTIDAD_PAGINAS","TAMANIO_PAGINA","RETARDO_COMPACTACION"};
 
-	puts(".::READING CONFIGURATION FILE::.");
+	puts(".:: READING CONFIGURATION FILE ::. \n");
 
 	t_config * punteroAStruct = config_create(PATH_CONF);
 
@@ -273,7 +343,7 @@ int init_Config(){
 }
 
 void init_Server(){
-	puts(".::INITIALIZING SERVER PROCESS::.");
+	puts(".:: INITIALIZING SERVER PROCESS ::. \n");
 
 	setServerSocket(&swapSocket,IPSWAP,PUERTOSWAP);
 
@@ -282,23 +352,31 @@ void init_Server(){
 	void* buffer = malloc(sizeof(int));
 	int handshakeOK = 0;
 	int operacion = 0;
-	char handShake;
+	char aux;
+
 
 	while(1){
 		if(handshakeOK){
-			free(buffer);
 			buffer = malloc(sizeof(int));
 
-			if(recv(umcSocket,buffer,1,0)<= 0)
-				break;
+			puts("[INFO] Waiting for UMC request");
+
+			if(recv(umcSocket,buffer,sizeof(int),0) <= 0){
+				free(buffer);
+				close(umcSocket);
+				close(swapSocket);
+
+				return;
+			}
 
 			/****************************
 			 * Leo el codigo de operacion
 			 * y convierto el char a int
 			 ****************************/
-			char aux;
 			memcpy(&aux,buffer,1);
 			operacion = aux - '0';
+
+			free(buffer);
 
 			switch (operacion) {
 				case ESCRIBIR: //pid(int), numeroPagina(int), codigo (undefined)
@@ -322,64 +400,23 @@ void init_Server(){
 			operacion = -1;
 
 		} else { //HAGO EL HANDSHAKE
-			if(recv(umcSocket, buffer,sizeof(char),0)<= 0){
-				break;
+			handshakeOK = umc_handshake();
+
+			char error[1] = {'E'};
+			if(send(umcSocket,(void *) error, 1,0) == -1) {
+				perror("send");
 			}
 
-			memcpy(&handShake, buffer,sizeof(char));
-
-			if(handShake == 'U'){ //El handshake es correcto
-				free(buffer);
-				buffer = malloc(sizeof(int));
-
-				if(recv(umcSocket, buffer,sizeof(int),0)<= 0){
-					break;
-				}
-
-				TAMANIO_PAGINA = atoi(buffer);
-				free(buffer);
-
-				init_BitMap();
-
-				//Armo la trama a responder char[]: S+cantPaginasLibres
-				int SIZE_TRAMA = 5;
-				char* respuesta = malloc(SIZE_TRAMA);
-				char tramaAEnviar[SIZE_TRAMA];
-				sprintf(respuesta,"S%d", paginas_CantidadPaginasLibres());
-
-				int i = 0;// Le quito el \0 al final
-				for(i=0; i < SIZE_TRAMA; i++){
-					tramaAEnviar[i]=respuesta[i];
-				}
-
-				if(send(umcSocket,(void *) tramaAEnviar, SIZE_TRAMA,0) == -1){
-					puts("[ERROR] Error while trying to complete handshake");
-					break;
-				}
-
-				printf("[INFO] Handshake with UMC succesfully done. Page size received: %d \n", TAMANIO_PAGINA);
-
-				handshakeOK = 1;
-
-				if(!init_SwapFile()){
-					puts("[ERROR] SWAP file couldn't be created. Check the conf file!");
-					close_SwapProcess();
-				}
-			} else {
-				puts("[ERROR] Error while trying to complete handshake");
-			}
 		}
 
 	}
 
-	close(umcSocket);
 }
 
 void umc_leer(){
 	int pid;
 	int numeroPagina;
 
-	char* respuesta;
 	char* buffer = malloc(sizeof(int));
 	char tramaAEnviar[TAMANIO_PAGINA];
 
@@ -410,7 +447,7 @@ void umc_leer(){
 	char* resultadoRequest = request_Lectura(pid, numeroPagina);
 
 	if(resultadoRequest != NULL){ //ENVIAMOS A UMC 1+cantPaginasLibres
-		respuesta = malloc(sizeof(char[TAMANIO_PAGINA]));
+		char* respuesta = malloc(sizeof(char[TAMANIO_PAGINA]));
 		sprintf(respuesta,"%s", resultadoRequest);
 
 		int i = 0;// Le quito el \0 al final
@@ -423,6 +460,8 @@ void umc_leer(){
 			exit(1);
 		}
 
+		free(respuesta);
+
 	} else { //ENVIAMOS ERROR A UMC
 		char error[1] = {'E'};
 		if(send(umcSocket,(void *) error, 1,0) == -1) {
@@ -430,10 +469,7 @@ void umc_leer(){
 		}
 	}
 
-	/*
 	free(buffer);
-	free(respuesta);
-	*/
 }
 
 void umc_escribir(){
@@ -445,7 +481,6 @@ void umc_escribir(){
 	int numeroPagina;
 	char* codigo = malloc(sizeof(char[TAMANIO_PAGINA]));
 
-	char* respuesta;
 	char tramaAEnviar[SIZE_TRAMA];
 
 	//Recibo el PID
@@ -476,12 +511,13 @@ void umc_escribir(){
 		exit(1);
 
 	memcpy(codigo, buffer, sizeof(char[TAMANIO_PAGINA]));
-	free(buffer);
 
 	//Hacemos el request
 	int resultadoRequest = request_EscrituraPagina(pid, numeroPagina, codigo);
 
 	if(resultadoRequest > -1){ //ENVIAMOS A UMC 1+cantPaginasLibres
+		char* respuesta;
+
 		respuesta = malloc(sizeof(char[SIZE_TRAMA]));
 		sprintf(respuesta,"S%d", paginas_CantidadPaginasLibres());
 
@@ -495,11 +531,7 @@ void umc_escribir(){
 			exit(1);
 		}
 
-		/*
-		free(buffer);
-		free(codigo);
 		free(respuesta);
-		*/
 
 	} else { //ENVIAMOS ERROR A UMC
 		char error[1] = {'E'};
@@ -507,6 +539,9 @@ void umc_escribir(){
 			perror("send");
 		}
 	}
+
+	free(buffer);
+	free(codigo);
 
 }
 
@@ -517,8 +552,6 @@ void umc_finalizarPrograma(){
 
 	int pid;
 
-	char* respuesta;
-	char tramaAEnviar[SIZE_TRAMA];
 
 	//Recibo el PID
 	if(recv(umcSocket, buffer, 1, 0)<= 0)
@@ -536,8 +569,10 @@ void umc_finalizarPrograma(){
 	int resultadoRequest = request_FinalizacionPrograma(pid);
 
 	if(resultadoRequest > 0){ //ENVIAMOS A UMC 1+cantPaginasLibres
-		respuesta = malloc(sizeof(char[SIZE_TRAMA]));
+		char* respuesta = malloc(sizeof(char[SIZE_TRAMA]));
 		sprintf(respuesta,"S%d", paginas_CantidadPaginasLibres());
+
+		char tramaAEnviar[SIZE_TRAMA];
 
 		int i = 0;// Le quito el \0 al final
 		for(i=0; i < SIZE_TRAMA; i++){
@@ -549,19 +584,17 @@ void umc_finalizarPrograma(){
 			exit(1);
 		}
 
-		/*
-		free(buffer);
-		free(codigo);
 		free(respuesta);
-		*/
 
 	} else { //ENVIAMOS ERROR A UMC
-		char error = 'E';
+		char error[1] = {'E'};
 		if(send(umcSocket,(void *) error, 1,0) == -1) {
 			perror("send");
 			exit(1);
 		}
 	}
+
+	free(buffer);
 }
 
 int init_SwapFile(){
