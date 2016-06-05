@@ -22,8 +22,8 @@ t_log* kernel_log;
 int main (int argc, char **argv){
 	kernel_log = log_create("kernel.log", "Elestac-KERNEL", true, LOG_LEVEL_TRACE);
 	if (start_kernel(argc, argv[1])<0) return 0; //load settings
-	//clientUMC=connect2UMC();
-	clientUMC=100;setup.PAGE_SIZE=1024; //TODO Delete -> lo hace connect2UMC()
+	clientUMC=connect2UMC();
+	//clientUMC=100;setup.PAGE_SIZE=1024; //TODO Delete -> lo hace connect2UMC()
 	if (clientUMC<0){
 		log_error(kernel_log, "Could not connect to the UMC. Please, try again.");
 		return 0;
@@ -85,8 +85,10 @@ int loadConfig(char* configFile){
 	if (config != NULL){
 		setup.PUERTO_PROG=config_get_int_value(config,"PUERTO_PROG");
 		setup.PUERTO_CPU=config_get_int_value(config,"PUERTO_CPU");
+		/* BEGIN pueden cambiar en tiempo de ejecucion */
 		setup.QUANTUM=config_get_int_value(config,"QUANTUM");
 		setup.QUANTUM_SLEEP=config_get_int_value(config,"QUANTUM_SLEEP");
+		/* END pueden cambiar en tiempo de ejecucion */
 		setup.IO_ID=config_get_array_value(config,"IO_ID");
 		setup.IO_SLEEP=config_get_array_value(config,"IO_SLEEP");
 		setup.SEM_ID=config_get_array_value(config,"SEM_ID");
@@ -97,7 +99,6 @@ int loadConfig(char* configFile){
 		setup.IP_UMC=config_get_string_value(config,"IP_UMC");
 		setup.KERNEL_IP=config_get_string_value(config,"KERNEL_IP");
 	}
-	//config_destroy(config);
 	return 0;
 }
 
@@ -119,13 +120,7 @@ int connect2UMC(){
 	return clientUMC;
 }
 
-int requestPages2UMC(char* PID, int ansisopLen,char* code,int clientUMC){
-	/*
-	This function MUST be in a thread
-	Because the recv() is BLOCKER and it can be delayed when waiting
-	for SWAP.
-	Put all parameters in a serialized struct (create a stream);
-	*/
+int requestPages2UMC(char* PID, int ansisopLen,char* code,int clientUMC){ //TODO Launch this in a thread
 	char* buffer;
 	char buffer_4[4];
 	int bufferLen=1+4+4+4+ansisopLen; //1+PID+req_pages+size+code
@@ -150,7 +145,6 @@ void tratarSeniales(int senial){
 	case SIGPIPE:
 		// Trato de escribir en un socket que cerro la conexion.
 		printf("La consola o el CPU con el que estabas hablando se murió. Llamá al 911.\n\n");
-		signal (SIGPIPE, tratarSeniales);
 		break;
 	default:
 		printf("Otra senial\n");
@@ -164,41 +158,46 @@ void add2FD_SET(void *client){
 }
 
 void check_CPU_FD_ISSET(void *cpu){
-	char cpu_protocol[1];
+	char *cpu_protocol = malloc(2);
 	t_Client *laCPU = cpu;
 	int pcb_size;
-	void *pcb_serializado;
-	char tmp_buff[4];
+	void *pcb_serializado = NULL;
+	char *tmp_buff = malloc(4);
 	t_pcb *incomingPCB;
 	if (FD_ISSET(laCPU->clientID, &allSockets)) {
 		if (recv(laCPU->clientID, cpu_protocol, 1, 0) > 0){
 			log_info(kernel_log,"CPU dijo: %s - Ejecutar protocolo correspondiente",cpu_protocol);
-			switch (atoi(cpu_protocol)){
+			switch (atoi(cpu_protocol)) {
 			case 1: // Quantum finish
 			case 2: // Program END
-				if(recv(laCPU->clientID, tmp_buff, 4, 0) > 0){
+				if (recv(laCPU->clientID, tmp_buff, 4, 0) > 0) {
 					pcb_size=atoi(tmp_buff);
-					if(recv(laCPU->clientID, pcb_serializado, pcb_size, 0) > 0){
+					if (recv(laCPU->clientID, pcb_serializado, pcb_size, 0) > 0) {
 						deserialize_pcb(&incomingPCB,&pcb_serializado,&pcb_size);
-						switch(incomingPCB->status){
-							case READY:
-								list_add(PCB_READY,incomingPCB);
-								break;
-							case BLOCKED:
-								list_add(PCB_BLOCKED,incomingPCB);
-								break;
-							case EXIT:
-								list_add(PCB_EXIT,incomingPCB);
-								break;
+						switch (incomingPCB->status) {
+						case READY:
+							list_add(PCB_READY,incomingPCB);
+							break;
+						case BLOCKED:
+							list_add(PCB_BLOCKED,incomingPCB);
+							break;
+						case EXIT:
+							list_add(PCB_EXIT,incomingPCB);
+							break;
+						default:
+							log_error(kernel_log,"Error with CPU protocol. Function check_CPU_FD_ISSET.");
 						}
 					}
 				}
 				break;
 			case 3:				//3== IO
+				log_warning(kernel_log,"Error with CPU protocol and input/output operation. Function check_CPU_FD_ISSET.");
 				break;
 			case 4:				//4== semaforo
+				log_warning(kernel_log,"Error with CPU protocol and semaphore operation. Function check_CPU_FD_ISSET.");
 				break;
 			case 5:				//5== var compartida
+				log_warning(kernel_log,"Error with CPU protocol and shared variable operation. Function check_CPU_FD_ISSET.");
 				break;
 			default:
 				log_error(kernel_log,"Caso no contemplado. CPU dijo: %s",cpu_protocol);
@@ -206,8 +205,7 @@ void check_CPU_FD_ISSET(void *cpu){
 			laCPU->status=READY;
 			laCPU->pid=0;
 			list_add(cpus_conectadas, laCPU); /* return the CPU to the queue */
-			round_robin(); // aca hago algo con los PCB_READY
-			/* agregar aca 2 rutinas, una para los PCB_BLOCKED y otra para los PCB_EXIT */
+			call_handlers();
 		} else {
 			printf(" .:: CPU %d has closed the connection ::. \n", laCPU->clientID);
 			close(laCPU->clientID);
@@ -269,7 +267,7 @@ void check_CONSOLE_FD_ISSET(void *console){
 }
 
 int control_clients(){
-	int i, newConsole,newCPU;
+	int newConsole,newCPU;
 	struct timeval timeout = {.tv_sec = 3};
 	FD_ZERO(&allSockets);
 	FD_SET(cpuServer, &allSockets);
@@ -278,17 +276,13 @@ int control_clients(){
 	list_iterate(cpus_conectadas,add2FD_SET);
 	int retval=select(maxSocket+1, &allSockets, NULL, NULL, &timeout); // (retval < 0) <=> signal
 	if (retval>0) {
-		//printf("Tengo %d consolas\n", list_size(consolas_conectadas));
 		list_iterate(consolas_conectadas,check_CONSOLE_FD_ISSET);
 		list_iterate(cpus_conectadas,check_CPU_FD_ISSET);
 		if ((newConsole=accept_new_client("console", &consoleServer, &allSockets, consolas_conectadas)) > 1)
 			accept_new_PCB(newConsole);
 		newCPU=accept_new_client("CPU", &cpuServer, &allSockets, cpus_conectadas);
 		if(newCPU>0) log_info(kernel_log,"New CPU accepted with ID %d",newCPU);
-		if (list_size(cpus_conectadas) > 0 && list_size(PCB_READY) > 0 ){
-			round_robin();
-		}
-		// if (list_size(PCB_BLOCKED) > 0) sarasa(); // TODO coso
+		call_handlers();
 	}
 	return 1;
 }
@@ -380,6 +374,25 @@ void round_robin(){
         tmp_buffer_size = tmp_buffer_size + pcb_buffer_size;
 		log_info(kernel_log,"Submitting to CPU %d the PID %d",laCPU->clientID, tuPCB->pid);
 		send(laCPU->clientID, tmp_buffer, tmp_buffer_size,0);
+	}
+	return;
+}
+
+void end_program(){
+
+	return;
+}
+
+void process_io(){
+
+	return;
+}
+
+void call_handlers(){
+	if(list_size(PCB_BLOCKED)>0) process_io();
+	if(list_size(PCB_EXIT)>0) end_program();
+	if (list_size(cpus_conectadas) > 0 && list_size(PCB_READY) > 0 ){
+		round_robin();
 	}
 	return;
 }
