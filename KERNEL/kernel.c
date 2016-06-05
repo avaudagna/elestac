@@ -22,8 +22,8 @@ t_log* kernel_log;
 int main (int argc, char **argv){
 	kernel_log = log_create("kernel.log", "Elestac-KERNEL", true, LOG_LEVEL_TRACE);
 	if (start_kernel(argc, argv[1])<0) return 0; //load settings
-	clientUMC=connect2UMC();
-	//clientUMC=100;setup.PAGE_SIZE=1024; //TODO Delete -> lo hace connect2UMC()
+	//clientUMC=connect2UMC();
+	clientUMC=100;setup.PAGE_SIZE=1024; //TODO Delete -> lo hace connect2UMC()
 	if (clientUMC<0){
 		log_error(kernel_log, "Could not connect to the UMC. Please, try again.");
 		return 0;
@@ -268,7 +268,7 @@ void check_CONSOLE_FD_ISSET(void *console){
 
 int control_clients(){
 	int newConsole,newCPU;
-	struct timeval timeout = {.tv_sec = 3};
+	struct timeval timeout = {.tv_sec = 1};
 	FD_ZERO(&allSockets);
 	FD_SET(cpuServer, &allSockets);
 	FD_SET(consoleServer, &allSockets);
@@ -282,8 +282,8 @@ int control_clients(){
 			accept_new_PCB(newConsole);
 		newCPU=accept_new_client("CPU", &cpuServer, &allSockets, cpus_conectadas);
 		if(newCPU>0) log_info(kernel_log,"New CPU accepted with ID %d",newCPU);
-		call_handlers();
 	}
+	call_handlers();
 	return 1;
 }
 
@@ -314,7 +314,7 @@ int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista){
 	return aceptado;
 }
 
-int accept_new_PCB(int newConsole){
+void accept_new_PCB(int newConsole){
 	char PID[4];
 	char buffer_4[4];
 	sprintf(PID, "%04d", newConsole);
@@ -351,48 +351,35 @@ int accept_new_PCB(int newConsole){
 
 void round_robin(){
 	t_Client *laCPU=list_remove(cpus_conectadas,0);
-	char quantum[4];
-	char quantum_sleep[4];
 	void * pcb_buffer = NULL;
 	void * tmp_buffer = NULL;
-	int tmp_buffer_size = 0;
+	int tmp_buffer_size = 1+4+4+4; /* 1+QUANTUM+QUANTUM_SLEEP+PCB_SIZE */
 	int pcb_buffer_size = 0;
-	if (list_size(PCB_READY) > 0){
-		t_pcb *tuPCB;
-		tuPCB=list_remove(PCB_READY,0);
-		tuPCB->status=EXECUTING;
-		laCPU->status=EXECUTING;
-		laCPU->pid=tuPCB->pid;
-		log_info(kernel_log," .:: Le mando a CPU %d el PCB del proceso %d ::.\n",laCPU->clientID, tuPCB->pid);
-		sprintf(quantum, "%04d", setup.QUANTUM);
-		sprintf(quantum_sleep, "%04d", setup.QUANTUM_SLEEP);
-		serialize_pcb(tuPCB, &pcb_buffer, &pcb_buffer_size);
-		tmp_buffer_size=1+4+4+4;
-        tmp_buffer = malloc(tmp_buffer_size+pcb_buffer_size);
-		asprintf(&tmp_buffer, "%d%s%s%04d", 1,quantum,quantum_sleep, pcb_buffer_size);
-        memcpy(tmp_buffer+tmp_buffer_size, pcb_buffer, pcb_buffer_size);
-        tmp_buffer_size = tmp_buffer_size + pcb_buffer_size;
-		log_info(kernel_log,"Submitting to CPU %d the PID %d",laCPU->clientID, tuPCB->pid);
-		send(laCPU->clientID, tmp_buffer, tmp_buffer_size,0);
-	}
-	return;
+	t_pcb *tuPCB;
+	tuPCB=list_remove(PCB_READY,0);
+	tuPCB->status=EXECUTING;
+	laCPU->status=EXECUTING;
+	laCPU->pid=tuPCB->pid;
+	serialize_pcb(tuPCB, &pcb_buffer, &pcb_buffer_size);
+	tmp_buffer = malloc((size_t) tmp_buffer_size+pcb_buffer_size);
+	asprintf(&tmp_buffer, "%d%04d%04d%04d", 1,setup.QUANTUM,setup.QUANTUM_SLEEP, pcb_buffer_size);
+	serialize_data(pcb_buffer, (size_t ) pcb_buffer_size, &tmp_buffer, &tmp_buffer_size );
+	log_info(kernel_log,"Submitting to CPU %d the PID %d",laCPU->clientID, tuPCB->pid);
+	send(laCPU->clientID, tmp_buffer, tmp_buffer_size,0);
 }
 
-void end_program(){
+void end_program() {
 
-	return;
 }
 
-void process_io(){
+void process_io() {
 
-	return;
 }
 
-void call_handlers(){
+void call_handlers() {
 	if(list_size(PCB_BLOCKED)>0) process_io();
 	if(list_size(PCB_EXIT)>0) end_program();
 	if (list_size(cpus_conectadas) > 0 && list_size(PCB_READY) > 0 ){
 		round_robin();
 	}
-	return;
 }

@@ -47,7 +47,7 @@ int 	loadConfig(char* configFile);
 int 	connect2UMC();
 int		control_clients();
 int 	accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista);
-int		accept_new_PCB(int newConsole);
+void	accept_new_PCB(int newConsole);
 void 	tratarSeniales(int);
 void 	round_robin();
 void	add2FD_SET(void *client);
