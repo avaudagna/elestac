@@ -15,12 +15,38 @@
  */
 
 #include "implementation_ansisop.h"
+#include "libs/socketCommons.h"
+
 
 static const int CONTENIDO_VARIABLE = 20;
 static const int POSICION_MEMORIA = 0x10;
 
 t_puntero definirVariable(t_nombre_variable variable) {
-	printf("definir la variable %c\n", variable);
+
+	int page_number, offset, tamanio;
+
+	//Leo el indice del stack,
+
+	//Pido a UMC espacio en memoria(Codigo: 3) con 4bytes
+	asprintf(&buffer, "3%04d%04d%04d0000", page_number, offset, tamanio);
+	if( send(umcSocketClient, buffer, 12, 0) < 0) {
+		puts("Send addr instruction_addr");
+		return 1;
+	}
+
+	recv_bytes_buffer = calloc(1, (size_t) element->tamanio);
+	if( recv(umcSocketClient , recv_bytes_buffer , (size_t ) element->tamanio , 0) < 0) {
+		log_error(cpu_log, "UMC bytes recv failed");
+		return -1;
+	}
+
+	t_var* var = (t_var*) calloc(1,sizeof(t_var));
+
+	var->var_id = variable;
+	var->page_number = page_number;
+	var->offset = offset;
+	var->tamanio = tamanio;
+
 	return POSICION_MEMORIA;
 }
 

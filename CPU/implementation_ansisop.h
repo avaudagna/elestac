@@ -22,6 +22,9 @@
 
 	#include <stdio.h>
 
+	extern int umcSocketClient;
+	extern t_pcb * actual_pcb;
+
 	t_puntero definirVariable(t_nombre_variable variable);
 
 	t_puntero obtenerPosicionVariable(t_nombre_variable variable);
