@@ -37,7 +37,7 @@ FINALIZACION_PROCESO	   2+PID								OK
           CPU <--> KERNEL
 ***************************************************************************/ 
 OPERACION			KERNEL -> CPU					CPU -> KERNEL
-HANDSHAKE										0
+HANDSHAKE											0
 HANDSHAKE_RTA			STACK SIZE ??
 FINALIZACION_PROCESO	   							2+PID
 
