@@ -56,7 +56,7 @@ typedef struct {
 } t_setup;
 
 int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer);
-logical_addr * armarDireccionLogica(t_intructions *actual_instruction);
+t_list * armarDireccionLogica(t_intructions *actual_instruction);
 void tratarSeniales(int senial);
 void MaquinaDeEstados();
 

@@ -9,7 +9,8 @@ set(SOURCE_FILES
     libs/pcb.c
     libs/stack.c
     libs/serialize.c
-    libs/socketCommons.c)
+    libs/socketCommons.c
+    libs/pcb_tests.c)
 
 INCLUDE_DIRECTORIES(/usr/include)
 LINK_DIRECTORIES(/usr/lib)

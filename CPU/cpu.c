@@ -3,8 +3,11 @@
 #include <sys/socket.h>
 #include <math.h>
 #include <signal.h>
+#include <commons/collections/list.h>
 #include "cpu.h"
 #include "libs/pcb.h"
+#include "libs/stack.h"
+#include "libs/pcb_tests.h"
 
 t_setup	setup; // GLOBAL settings
 t_log* cpu_log;
@@ -14,6 +17,7 @@ t_log* cpu_log;
 // gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collections -o cpu libs/stack.c libs/pcb.c libs/serialize.c libs/socketCommons.c cpu.c implementation_ansisop.c -L/usr/lib -lcommons -lparser-ansisop -lm
 //
 int loadConfig(char* configFile);
+int get_instruction_line(int umcSocketClient, t_list *instruction_addresses_list, void ** instruction_line);
 
 int main(int argc, char **argv) {
 
@@ -42,67 +46,90 @@ int main(int argc, char **argv) {
 //	}
 
 	//Crete UMC client
-//    if (getClientSocket(&umcSocketClient, setup.IP_UMC , setup.PUERTO_UMC) == 0) {
+    if (getClientSocket(&umcSocketClient, setup.IP_UMC , setup.PUERTO_UMC) == 0) {
+        log_info(cpu_log,"New UMC socket obtained");
+    }
+//	//Crete Kernel client
+//	if (getClientSocket(&kernelSocketClient, setup.KERNEL_IP, setup.PUERTO_KERNEL) == 0) {
 //        log_info(cpu_log,"New KERNEL socket obtained");
 //    }
-	//Crete Kernel client
-	if (getClientSocket(&kernelSocketClient, setup.KERNEL_IP, setup.PUERTO_KERNEL) == 0) {
-        log_info(cpu_log,"New KERNEL socket obtained");
-    }
-    else {
-        log_error(cpu_log, "Could not obtain KERNEL socket");
-        return -1;
-    }
+//    else {
+//        log_error(cpu_log, "Could not obtain KERNEL socket");
+//        return -1;
+//    }
 	//keep communicating with server
 	while(1) {
 		//Send a handshake to the kernel
         //MaquinaDeEstados();
-		if( send(kernelSocketClient, kernelHandShake, 1, 0) < 0) {
-            log_error(cpu_log, "Error sending handshake to KERNEL");
-				return 1;
-		}
-        printf("\nSENT 0 TO KERNEL\n");
-        log_info(cpu_log, "Sent handshake :''%s'' to KERNEL", kernelHandShake);
+//		if( send(kernelSocketClient, kernelHandShake, 1, 0) < 0) {
+//            log_error(cpu_log, "Error sending handshake to KERNEL");
+//				return 1;
+//		}
+//        printf("\nSENT 0 TO KERNEL\n");
+//        log_info(cpu_log, "Sent handshake :''%s'' to KERNEL", kernelHandShake);
 
-		//Wait for PCB from the Kernel
-
-        //primer byte 1 ? => recibirPcb LISTO
-        //En Recibir PCB : Cada 4 bytes: Q, QSleep, pcb_size, pcb LISTO
         
-        printf(" .:: Waiting for Kernel handshake response ::.\n");
-        if( recv(kernelSocketClient , handshake , sizeof(char) , 0) < 0) {
-              log_error(cpu_log, "KERNEL handshake response receive failed");
-              return -1;
-        }
-        if(strncmp(handshake, "1", sizeof(char)) != 0) {
-            log_error(cpu_log, "Wrong KERNEL handshake response received");
-            return -1;
-        }
+//        printf(" .:: Waiting for Kernel handshake response ::.\n");
+//        if( recv(kernelSocketClient , handshake , sizeof(char) , 0) < 0) {
+//              log_error(cpu_log, "KERNEL handshake response receive failed");
+//              return -1;
+//        }
+//        if(strncmp(handshake, "1", sizeof(char)) != 0) {
+//            log_error(cpu_log, "Wrong KERNEL handshake response received");
+//            return -1;
+//        }
 
-        t_kernel_data *incoming_kernel_data_buffer = calloc(1, sizeof(t_kernel_data));
-        log_info(cpu_log, "Waiting for kernel PCB and Quantum data");
-        if( recibir_pcb(kernelSocketClient, incoming_kernel_data_buffer) < 0) {
-            log_error(cpu_log, "Error receiving PCB and Quantum data from KERNEL");
-            return -1;
-        }
+//        t_kernel_data *incoming_kernel_data_buffer = calloc(1, sizeof(t_kernel_data));
+//        log_info(cpu_log, "Waiting for kernel PCB and Quantum data");
+//        if( recibir_pcb(kernelSocketClient, incoming_kernel_data_buffer) < 0) {
+//            log_error(cpu_log, "Error receiving PCB and Quantum data from KERNEL");
+//            return -1;
+//        }
 
         //Success!!  
-        //Deserializo el PCB que recibo LISTO
+        //Deserializo el PCB que recibo
         t_pcb * actual_pcb = (t_pcb *) calloc(1,sizeof(t_pcb));
         int  last_buffer_index = 0;
-        deserialize_pcb(&actual_pcb, incoming_kernel_data_buffer->serialized_pcb, &last_buffer_index);
+//        deserialize_pcb(&actual_pcb, incoming_kernel_data_buffer->serialized_pcb, &last_buffer_index);
+
+        actual_pcb = getPcbExample();
         //Le paso el pid a la umc
+        //handshake
+        if( send(umcSocketClient , "1" , 1, 0) < 0) {
+            puts("Send failed");
+            return 1;
+        }
+        //pid
         if( send(umcSocketClient , &actual_pcb->pid , sizeof(actual_pcb->pid ), 0) < 0) {
             puts("Send failed");
             return 1;
         }
-        //Vuelvo a mi siguiente linea y hago un for de 0 a Quantum
-        for(i = 0; i < incoming_kernel_data_buffer->Q; i++) {
-            usleep((u_int32_t ) incoming_kernel_data_buffer->QSleep*1000);
-            //Dentro del for leo el PC, con el valor (ej 3)
-            logical_addr * intruction_addr = armarDireccionLogica(actual_pcb->instrucciones_serializado+actual_pcb->program_counter);
-            //TODO: MANDARLE ESTO A MARIAN!
+
+        char identificador_operacion_umc;
+        if( recv(umcSocketClient , &identificador_operacion_umc , sizeof(char) , 0) < 0) {
+            log_info(cpu_log, "identificador_operacion_umc recv failed");
+            return -1;
         }
+        //recibo el PAGE_SIZE
+        char umc_buffer[4];
+        if( recv(umcSocketClient , umc_buffer, sizeof(int) , 0) <= 0) {
+            log_info(cpu_log, "serialized_pcb recv failed");
+            return -1;
+        }
+        setup.PAGE_SIZE = atoi(umc_buffer);
+
+
+        void * instruction_line = NULL;
+//        //Voy a la siguiente linea y hago un for de 0 a Quantum
+//        for(i = 0; i < incoming_kernel_data_buffer->Q; i++) {
+//            usleep((u_int32_t ) incoming_kernel_data_buffer->QSleep*1000);
+            t_list * instruction_addresses_list = armarDireccionLogica(actual_pcb->instrucciones_serializado+actual_pcb->program_counter);
+
+            get_instruction_line(umcSocketClient, instruction_addresses_list, &instruction_line);
+
+//
+
+        //}
 
 			//Yo voy a recibir los bytes que le vaya pidiendo y los voy metiendo en un buffer hasta que termino
 			//Ese buffer representa una linea del programa que tengo que ejecutar,
@@ -150,13 +177,46 @@ int main(int argc, char **argv) {
 		//de lo que me devuelva el parser, devuelvo el resultado para imprimir al kernel
 
 		//Send message to the Kernel
-		if( send(kernelSocketClient , "Elestac"  , PACKAGE_SIZE , 0) < 0) {
-				puts("Send failed");
-				return 1;
-		}
+//		if( send(kernelSocketClient , "Elestac"  , PACKAGE_SIZE , 0) < 0) {
+//				puts("Send failed");
+//				return 1;
+//		}
 	}
 
 	return 0;
+}
+
+int get_instruction_line(int umcSocketClient, t_list *instruction_addresses_list, void ** instruction_line) {
+
+    void * recv_bytes_buffer = NULL;
+    int index = 0, buffer_index = 0;
+
+    while(list_size(instruction_addresses_list) > 0) {
+        if( send(umcSocketClient , "2", sizeof(char), 0) < 0) {
+            puts("Send solicitar bytes de una pagina marker");
+            return -1;
+        }
+        logical_addr * element = list_remove(instruction_addresses_list, index);
+        void * buffer = NULL;
+        int buffer_size = 0;
+        asprintf(&buffer, "%04d%04d%04d", element->page_number, element->offset, element->tamanio);
+        if( send(umcSocketClient, buffer, 12, 0) < 0) {
+            puts("Send addr instruction_addr");
+            return 1;
+        }
+        index ++;
+
+        recv_bytes_buffer = calloc(1, (size_t) element->tamanio);
+        *instruction_line = realloc(*instruction_line, strlen(*instruction_line)+element->tamanio);
+        if( recv(umcSocketClient , recv_bytes_buffer , (size_t ) element->tamanio , 0) < 0) {
+            log_error(cpu_log, "UMC bytes recv failed");
+            return -1;
+        }
+        log_info(cpu_log, "Bytes Received: %s", recv_bytes_buffer);
+        memcpy(*instruction_line+buffer_index, recv_bytes_buffer, (size_t) element->tamanio);
+        buffer_index += element->tamanio;
+    }
+    return 0;
 }
 
 void MaquinaDeEstados() {
@@ -183,12 +243,6 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
         kernel_data_buffer->Q = atoi(buffer);
         log_info(cpu_log, "Q: %d", kernel_data_buffer->Q);
 
-    if( recv(kernelSocketClient , buffer , sizeof(int) , 0) < 0) {
-            log_info(cpu_log, "QSleep recv failed");
-            return -1;
-        }
-        kernel_data_buffer->QSleep = atoi(buffer);
-        log_info(cpu_log, "QSleep: %d", kernel_data_buffer->QSleep);
 
     if( recv(kernelSocketClient ,buffer , sizeof(int) , 0) < 0) {
             log_info(cpu_log, "pcb_size recv failed");
@@ -214,14 +268,43 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
         return 0;
 }
 
-logical_addr * armarDireccionLogica(t_intructions *actual_instruction) {
-    logical_addr *addr = (logical_addr*) calloc(1,sizeof(logical_addr));
+t_list* armarDireccionLogica(t_intructions *actual_instruction) {
 
-    float actual_position = ((int) actual_instruction->start + 1)/ setup.PAGE_SIZE;
-    addr->page_number = (int) ceilf(actual_position);
-    addr->offset = (int) actual_instruction->start - (int) round(actual_position);
-    addr->tamanio = actual_instruction->offset;
-    return addr;
+
+//    float actual_position = ((int) actual_instruction->start + 1)/ setup.PAGE_SIZE;
+//    addr->page_number = (int) ceilf(actual_position);
+//    addr->offset = (int) actual_instruction->start - (int) round(actual_position);
+//    addr->tamanio = actual_instruction->offset;
+//    return addr;
+    t_list *address_list = list_create();
+    logical_addr *addr = (logical_addr*) calloc(1,sizeof(logical_addr));
+    int actual_page = 0;
+    //First calculation
+    addr->page_number =  (int) actual_instruction->start / setup.PAGE_SIZE;
+    actual_page = addr->page_number;
+    addr->offset = actual_instruction->start % setup.PAGE_SIZE;
+    if(actual_instruction->offset > setup.PAGE_SIZE) {
+        addr->tamanio= setup.PAGE_SIZE;
+    }
+    else {
+        addr->tamanio = actual_instruction->offset;
+    }
+    list_add(address_list, addr);
+    actual_instruction->offset = actual_instruction->offset - addr->tamanio;
+
+    while (actual_instruction->offset > 0) {
+        addr = (logical_addr*) calloc(1,sizeof(logical_addr));
+        addr->page_number = ++actual_page;
+        addr->offset = 0;
+        if(actual_instruction->offset > setup.PAGE_SIZE) {
+            addr->tamanio = setup.PAGE_SIZE;
+        } else {
+            addr->tamanio = actual_instruction->offset;
+        }
+        actual_instruction->offset = actual_instruction->offset - addr->tamanio;
+        list_add(address_list, addr);
+    }
+    return address_list;
 }
 
 int start_cpu(int argc, char* configFile){
