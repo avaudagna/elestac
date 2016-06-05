@@ -89,8 +89,8 @@ void procesoSolicitudNuevoProceso(int * socketBuff);
 void FinalizarProceso(int * socketBuff);
 void atenderKernel(int * socketBuff);
 void recibirYAlmacenarNuevoProceso(int * socketBuff, int cantidadPaginasSolicitadas, int pid_aux);
-void dividirEnPaginas( int cantidadPaginasSolicitadas,int pid_aux, int paginasDeCodigo,char codigo[],int code_size);
-void enviarTramaAlSwap(char trama[],int size_trama);
+void dividirEnPaginas(int pid_aux, int paginasDeCodigo, char codigo[], int code_size);
+void enviarPaginaAlSwap(char *trama, int size_trama);
 void agregarPagina(t_list * header,int pid,PAGINA * pagina_aux);
 t_list * obtenerTablaDePaginasDePID(t_list *header,int pid);
 bool compararPid(PAGINA * data,int pid);
@@ -144,6 +144,8 @@ void atenderCPU(int *socketBuff);
 int setServerSocket(int* serverSocket, const char* address, const int port);
 void cambioProcesoActivo(int *socket, int *pid);
 void pedidoBytes(int *socketBuff, int *pid_actual);
+void enviarPaginasDeStackAlSwap(int _pid, int nroDePaginaInicial);
+void indexarPaginasDeStack(int _pid, int nroDePagina);
 
 int main(int argc , char **argv){
 
@@ -334,6 +336,8 @@ FunctionPointer QuienSos(int * socketBuff) {
 	if ( package == '0' ) {	// KERNEL
 		contConexionesNucleo++;
 
+		printf("\n.: Se abre conexion con KERNEL :. \n");
+
 		if ( contConexionesNucleo == 1 ) {
 
 			aux = atenderKernel;
@@ -437,12 +441,12 @@ void atenderKernel(int * socketBuff){
 int identificarOperacion(int * socketBuff){
 
 	int package;
-	char a;
+	char *buffer = malloc(2);
 
 
-	while ( (recv(*socketBuff, (void*) (&a), 1, 0)) < 0 );	// levanto byte que indica que tipo de operacion se va a llevar a cabo
+	while ( (recv(*socketBuff, (void*) (buffer), 1, 0)) < 0 );	// levanto byte que indica que tipo de operacion se va a llevar a cabo
 
-	package=atoi(a);
+	package=atoi(buffer);
 
 	return package;
 
@@ -454,7 +458,7 @@ void  handShakeKernel(int * socketBuff){
 	char buffer_stack_size[4];
 	cantidad_bytes_recibidos = recv(*socketBuff, (void*) buffer_stack_size, 4, 0);		// levanto los 4 bytes q son del stack_size
 	stack_size = atoi(buffer_stack_size);
-	printf("\nStack Size : %d\n",stack_size);
+	printf("\n.:Stack Size : %d :.\n",stack_size);
 	if ( cantidad_bytes_recibidos <= 0){
 		perror("recv");
 	}
@@ -480,20 +484,22 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 	int cantidadDePaginasSolicitadas,
 		cantidad_bytes_recibidos,
 		pid_aux;
+	char buffer[4];
 
 	// levanto los 4 bytes q son del pid
-	cantidad_bytes_recibidos = recv(*socketBuff, (void*) (&pid_aux), sizeof(pid_aux), 0);
+	cantidad_bytes_recibidos = recv(*socketBuff, (void*) (buffer), 4, 0);
 
-		if ( cantidad_bytes_recibidos <= 0){
-			perror("recv");
-		}
+	if ( cantidad_bytes_recibidos <= 0)	perror("recv");
+
+	pid_aux = atoi(buffer);
 
 	// levanto los 4 bytes q son del cantidadDePaginasSolicitadas
-	cantidad_bytes_recibidos = recv(*socketBuff, (void*) (&cantidadDePaginasSolicitadas), sizeof(cantidadDePaginasSolicitadas), 0);
+	cantidad_bytes_recibidos = recv(*socketBuff, (void*) (buffer), 4, 0);
 
-		if ( cantidad_bytes_recibidos <= 0){
-				perror("recv");
-		}
+	if ( cantidad_bytes_recibidos <= 0)	perror("recv");
+
+	cantidadDePaginasSolicitadas = atoi(buffer);
+
 
 	if ( (cantidadDePaginasSolicitadas+stack_size) <= paginasLibresEnSwap) {	// Se puede almacenar el nuevo proceso , respondo que SI
 
@@ -502,17 +508,10 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 		char trama_handshake[4];
 		sprintf(trama_handshake,"%04d",cantidadDePaginasSolicitadas);
 
-		if ( send(*socketBuff,(void *)trama_handshake,4,0) == -1)
-			perror("send");
+		if ( send(*socketBuff,(void *)trama_handshake,4,0) == -1) perror("send");
 
-	}else{
-
-		//char trama_handshake[2]={'N','O'};
-
-		if ( send(*socketBuff,(void *)"0000",4,0) == -1 )
-			perror("send");
-	}
-
+	}else
+		if ( send(*socketBuff,(void *)"0000",4,0) == -1 ) perror("send");
 }
 
 /*TRAMA : 1+PID+CANT PAGs+CODE SIZE+CODE
@@ -522,33 +521,33 @@ void recibirYAlmacenarNuevoProceso(int * socketBuff,int cantidadPaginasSolicitad
 // obtengo code_size
 
 	int code_size;
-
 	PIDPAGINAS nuevo_pid;
+	char buffer[4];
 
 	nuevo_pid.pid = pid_aux;
 	nuevo_pid.headListaDePaginas = NULL;
-
 	list_add(headerListaDePids,(void *)&(nuevo_pid));		//agrego nuevo PID
 
-	if( (recv(*socketBuff, (void*) (&code_size), sizeof(code_size), 0)) <= 0){
+	// levanto el campo tamaño de codigo
+	if( (recv(*socketBuff, (void*) (buffer), 4 , 0)) <= 0){
 		perror("recv");
 	}else{
-		// obtengo codigo
-		int paginasDeCodigo = code_size / 5;  //definir parametro tamanio pagina !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		// levanto el codigo
+		int paginasDeCodigo = cantidadPaginasSolicitadas;  // cantidadPaginasSolicitadas + stack_size
 		char codigo[code_size];
 
 		if( (recv(*socketBuff, (void*) (codigo), code_size, 0)) <= 0){	// me almaceno todo el codigo
 				perror("recv");
 		}
 		else{
-			  dividirEnPaginas(cantidadPaginasSolicitadas,pid_aux,paginasDeCodigo,codigo,code_size);
+			dividirEnPaginas(pid_aux, paginasDeCodigo, codigo, code_size);
 		}
 	}
 
 }
 
 /*1+pid+numPagina+codigo*/
-void dividirEnPaginas( int cantidadPaginasSolicitadas,int pid_aux, int paginasDeCodigo,char codigo[],int code_size){
+void dividirEnPaginas(int pid_aux, int paginasDeCodigo, char codigo[], int code_size) {
 
 	int i = 0,
 		nroDePagina=0,
@@ -578,13 +577,13 @@ void dividirEnPaginas( int cantidadPaginasSolicitadas,int pid_aux, int paginasDe
 				memcpy((void *) aux_code, &codigo[j],
 					   bytes_restantes);    // LO QUE NO SE LLENA CON INFO, SE DEJA EN GARBAGE
 		}
-				// tengo : pid+nroDePagina+aux_code
-			sprintf(trama,"%04d",pid_aux);
+				// trama de escritura a swap : 1+pid+nroDePagina+aux_code
+			sprintf(trama,"1%04d",pid_aux);
 			sprintf(&trama[sizeof(pid_aux)],"%04d",nroDePagina);
 			memcpy((void * )&trama[sizeof(pid_aux)+sizeof(nroDePagina)],aux_code,umcGlobalParameters.marcosSize);
 
 			// envio al swap la pagina
-			enviarTramaAlSwap(trama,umcGlobalParameters.marcosSize+sizeof(pid_aux)+sizeof(nroDePagina));
+			enviarPaginaAlSwap(trama, umcGlobalParameters.marcosSize + sizeof(pid_aux) + sizeof(nroDePagina));
 			// swap me responde dandome el OKEY y actualizandome con la cantidad_de_paginas_libres que le queda
 			swapUpdate();
 			page_node = (PAGINA *)malloc (sizeof(PAGINA));
@@ -595,9 +594,40 @@ void dividirEnPaginas( int cantidadPaginasSolicitadas,int pid_aux, int paginasDe
 			agregarPagina(headerListaDePids,pid_aux,page_node);
 
 	}
+	// una vez que finaliza de enviar paginas de codigo , ahora envio las stack_size paginas de STACK :D
+	enviarPaginasDeStackAlSwap(pid_aux,nroDePagina);
 }
 
-void enviarTramaAlSwap(char trama[],int size_trama){
+void indexarPaginasDeStack(int _pid, int nroDePagina) {
+
+	PAGINA * page_node;
+
+	page_node = (PAGINA *)malloc (sizeof(PAGINA));
+	page_node->nroPagina=nroDePagina;
+	page_node->modificado=0;
+	page_node->presencia=0;
+	// agrego pagina a la tabla de paginas asociada a ese PID
+	agregarPagina(headerListaDePids,_pid,page_node);
+}
+
+void enviarPaginasDeStackAlSwap(int _pid, int nroDePaginaInicial) {
+
+	int i=0;
+	char trama[sizeof(_pid)+sizeof(nroDePaginaInicial)+umcGlobalParameters.marcosSize];
+
+	// trama de escritura a swap : 1+pid+nroDePagina+aux_code
+	sprintf(trama,"1%04d",_pid);
+
+	for(i=0;i<stack_size;i++,nroDePaginaInicial++){
+
+		sprintf(&trama[sizeof(pid_aux)],"%04d",nroDePaginaInicial);
+		enviarPaginaAlSwap(trama,umcGlobalParameters.marcosSize + ( sizeof(_pid) * 2 ) ) ;
+		indexarPaginasDeStack(_pid,nroDePaginaInicial);
+	}
+
+}
+
+void enviarPaginaAlSwap(char *trama, int size_trama){
 
 	if ( send(socketClienteSwap,(void *)trama,size_trama,0) == -1 ){
 		perror("send");
