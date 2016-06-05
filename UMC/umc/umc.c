@@ -81,7 +81,11 @@ typedef struct _marco {
 	unsigned char estado;
 }MARCO;
 
-
+typedef struct _tlb {
+	int pid,
+		nroPagina,
+		indice;	// numero de marco en memoria principal
+}TLB;
 
 
 // Funciones para/con KERNEL
@@ -115,7 +119,7 @@ PAGINA * obtenerPaginaDeTablaDePaginas(t_list *headerTablaPaginas, int nroPagina
 
 
 #define PRESENTE_MP 1
-#define PRESENTE_SWAP 0
+#define AUSENTE 0
 
 // Funciones para operar con el swap
 void init_Swap(void);
@@ -136,6 +140,7 @@ int stack_size;
 t_list *headerListaDePids;
 void *memoriaPrincipal = NULL;
 MARCO *vectorMarcos = NULL;
+t_list *headerTLB = NULL;
 
 /*FUNCIONES DE INICIALIZACION*/
 void init_UMC(char *);
@@ -181,6 +186,16 @@ int getcantPagEnMP(PIDPAGINAS *pPidPagina);
 
 t_link_element *obtenerPidPagina(int pPid);
 
+int getcantPagEnMPxPID(int pPid);
+
+void setcantPagEnMPxPID(int pPid, int nuevocantPagEnMP);
+
+void init_TLB(void);
+
+bool consultarTLB(int *pPid, int pagina, int *indice);
+
+t_link_element *obtenerIndiceTLB(int *pPid, int pagina);
+
 int main(int argc , char **argv){
 
 	if(argc != 2){
@@ -202,9 +217,27 @@ void init_UMC(char * configFile)
 {
 	init_Parameters(configFile);
 	init_MemoriaPrincipal();
+	init_TLB();
 	init_Swap(); // socket con swap
 	handShake_Swap();
 	init_Socket(); // socket de escucha
+}
+
+void init_TLB(void) {
+
+	if ( umcGlobalParameters.entradasTLB > 0){
+		headerTLB = list_create();
+		int i = 0;
+		TLB * aux = NULL;
+		for ( i=0 ; i < umcGlobalParameters.entradasTLB ; i++){		// le pongo a la lista TLB tantos nodos como entradas tenga
+			aux = (TLB *) malloc(sizeof(TLB));
+			aux->pid=0;
+			aux->nroPagina=0;
+			aux->indice=0;
+			list_add(headerTLB,aux);
+		}
+	}
+
 }
 
 
@@ -858,30 +891,69 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 
 	_tamanio=atoi(buffer);
 
-	//  VALIDAR QUE ESTE EN TLB !!!
+	int indice_buff;
 
-	headerTablaDePaginas = obtenerTablaDePaginasDePID(headerListaDePids,*pid_actual);
+	if((umcGlobalParameters.entradasTLB != 0 ) && (consultarTLB(pid_actual,_pagina,&indice_buff))){	// Esta en TLB
+		// si esta en la tabla,  ya tengo el indice y de ahi me voy a vectorMarcos[indice]
+		PAGINA *temp;
+		temp = (PAGINA *) malloc (sizeof(PAGINA));
+		temp->nroDeMarco = indice_buff;
+		resolverEnMP(socketBuff,temp,_offset,_tamanio);	// lo hago asi para poder reutilizar resolverEnMP , que al fin y al cabo es lo que se termina haciendo
+		free(temp);
 
-	aux = obtenerPaginaDeTablaDePaginas(headerTablaDePaginas,_pagina);
-
-	if ( aux == NULL ){
-		pedidoDePaginaInvalida(socketBuff);
 	}
-	else{
+	else {	// No esta en TLB
 
-		if ( aux->presencia == PRESENTE_SWAP) {	// La pagina NO se encuentra en memoria principal
+		headerTablaDePaginas = obtenerTablaDePaginasDePID(headerListaDePids, *pid_actual);
 
-			 pedirPaginaSwap(socketBuff,pid_actual,aux->nroPagina);
-			 //1- Pedir pagina a Swap
-			 // 2- ¿ El proceso tiene marcos disponibles ? SI , OK ALMACENO , ¿NO? APLICO ALGORITMO
-			//pedirPaginaASwap(aux);
+		aux = obtenerPaginaDeTablaDePaginas(headerTablaDePaginas, _pagina);
+
+		if (aux == NULL) {
+			pedidoDePaginaInvalida(socketBuff);
 		}
-		else 	// pagina en memoria principal
-			resolverEnMP(socketBuff,aux, _offset,_tamanio);
+		else {
 
+			if (aux->presencia == AUSENTE) {    // La pagina NO se encuentra en memoria principal
+
+				pedirPaginaSwap(socketBuff, pid_actual, aux->nroPagina);
+				//1- Pedir pagina a Swap
+				// 2- ¿ El proceso tiene marcos disponibles ? SI , OK ALMACENO , ¿NO? APLICO ALGORITMO
+				//pedirPaginaASwap(aux);
+			}
+			else {
+
+				resolverEnMP(socketBuff, aux, _offset, _tamanio); // pagina en memoria principal
+
+			}
+
+		}
+	}
+}
+
+t_link_element *obtenerIndiceTLB(int *pPid, int pagina) {
+
+	t_link_element *aux = NULL;
+
+	aux = headerTLB->head;
+
+	while ( aux != NULL){
+		if ( (((TLB *)aux->data)->pid == *pPid) && (((TLB *)aux->data)->nroPagina == pagina) )
+			return aux;
+		aux = aux->next;
 	}
 
+}
+bool consultarTLB(int *pPid, int pagina, int *indice) {
 
+	t_link_element *aux = NULL;
+
+	aux = obtenerIndiceTLB(pPid,pagina);
+	if ( aux == NULL)
+		return false;
+	else {
+		*indice = ((TLB *) aux->data)->indice;
+		return true;
+	}
 }
 
 void pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina) {
@@ -912,8 +984,6 @@ void pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina) {
 
 		// ¿ Hay marcos libres ? ¿ El proceso tiene marcos disponibles ?
 
-
-
 		if ( (cantPagDisponiblesxPID(pid_actual)) == 0 ) {		// si el proceso ya esta utilizando todos sus marcos en MP
 			// ALGORITMO DE REEMPLAZO LOCAL
 		}
@@ -925,6 +995,7 @@ void pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina) {
 			}
 		}
 	}
+
 }
 
 // Funcion que me dice cuantas marcos mas puede utilizar el proceso en memoria
@@ -952,10 +1023,6 @@ t_link_element *obtenerPidPagina(int pPid) {
 }
 
 
-int getcantPagEnMP(PIDPAGINAS *pPidPagina) {
-	return pPidPagina->cantPagEnMP;
-}
-
 int marcosDisponiblesEnMP() {
 	int contador=0,i=0;
 
@@ -979,8 +1046,28 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 	setBitDePresencia(pPid,pPagina,PRESENTE_MP);
 	setNroDeMarco(pPid,pPagina,indice);
 	// actualizo el valor cantPagEnMP asociado a ese PID
+	setcantPagEnMPxPID(*pPid,( getcantPagEnMPxPID(*pPid) - 1 ) );
 
 }
+
+void setcantPagEnMPxPID(int pPid, int nuevocantPagEnMP) {
+
+	t_link_element *aux = NULL;
+	aux = obtenerPidPagina(pPid);
+	((PIDPAGINAS *)aux->data)->cantPagEnMP = nuevocantPagEnMP ;
+
+}
+
+int getcantPagEnMPxPID(int pPid) {
+	t_link_element *aux = NULL;
+	aux = obtenerPidPagina(pPid);
+	return getcantPagEnMP(aux->data);
+}
+
+int getcantPagEnMP(PIDPAGINAS *pPidPagina) {
+	return pPidPagina->cantPagEnMP;
+}
+
 
 void setNroDeMarco(int *pPid, int pPagina, int indice) {
 
@@ -1034,7 +1121,7 @@ void resolverEnMP(int *socketBuff, PAGINA *pPagina, int offset, int tamanio) {
 	char buffer[tamanio+1];
 	buffer[0]='1';
 
-	memcpy(buffer,vectorMarcos[pPagina->nroDeMarco].comienzoMarco,tamanio);
+	memcpy(buffer,(vectorMarcos[pPagina->nroDeMarco].comienzoMarco)+offset,tamanio);
 
 	if (send(*socketBuff,buffer,tamanio+1,0) <= 0)
 		perror("send");
