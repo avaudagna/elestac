@@ -170,28 +170,26 @@ void check_CPU_FD_ISSET(void *cpu){
 			switch (atoi(cpu_protocol)) {
 			case 1: // Quantum finish
 			case 2: // Program END
-				if (recv(laCPU->clientID, tmp_buff, 4, 0) > 0) {
-					pcb_size=atoi(tmp_buff);
-					if (recv(laCPU->clientID, pcb_serializado, pcb_size, 0) > 0) {
-						deserialize_pcb(&incomingPCB,&pcb_serializado,&pcb_size);
-						switch (incomingPCB->status) {
-						case READY:
-							list_add(PCB_READY,incomingPCB);
-							break;
-						case BLOCKED:
+    case 3:				//3== IO
+      recv(laCPU->clientID, tmp_buff, 4, 0);
+				pcb_size=atoi(tmp_buff);
+				recv(laCPU->clientID, pcb_serializado, pcb_size, 0);
+     	deserialize_pcb(&incomingPCB,&pcb_serializado,&pcb_size);
+				switch (incomingPCB->status) {
+				case READY:
+					list_add(PCB_READY,incomingPCB);
+					break;
+				case BLOCKED:
 							list_add(PCB_BLOCKED,incomingPCB);
-							break;
+							// TODO aca hay un io.
+          // tengo que recv el io_name_size + io_name + 4bytes io_number_of_operations y guarlos en algun lugar mistico
+          break;
 						case EXIT:
 							list_add(PCB_EXIT,incomingPCB);
 							break;
-						default:
+				default:
 							log_error(kernel_log,"Error with CPU protocol. Function check_CPU_FD_ISSET.");
-						}
-					}
 				}
-				break;
-			case 3:				//3== IO
-				log_warning(kernel_log,"Error with CPU protocol and input/output operation. Function check_CPU_FD_ISSET.");
 				break;
 			case 4:				//4== semaforo
 				log_warning(kernel_log,"Error with CPU protocol and semaphore operation. Function check_CPU_FD_ISSET.");
@@ -202,6 +200,9 @@ void check_CPU_FD_ISSET(void *cpu){
 			default:
 				log_error(kernel_log,"Caso no contemplado. CPU dijo: %s",cpu_protocol);
 			}
+  /* TODO
+    semaphores + shared vars will not release the cpu: kernel must recv, process and send the reply to cpu
+            */
 			laCPU->status=READY;
 			laCPU->pid=0;
 			list_add(cpus_conectadas, laCPU); /* return the CPU to the queue */
