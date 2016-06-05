@@ -72,6 +72,7 @@ typedef struct _pagina {
 
 typedef struct _pidPaginas {
 	int pid;
+	int cantPagEnMP;
 	t_list * headListaDePaginas;
 }PIDPAGINAS;
 
@@ -112,6 +113,9 @@ PAGINA * obtenerPaginaDeTablaDePaginas(t_list *headerTablaPaginas, int nroPagina
 //#define PAGE_SIZE 1024
 
 
+
+#define PRESENTE_MP 1
+#define PRESENTE_SWAP 0
 
 // Funciones para operar con el swap
 void init_Swap(void);
@@ -159,13 +163,23 @@ void resolverEnMP(int *socketBuff, PAGINA *pPagina, int offset, int tamanio);
 
 void pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina);
 
-void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[]);
+void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina);
 
-void *obtenerMarcoLibreEnMP();
+void *obtenerMarcoLibreEnMP(int *indice);
 
 int marcosDisponiblesEnMP();
 
-int cantPagDisponiblesxPID(int *pInt);
+int cantPagDisponiblesxPID(int *pPid);
+
+void setBitDePresencia(int *pPid, int pPagina, int estado);
+
+void setNroDeMarco(int *pPid, int pPagina, int indice);
+
+PAGINA *obtenerPagina(int pPid, int pPagina);
+
+int getcantPagEnMP(PIDPAGINAS *pPidPagina);
+
+t_link_element *obtenerPidPagina(int pPid);
 
 int main(int argc , char **argv){
 
@@ -553,6 +567,7 @@ void recibirYAlmacenarNuevoProceso(int * socketBuff,int cantidadPaginasSolicitad
 	PIDPAGINAS nuevo_pid;
 	char buffer[4];
 
+	nuevo_pid.cantPagEnMP=0;
 	nuevo_pid.pid = pid_aux;
 	nuevo_pid.headListaDePaginas = NULL;
 	list_add(headerListaDePids,(void *)&(nuevo_pid));		//agrego nuevo PID
@@ -854,7 +869,7 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 	}
 	else{
 
-		if ( aux->presencia == 0) {	// La pagina NO se encuentra en memoria principal
+		if ( aux->presencia == PRESENTE_SWAP) {	// La pagina NO se encuentra en memoria principal
 
 			 pedirPaginaSwap(socketBuff,pid_actual,aux->nroPagina);
 			 //1- Pedir pagina a Swap
@@ -873,78 +888,143 @@ void pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina) {
 
 	// Le pido al swap la pagina : 3+pid+nroPagina
 	char 	buffer[9],
-			aux[umcGlobalParameters.marcosSize],
+			contenidoPagina[umcGlobalParameters.marcosSize],
 			buff_pid[4];
-	int __pid;
+	int 	__pid,
+			tamanioContenidoPagina = 0;
 
-	sprintf(buffer,"1%04d%04d",*pid_actual,nroPagina);
+	sprintf(buffer,"1%04d%04d",*pid_actual,nroPagina);	// PIDO PAGINA
 
 	if ( send(socketClienteSwap,buffer,9,0) <= 0)
 		perror("send");
 
 	// respuesta swap : pid+PAGINA
 
-	if(recv(*socketBuff,(void * )buff_pid,4, 0) <= 0 )
+	if(recv(*socketBuff,(void * )buff_pid,4, 0) <= 0 )	// SWAP ME DEVUELVE LA PAGINA
 		perror("recv");
 
 	__pid = atoi(buff_pid);
 
 	if (__pid == *pid_actual){	// valido que la pagina que me respondio swap se corresponda a la que pedi
 
-		if(recv(*socketBuff,aux,umcGlobalParameters.marcosSize, 0) <= 0 )
+		if( (tamanioContenidoPagina = recv(*socketBuff,contenidoPagina,umcGlobalParameters.marcosSize, 0)) <= 0 )
 			perror("recv");
 
 		// ¿ Hay marcos libres ? ¿ El proceso tiene marcos disponibles ?
-		// si  y si --> almaceno la pagina en MP y actualizo bit de presencia + TLB !!!!!
-		if ( marcosDisponiblesEnMP() > 0 ) {
-			if ( ( cantPagDisponiblesxPID(pid_actual) > 0 ){
-					almacenoPaginaEnMP(pid_actual, nroPagina, aux);
-				}else{ // si  y no --> algoritmo de reemplazo
-					// ALGORITMO DE REEMPLAZO
-				}
-		} else{
 
+
+
+		if ( (cantPagDisponiblesxPID(pid_actual)) == 0 ) {		// si el proceso ya esta utilizando todos sus marcos en MP
+			// ALGORITMO DE REEMPLAZO LOCAL
 		}
-
-
-
-		// CLOCK() / CLOCK_MODIFICADO()
-
-		// no y no --> algoritmo de reemplazo
-
-		// CLOCK() / CLOCK_MODIFICADO()
-
-		// no y si --> espero a que finalice otro proceso
-
-		// ESPERAR A QUE marcosDisponiblesEnMP > 0
-
+		else{
+			if (marcosDisponiblesEnMP() == 0){
+				// ESPERAR A QUE OTRO PROCESO FINALICE PARA QUE LIBERE MARCOS EN MP ( es REEMPLAZO LOCAL X ESO )
+			}else{	// EL PROCESO TIENE MARCOS DISPONIBLES Y HAY MARCOS LIBRES EN MP :)
+				almacenoPaginaEnMP(pid_actual, nroPagina, contenidoPagina, tamanioContenidoPagina);
+			}
+		}
 	}
+}
 
+// Funcion que me dice cuantas marcos mas puede utilizar el proceso en memoria
+int cantPagDisponiblesxPID(int *pPid) {
+
+	t_link_element *aux = NULL;
+
+	aux = obtenerPidPagina(*pPid);
+
+	return (umcGlobalParameters.marcosXProc - getcantPagEnMP(aux->data));
 
 }
 
-int cantPagDisponiblesxPID(int *pInt) {
-	return 0;
+t_link_element *obtenerPidPagina(int pPid) {
+
+	t_link_element *aux = NULL;
+	aux = headerListaDePids->head;
+
+	while(aux != NULL){
+		if ( (compararPid(aux->data,pPid)) )
+			return aux;
+		aux = aux->next;
+	}
+
+}
+
+
+int getcantPagEnMP(PIDPAGINAS *pPidPagina) {
+	return pPidPagina->cantPagEnMP;
 }
 
 int marcosDisponiblesEnMP() {
-	return 0;
+	int contador=0,i=0;
+
+	for(i=0;i<umcGlobalParameters.marcos;i++){
+		if ( vectorMarcos[i].estado == LIBRE)
+			contador++;
+	}
+	return  contador;
 }
 
-void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[]) {
+void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina) {
 
 	void *comienzoPaginaLibre = NULL;
+	int indice;
 
-	comienzoPaginaLibre = obtenerMarcoLibreEnMP();
+	comienzoPaginaLibre = obtenerMarcoLibreEnMP(&indice);	// levanto el primer MARCO LIBRE en MP
+
+	// almaceno pagina en memoria principal
+	memcpy(comienzoPaginaLibre,codigo,tamanioPagina);
+	// actualizo bit de presencia y marco donde se encuentra almacenado en memoria principal
+	setBitDePresencia(pPid,pPagina,PRESENTE_MP);
+	setNroDeMarco(pPid,pPagina,indice);
+	// actualizo el valor cantPagEnMP asociado a ese PID
+
 }
 
-void *obtenerMarcoLibreEnMP() {
+void setNroDeMarco(int *pPid, int pPagina, int indice) {
+
+	PAGINA *auxiliar = NULL;
+
+	auxiliar = obtenerPagina(*pPid,pPagina);
+
+	auxiliar->nroDeMarco = indice;
+
+}
+
+void setBitDePresencia(int *pPid, int pPagina, int estado) {
+
+	PAGINA *auxiliar = NULL;
+
+	auxiliar = obtenerPagina(*pPid,pPagina);
+
+	auxiliar->presencia = estado;
+
+}
+
+PAGINA *obtenerPagina(int pPid, int pPagina) {
+
+	t_list *headerTablaDePaginas;
+	PAGINA *pag_aux = NULL;
+
+	headerTablaDePaginas = obtenerTablaDePaginasDePID(headerListaDePids,pPid);
+
+	pag_aux = obtenerPaginaDeTablaDePaginas(headerTablaDePaginas,pPagina);
+
+	return pag_aux;
+
+}
+
+
+void *obtenerMarcoLibreEnMP(int *indice) {
 
 	int i = 0;
 
 	while(i<umcGlobalParameters.marcos){
+		*indice = i;
 		if ( vectorMarcos[i].estado == LIBRE)
 			return vectorMarcos[i].comienzoMarco;
+		i++;
 	}
 	return NULL;
 }
