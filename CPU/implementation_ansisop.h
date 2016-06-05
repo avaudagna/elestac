@@ -1,37 +1,42 @@
-/*
- * Copyright (C) 2012 Sistemas Operativos - UTN FRBA. All rights reserved.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-
-#ifndef DUMMY_ANSISOP_H_
-#define DUMMY_ANSISOP_H_
+#ifndef IMPL_ANSISOP_H_
+#define IMPL_ANSISOP_H_
 
 	#include <parser/parser.h>
 
 	#include <stdio.h>
+	#include "libs/pcb.h"
+    #include "cpu.h"
+    #include "libs/t_setup.h"
 
-	extern int umcSocketClient;
+#define ANSISOP_VAR_SIZE 4
+
+    typedef t_var* t_posicion;
+
+    extern int umcSocketClient;
+	extern int kernelSocketClient;
 	extern t_pcb * actual_pcb;
+    extern t_setup setup;
+    extern t_log* cpu_log;
 
-	t_puntero definirVariable(t_nombre_variable variable);
+    //#1
+    t_puntero definirVariable(t_nombre_variable variable);
 
-	t_puntero obtenerPosicionVariable(t_nombre_variable variable);
-	t_valor_variable dereferenciar(t_puntero puntero);
-	void asignar(t_puntero puntero, t_valor_variable variable);
+    logical_addr * armar_direccion_logica(int pointer, int size);
+    int add_stack_variable(int *stack_pointer, t_stack **stack, t_var *nueva_variable);
 
-	void imprimir(t_valor_variable valor);
-	void imprimirTexto(char* texto);
+    //#2
+    t_puntero obtenerPosicionVariable(t_nombre_variable variable);
+
+    //#3
+    t_valor_variable dereferenciar(t_puntero puntero);
+
+    //#4
+    void asignar(t_puntero puntero, t_valor_variable variable);
+
+    //#5
+    void imprimir(t_valor_variable valor);
+
+    //#6
+    void imprimirTexto(char* texto);
 
 #endif
