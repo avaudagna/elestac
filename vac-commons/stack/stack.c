@@ -75,7 +75,7 @@ void serialize_stack_entry(t_stack_entry *entry, void **buffer, int *buffer_size
     serialize_data(&entry->cant_vars, sizeof(int), buffer, buffer_size);
     //serialize_data(&entry->vars, (size_t) sizeof(t_var)*entry->cant_vars, buffer, buffer_size);
     for(i = 0; i < entry->cant_vars; i++) {
-        serialize_data(&entry->vars->var_id, (size_t) sizeof(unsigned char), buffer, buffer_size);
+        serialize_data(&entry->vars->var_id, (size_t) sizeof(char), buffer, buffer_size);
         serialize_data(&entry->vars->page_number, (size_t) sizeof(int), buffer, buffer_size);
         serialize_data(&entry->vars->offset, (size_t) sizeof(int), buffer, buffer_size);
         serialize_data(&entry->vars->tamanio, (size_t) sizeof(int), buffer, buffer_size);
@@ -141,7 +141,7 @@ void deserialize_stack_entry(t_stack_entry **entry, void **serialized_data, int 
     deserialize_data(&(*entry)->args->tamanio, sizeof(int), serialized_data, serialized_data_size);
     deserialize_data(&(*entry)->cant_vars, sizeof(int), serialized_data, serialized_data_size);
     //deserialize_data((*entry)->vars, (size_t) (*entry)->cant_vars, serialized_data, serialized_data_size);
-    deserialize_data(&(*entry)->vars->var_id, sizeof(unsigned char), serialized_data, serialized_data_size);
+    deserialize_data(&(*entry)->vars->var_id, sizeof(char), serialized_data, serialized_data_size);
     deserialize_data(&(*entry)->vars->page_number, sizeof(int), serialized_data, serialized_data_size);
     deserialize_data(&(*entry)->vars->offset, sizeof(int), serialized_data, serialized_data_size);
     deserialize_data(&(*entry)->vars->tamanio, sizeof(int), serialized_data, serialized_data_size);

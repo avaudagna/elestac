@@ -13,7 +13,7 @@ typedef struct {
 } logical_addr;
 
 typedef struct {
-    unsigned char var_id;
+    char var_id;
     int page_number;
     int offset;
     int tamanio;
