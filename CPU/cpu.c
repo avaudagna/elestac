@@ -126,7 +126,7 @@ int execute_state_machine() {
     while(actual_kernel_data->Q > 0)
     switch(execution_state) {
         case S0_CHECK_EXECUTION_STATE:
-            check_execution_state();
+            if (check_execution_state() == SUCCESS) { execution_state = S1_GET_EXECUTION_LINE; } else { execution_state = ERROR; };
             break;
         case S1_GET_EXECUTION_LINE:
             if (get_execution_line(&instruction_line) == SUCCESS) { execution_state = S2_EXECUTE_LINE; } else { execution_state = ERROR; };
