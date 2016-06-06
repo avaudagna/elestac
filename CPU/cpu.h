@@ -1,11 +1,7 @@
 #ifndef CPU_H_
 #define CPU_H_
 
-//#define UMC_ADDR "127.0.0.1"
-//#define UMC_PORT 56793
-//#define KERNEL_ADDR "190.105.70.226"
-//#define KERNEL_PORT 5001
-//#define PAGE_SIZE 1024
+#include "cpu_init.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -16,48 +12,54 @@
 #include <unistd.h>
 
 #include <commons/log.h>
+#include <commons/collections/list.h>
+#include <commons/config.h>
 #include <parser/parser.h>
-#include "implementation_ansisop.h"
+#include <parser/metadata_program.h>
 
 #include "libs/socketCommons.h"
 #include "libs/stack.h"
+#include "libs/t_setup.h"
 
+#include <sys/socket.h>
+#include <signal.h>
 
-AnSISOP_funciones functions = {
-        .AnSISOP_definirVariable		= definirVariable,
-        .AnSISOP_obtenerPosicionVariable= obtenerPosicionVariable,
-        .AnSISOP_dereferenciar			= dereferenciar,
-        .AnSISOP_asignar				= asignar,
-        .AnSISOP_imprimir				= imprimir,
-        .AnSISOP_imprimirTexto			= imprimirTexto,
+#include "implementation_ansisop.h"
 
-};
-AnSISOP_kernel kernel_functions = { };
+#include "cpu_structs.h"
 
-typedef struct {
-    int Q;
-    int QSleep;
-    int pcb_size;
-    void *serialized_pcb;
-} t_kernel_data;
+#define KERNEL_HANDSHAKE "0"
+#define UMC_HANDSHAKE "1"
 
-typedef struct {
-    char** 	SEM_ID;
-    char** 	SEM_INIT;
-    char** 	IO_ID;
-    char** 	IO_SLEEP;
-    char** 	SHARED_VARS;
-    int 	STACK_SIZE;
-    int 	PAGE_SIZE;
-    int 	PUERTO_UMC;
-    char*	IP_UMC;
-    int 	PUERTO_KERNEL;
-    char*	KERNEL_IP;
-} t_setup;
+//cpu state machine states
+#define S0_KERNEL_FIRST_COM 0
+#define S1_GET_PCB 1
+#define S2_GET_PAGE_SIZE 2
+#define S3_EXECUTE 3
+#define S4_RETURN_PCB 4
+
+//round robin state machine states
+#define S0_CHECK_EXECUTION_STATE 0
+#define S1_GET_EXECUTION_LINE 1
+#define S2_EXECUTE_LINE 2
+#define S3_DECREMENT_Q 3
 
 int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer);
 t_list * armarDireccionLogica(t_intructions *actual_instruction);
 void tratarSeniales(int senial);
-void MaquinaDeEstados();
+int loadConfig(char* configFile);
+int get_instruction_line(int umcSocketClient, t_list *instruction_addresses_list, void ** instruction_line);
+
+//cpu state machine
+int cpu_state_machine();
+int kernel_first_com();
+int get_pcb();
+int get_page_size();
+
+//execute process state machine
+int execute_state_machine();
+int check_execution_state();
+int get_execution_line(void ** instruction_line);
+int execute_line(void *pVoid);
 
 #endif

@@ -8,7 +8,7 @@ static const int POSICION_MEMORIA = 0x10;
 t_puntero definirVariable(t_nombre_variable variable) {
 
 	int page_number, offset, tamanio;
-
+    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 //	//Leo el indice del stack,
 //
 //	//Pido a UMC espacio en memoria(Codigo: 3) con 4bytes
@@ -105,23 +105,28 @@ int add_stack_variable(int *stack_pointer, t_stack **stack, t_var *nueva_variabl
 
 
 t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
+    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 	printf("Obtener posicion de %c\n", variable);
 	return POSICION_MEMORIA;
 }
 
 t_valor_variable dereferenciar(t_puntero puntero) {
+    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 	printf("Dereferenciar %d y su valor es: %d\n", puntero, CONTENIDO_VARIABLE);
 	return CONTENIDO_VARIABLE;
 }
 
 void asignar(t_puntero puntero, t_valor_variable variable) {
+    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 	printf("Asignando en %d el valor %d\n", puntero, variable);
 }
 
 void imprimir(t_valor_variable valor) {
+    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 	printf("Imprimir %d\n", valor);
 }
 
 void imprimirTexto(char* texto) {
+    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 	printf("ImprimirTexto: %s", texto);
 }
