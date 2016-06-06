@@ -13,8 +13,8 @@ int cpu_init(int argc, char *config_file) {
     print_cpu_banner();
     signalsInit();
 
-    return (usage_check(argc) && setup_config_init(config_file) &&
-    client_sockets_init() && log_init());
+    return (usage_check(argc) && log_init() &&
+            setup_config_init(config_file) && client_sockets_init() );
 }
 
 int log_init() {
@@ -31,7 +31,7 @@ int log_init() {
 
 int usage_check(int argc) {
     if(argc!=2) {
-        printf("Usage: ./cpu setup.data \n");
+        printf("Usage: ./cpu setup->data \n");
         return ERROR;
     }
     return SUCCESS;
@@ -45,14 +45,14 @@ void print_cpu_banner() {
 
 int client_sockets_init() {
     //Crete UMC client socket
-    if (getClientSocket(&umcSocketClient, setup.IP_UMC , setup.PUERTO_UMC) == 0) {
+    if (getClientSocket(&umcSocketClient, setup->IP_UMC , setup->PUERTO_UMC) == 0) {
         log_info(cpu_log,"New UMC socket obtained");
     } else {
         log_error(cpu_log, "Could not obtain UMC socket");
         return ERROR;
     }
     //Crete Kernel client socket
-    if (getClientSocket(&kernelSocketClient, setup.KERNEL_IP, setup.PUERTO_KERNEL) == 0) {
+    if (getClientSocket(&kernelSocketClient, setup->KERNEL_IP, setup->PUERTO_KERNEL) == 0) {
         log_info(cpu_log,"New KERNEL socket obtained");
     }
     else {
@@ -74,17 +74,18 @@ int loadConfig(char* configFile){
     t_config *config = config_create(configFile);
     printf(" .:: Loading settings ::.\n");
 
+    setup = (t_setup*) malloc(sizeof(t_setup));
     if(config != NULL){
-        setup.PUERTO_KERNEL=config_get_int_value(config,"PUERTO_KERNEL");
-        setup.KERNEL_IP=config_get_string_value(config,"KERNEL_IP");
-        setup.IO_ID=config_get_array_value(config,"IO_ID");
-        setup.IO_SLEEP=config_get_array_value(config,"IO_SLEEP");
-        setup.SEM_ID=config_get_array_value(config,"SEM_ID");
-        setup.SEM_INIT=config_get_array_value(config,"SEM_INIT");
-        setup.SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
-        setup.STACK_SIZE=config_get_int_value(config,"STACK_SIZE");
-        setup.PUERTO_UMC=config_get_int_value(config,"PUERTO_UMC");
-        setup.IP_UMC=config_get_string_value(config,"IP_UMC");
+        setup->PUERTO_KERNEL=config_get_int_value(config,"PUERTO_KERNEL");
+        setup->KERNEL_IP=config_get_string_value(config,"KERNEL_IP");
+        setup->IO_ID=config_get_array_value(config,"IO_ID");
+        setup->IO_SLEEP=config_get_array_value(config,"IO_SLEEP");
+        setup->SEM_ID=config_get_array_value(config,"SEM_ID");
+        setup->SEM_INIT=config_get_array_value(config,"SEM_INIT");
+        setup->SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
+        setup->STACK_SIZE=config_get_int_value(config,"STACK_SIZE");
+        setup->PUERTO_UMC=config_get_int_value(config,"PUERTO_UMC");
+        setup->IP_UMC=config_get_string_value(config,"IP_UMC");
     }
     //config_destroy(config);
     return SUCCESS;

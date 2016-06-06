@@ -16,7 +16,7 @@
 
 extern int umcSocketClient;
 extern int kernelSocketClient;
-extern t_setup setup;
+extern t_setup* setup;
 extern t_log* cpu_log;
 
 int cpu_init(int argc, char *config_file);

@@ -3,7 +3,7 @@
 
 
 //Variables globales
-t_setup setup; // GLOBAL settings
+t_setup * setup; // GLOBAL settings
 t_log* cpu_log;
 int umcSocketClient = 0, kernelSocketClient = 0;
 t_kernel_data * actual_kernel_data;
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 
     if (cpu_init(argc, argv[1])<0) return 0;
 
-    while(cpu_state_machine() == SUCCESS);
+    cpu_state_machine();
 
     return 0;
 }
@@ -96,23 +96,25 @@ int main(int argc, char **argv) {
 int cpu_state_machine() {
     int state = 0;
 
-    switch(state) {
-        case S0_KERNEL_FIRST_COM:
-            if (kernel_first_com() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; };
-            break;
-        case S1_GET_PCB:
-            if (get_pcb() == SUCCESS) { state = S2_GET_PAGE_SIZE; } else { state = ERROR; };
-            break;
-        case S2_GET_PAGE_SIZE:
-            if (get_page_size() == SUCCESS) { state = S3_EXECUTE; } else { state = ERROR; };
-            break;
-        case S3_EXECUTE:
-            if (execute_state_machine() == SUCCESS) { state = S4_RETURN_PCB; } else { state = ERROR; };
-            break;
-        default:
-        case ERROR:
-            return ERROR;
-            break;
+    while(state != ERROR) {
+        switch(state) {
+            case S0_KERNEL_FIRST_COM:
+                if (kernel_first_com() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; };
+                break;
+            case S1_GET_PCB:
+                if (get_pcb() == SUCCESS) { state = S2_GET_PAGE_SIZE; } else { state = ERROR; };
+                break;
+            case S2_GET_PAGE_SIZE:
+                if (get_page_size() == SUCCESS) { state = S3_EXECUTE; } else { state = ERROR; };
+                break;
+            case S3_EXECUTE:
+                if (execute_state_machine() == SUCCESS) { state = S4_RETURN_PCB; } else { state = ERROR; };
+                break;
+            default:
+            case ERROR:
+                return ERROR;
+                break;
+        }
     }
     return SUCCESS;
 }
@@ -185,7 +187,7 @@ int get_page_size() {
         log_error(cpu_log, "Recv UMC PAGE_SIZE failed");
         return ERROR;
     }
-    setup.PAGE_SIZE = atoi(umc_buffer);
+    setup->PAGE_SIZE = atoi(umc_buffer);
     return SUCCESS;
 }
 
@@ -298,7 +300,7 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
 
 t_list* armarDireccionLogica(t_intructions *actual_instruction) {
 
-//    float actual_position = ((int) actual_instruction->start + 1)/ setup.PAGE_SIZE;
+//    float actual_position = ((int) actual_instruction->start + 1)/ setup->PAGE_SIZE;
 //    addr->page_number = (int) ceilf(actual_position);
 //    addr->offset = (int) actual_instruction->start - (int) round(actual_position);
 //    addr->tamanio = actual_instruction->offset;
@@ -308,10 +310,10 @@ t_list* armarDireccionLogica(t_intructions *actual_instruction) {
     int actual_page = 0;
     log_info(cpu_log, "Obtaining logic addresses for start:%d offset:%d",actual_instruction->start, actual_instruction->offset );
     //First calculation
-    addr->page_number =  (int) actual_instruction->start / setup.PAGE_SIZE;
+    addr->page_number =  (int) actual_instruction->start / setup->PAGE_SIZE;
     actual_page = addr->page_number;
-    addr->offset = actual_instruction->start % setup.PAGE_SIZE;
-    addr->tamanio = setup.PAGE_SIZE - addr->offset;
+    addr->offset = actual_instruction->start % setup->PAGE_SIZE;
+    addr->tamanio = setup->PAGE_SIZE - addr->offset;
 
     list_add(address_list, addr);
     actual_instruction->offset = actual_instruction->offset - addr->tamanio;
@@ -322,9 +324,9 @@ t_list* armarDireccionLogica(t_intructions *actual_instruction) {
         addr = (logical_addr*) calloc(1,sizeof(logical_addr));
         addr->page_number = ++actual_page;
         addr->offset = 0;
-        //addr->tamanio = setup.PAGE_SIZE - addr->offset;
-        if(actual_instruction->offset > setup.PAGE_SIZE) {
-            addr->tamanio = setup.PAGE_SIZE;
+        //addr->tamanio = setup->PAGE_SIZE - addr->offset;
+        if(actual_instruction->offset > setup->PAGE_SIZE) {
+            addr->tamanio = setup->PAGE_SIZE;
         } else {
             addr->tamanio = actual_instruction->offset;
         }

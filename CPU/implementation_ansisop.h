@@ -17,7 +17,7 @@
     extern int umcSocketClient;
 	extern int kernelSocketClient;
 	extern t_pcb* actual_pcb;
-    extern t_setup setup;
+    extern t_setup * setup;
     extern t_log* cpu_log;
     extern t_kernel_data* actual_kernel_data;
 

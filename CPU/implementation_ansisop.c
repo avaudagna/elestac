@@ -40,7 +40,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
     int actual_stack_pointer = actual_pcb->stack_pointer;
 
     //3) Armamos la logical address requerida
-    logical_addr* direccion_espectante = armar_direccion_logica(actual_stack_pointer, setup.PAGE_SIZE);
+    logical_addr* direccion_espectante = armar_direccion_logica(actual_stack_pointer, setup->PAGE_SIZE);
 
     //4) Enviamos el pedido a la UMC para que nos diga si puede meter la variable ahi o no, si puede retornamos la addr.
     char value [5]= "0000", *umc_request_buffer = NULL;
