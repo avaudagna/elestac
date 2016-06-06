@@ -1,3 +1,5 @@
 [ERROR] 01:24:22:402 Elestac-KERNEL/(16791:16791): Could not connect to the UMC. Please, try again.
 [ERROR] 01:33:49:800 Elestac-KERNEL/(17631:17631): Could not connect to the UMC. Please, try again.
 [ERROR] 15:10:03:18 Elestac-KERNEL/(23934:23934): Could not connect to the UMC. Please, try again.
+[ERROR] 13:57:26:356 Elestac-KERNEL/(20482:20482): Error while creating the CONSOLE server.
+[ERROR] 14:05:03:506 Elestac-KERNEL/(21849:21849): Error while creating the CONSOLE server.

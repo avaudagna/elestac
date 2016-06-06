@@ -38,8 +38,14 @@ struct {
 typedef struct{
 	int 	clientID,
 			status,
-		    pid;
+			pid;
 } t_Client;
+
+typedef struct{
+	int		pid;
+	char    *io_name,
+			*io_units;
+} t_io;
 
 int     requestPages2UMC(char* PID, int ansisopLen,char* code,int clientUMC);
 int		start_kernel(int argc, char* configFile);

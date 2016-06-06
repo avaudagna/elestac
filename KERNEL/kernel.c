@@ -14,7 +14,7 @@ gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
 int consoleServer, cpuServer, clientUMC;
 int maxSocket=0;
 t_list	*PCB_READY, *PCB_BLOCKED, *PCB_EXIT; /* I think I don't need queues 4 NEW & EXECUTING */
-t_list *cpus_conectadas, *consolas_conectadas;
+t_list *cpus_conectadas, *consolas_conectadas, *solicitudes_io;
 fd_set 	allSockets;
 t_log* kernel_log;
 /* END OF GLOBAL STUFF I NEED EVERYWHERE */
@@ -32,7 +32,8 @@ int main (int argc, char **argv){
 	PCB_BLOCKED = list_create();
 	PCB_EXIT = list_create();
 	cpus_conectadas = list_create();
-	consolas_conectadas= list_create();
+	consolas_conectadas = list_create();
+	solicitudes_io = list_create();
 	if(setServerSocket(&consoleServer, setup.KERNEL_IP, setup.PUERTO_PROG)<0){
 		log_error(kernel_log,"Error while creating the CONSOLE server.");
 		return 0;
@@ -170,42 +171,48 @@ void check_CPU_FD_ISSET(void *cpu){
 			switch (atoi(cpu_protocol)) {
 			case 1: // Quantum finish
 			case 2: // Program END
-    case 3:				//3== IO
-      recv(laCPU->clientID, tmp_buff, 4, 0);
+            case 3:				//3== IO
+                recv(laCPU->clientID, tmp_buff, 4, 0);
 				pcb_size=atoi(tmp_buff);
 				recv(laCPU->clientID, pcb_serializado, pcb_size, 0);
-     	deserialize_pcb(&incomingPCB,&pcb_serializado,&pcb_size);
+     	        deserialize_pcb(&incomingPCB,&pcb_serializado,&pcb_size);
 				switch (incomingPCB->status) {
 				case READY:
 					list_add(PCB_READY,incomingPCB);
 					break;
 				case BLOCKED:
-							list_add(PCB_BLOCKED,incomingPCB);
-							// TODO aca hay un io.
-          // tengo que recv el io_name_size + io_name + 4bytes io_number_of_operations y guarlos en algun lugar mistico
-          break;
-						case EXIT:
-							list_add(PCB_EXIT,incomingPCB);
-							break;
+					list_add(PCB_BLOCKED,incomingPCB);
+					t_io *io_op = malloc(sizeof(t_io));
+					io_op->pid=laCPU->pid;
+					recv(laCPU->clientID, tmp_buff, 4, 0); // size of the io_name
+					recv(laCPU->clientID, io_op->io_name, (size_t) atoi(tmp_buff), 0);
+					recv(laCPU->clientID, io_op->io_units, 4, 0);
+					list_add(solicitudes_io, io_op); // TODO check how we manage the different queues.
+						// TODO I could create the i/o queues when loading the settings with a loop around the array.
+					break;
+				case EXIT:
+					list_add(PCB_EXIT,incomingPCB);
+					break;
 				default:
-							log_error(kernel_log,"Error with CPU protocol. Function check_CPU_FD_ISSET.");
+					log_error(kernel_log,"Error with CPU protocol. Function check_CPU_FD_ISSET.");
 				}
+				laCPU->status=READY;
+				laCPU->pid=0;
+				list_add(cpus_conectadas, laCPU); /* return the CPU to the queue */
 				break;
 			case 4:				//4== semaforo
+				//wait   [identificador de semáforo]
+				//signal [identificador de semáforo]
 				log_warning(kernel_log,"Error with CPU protocol and semaphore operation. Function check_CPU_FD_ISSET.");
 				break;
 			case 5:				//5== var compartida
+				//obtener_valor [identificador de variable compartida]
+				//grabar_valor  [identificador de variable compartida] [valor a grabar]
 				log_warning(kernel_log,"Error with CPU protocol and shared variable operation. Function check_CPU_FD_ISSET.");
 				break;
 			default:
 				log_error(kernel_log,"Caso no contemplado. CPU dijo: %s",cpu_protocol);
 			}
-  /* TODO
-    semaphores + shared vars will not release the cpu: kernel must recv, process and send the reply to cpu
-            */
-			laCPU->status=READY;
-			laCPU->pid=0;
-			list_add(cpus_conectadas, laCPU); /* return the CPU to the queue */
 			call_handlers();
 		} else {
 			printf(" .:: CPU %d has closed the connection ::. \n", laCPU->clientID);
@@ -374,7 +381,12 @@ void end_program() {
 }
 
 void process_io() {
-
+	int i=0;
+	while(strlen(setup.IO_ID[i])>0){
+		// aca detectar el IO y procesar la solicitud
+		i++;
+	}
+	// si llego aca hay exception -> el io_id esta mal
 }
 
 void call_handlers() {
