@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include "libs/pcb.h"
 #include "cpu.h"
-#include "libs/t_setup.h"
 #include "cpu_structs.h"
 
 

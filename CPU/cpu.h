@@ -19,7 +19,6 @@
 
 #include "libs/socketCommons.h"
 #include "libs/stack.h"
-#include "libs/t_setup.h"
 
 #include <sys/socket.h>
 #include <signal.h>

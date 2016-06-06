@@ -5,6 +5,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(SOURCE_FILES
     cpu.c
+    cpu_init.c
     implementation_ansisop.c
     libs/pcb.c
     libs/stack.c

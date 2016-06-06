@@ -1,12 +1,15 @@
 #ifndef CPU_CPU_INIT_H
 #define CPU_CPU_INIT_H
 
-#include <stdio.h>
-#include "libs/socketCommons.h"
-#include "libs/t_setup.h"
+
 #include <signal.h>
+#include <stdio.h>
 #include <commons/log.h>
 #include <commons/config.h>
+
+#include "libs/socketCommons.h"
+
+#include "cpu_structs.h"
 
 #define SUCCESS 1
 #define ERROR -1
