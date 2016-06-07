@@ -41,12 +41,11 @@
 
 /* COMUNICACION/OPERACIONES CON CPU */
 
-#define PEDIDO_BYTES 2
-#define ALMACENAMIENTO_BYTES 3
+#define HANDSHAKE_CPU 1
+#define CAMBIO_PROCESO_ACTIVO 2
+#define PEDIDO_BYTES 3
+#define ALMACENAMIENTO_BYTES 4
 #define FIN_COMUNICACION_CPU 0
-#define CAMBIO_PROCESO_ACTIVO 1
-
-
 
 typedef struct umc_parametros {
      int	listenningPort,
@@ -121,6 +120,8 @@ PAGINA * obtenerPaginaDeTablaDePaginas(t_list *headerTablaPaginas, int nroPagina
 
 #define PRESENTE_MP 1
 #define AUSENTE 0
+
+
 
 // Funciones para operar con el swap
 void init_Swap(void);
@@ -202,6 +203,8 @@ void setBitDeUso(int pPid, int pPagina, int valorBitDeUso);
 void algoritmoClock(int pPid, int pPagina, int tamanioContenidoPagina, void *contenidoPagina);
 
 bool filtrarPorBitDePresencia(void *data);
+
+void handShakeCpu(int *socketBuff);
 
 int main(int argc , char **argv){
 
@@ -436,13 +439,17 @@ FunctionPointer QuienSos(int * socketBuff) {
 
 void atenderCPU(int *socketBuff){
 
-	int pid_actual,estado=CAMBIO_PROCESO_ACTIVO;
+	int pid_actual,estado=HANDSHAKE_CPU;
 
 	while(estado != EXIT ){
 		switch(estado){
 
 		case IDENTIFICADOR_OPERACION:
 			estado = identificarOperacion(socketBuff);
+			break;
+		case HANDSHAKE_CPU:
+				handShakeCpu(socketBuff);
+				estado = IDENTIFICADOR_OPERACION;
 			break;
 		case CAMBIO_PROCESO_ACTIVO:
 			cambioProcesoActivo(socketBuff, &pid_actual);
@@ -467,10 +474,23 @@ void atenderCPU(int *socketBuff){
 	pthread_exit(0);		// chau thread
 }
 
-void cambioProcesoActivo(int *socket, int *pid){
+void handShakeCpu(int *socketBuff) {
 
 	char buffer[5];
 
+	// 0+PAGE_SIZE
+	sprintf(buffer,"0%04d",umcGlobalParameters.marcosSize);
+
+	if ( send(*socket,(void *)buffer,5,0) == -1 )
+		perror("send");
+
+
+}
+
+void cambioProcesoActivo(int *socket, int *pid){
+
+	char buffer[5];
+	// levanto el nuevo PID que esta ejecutando el CPU
 	if ( (recv(*socket, (void*) (buffer), 4, 0)) <= 0 )
 		perror("recv");
 	*pid = atoi(buffer);

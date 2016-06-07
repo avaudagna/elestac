@@ -52,14 +52,16 @@ FINALIZACION_PROCESO	   							2+PID
 /***************************************************************************
           UMC <--> CPU
 ***************************************************************************/ 
-OPERACION			CPU->UMC					UMC->CPU
-HANDSHAKE 			1+PID 						
-HANDSHAKE_RTA									0+PAGE_SIZE (4 bytes)
-PEDIDO_BYTES		2+PAGINA+OFFSET+TAMAÑO (13 bytes)
-PEDIDO_BYTES_RTA_OK								1+CODIGO
-PEDIDO_BYTES_RTA_PAGINA_INVALIDA				2
-ALMACENAR_BYTES		3+PAGINA+OFFSET+TAMAÑO+CODIGO ( 12 + sizeof(CODIGO))
-STACKOVERFLOW									STACKOVERFLOW
+OPERACION					CPU->UMC								UMC->CPU
+HANDSHAKE 					1	 						
+HANDSHAKE_RTA														0+PAGE_SIZE (4 bytes)
+CAMBIO_DE_PROCESO_ACTIVO	2+PID
+PEDIDO_BYTES				3+PAGINA+OFFSET+TAMAÑO (13 bytes)
+PEDIDO_BYTES_RTA_OK													1+CODIGO
+PEDIDO_BYTES_RTA_PAGINA_INVALIDA									2
+ALMACENAR_BYTES				3+PAGINA+OFFSET+TAMAÑO+codigo           1 ( OK)
+												
+STACKOVERFLOW														3
 
 
 
