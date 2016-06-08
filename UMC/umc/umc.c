@@ -36,7 +36,6 @@
 #define SOLICITUD_NUEVO_PROCESO 1
 #define FINALIZAR_PROCESO 2
 #define EXIT (-1)
-#define PID_SIZE 4
 #define SIZE_OF_PAGE_SIZE 4
 
 /* COMUNICACION/OPERACIONES CON CPU */
@@ -60,8 +59,6 @@ typedef struct umc_parametros {
 			*portSwap;
 }UMC_PARAMETERS;
 
-
-
 typedef struct _pagina {
 	int nroPagina;
 	int presencia;
@@ -74,6 +71,12 @@ typedef struct _pidPaginas {
 	int cantPagEnMP;
 	t_list * headListaDePaginas;
 }PIDPAGINAS;
+
+typedef struct clock {
+	int pid;
+	PAGINA *pag;
+}CLOCK;
+
 
 typedef struct _marco {
 	void *comienzoMarco;
@@ -132,17 +135,21 @@ typedef void (*FunctionPointer)(int * socketBuff);
 typedef void * (*boid_function_boid_pointer) (void*);
 
 /*VARIABLES GLOBALES */
-int socketServidor;
-int socketClienteSwap;
 UMC_PARAMETERS umcGlobalParameters;
-int contConexionesNucleo = 0;
-int contConexionesCPU = 0;
-int paginasLibresEnSwap = 0;
-int stack_size;
-t_list *headerListaDePids;
-void *memoriaPrincipal = NULL;
-MARCO *vectorMarcos = NULL;
-t_list *headerTLB = NULL;
+int 	contConexionesNucleo = 0,
+	 	contConexionesCPU = 0,
+		paginasLibresEnSwap = 0,
+		socketServidor,
+		socketClienteSwap,
+		stack_size;
+t_list 	*headerListaDePids,
+		*headerTLB = NULL,
+		*headerPunterosClock = NULL,
+		*headerFIFOxPID = NULL;
+void 	*memoriaPrincipal = NULL;
+MARCO 	*vectorMarcos = NULL;
+
+
 
 /*FUNCIONES DE INICIALIZACION*/
 void init_UMC(char *);
@@ -205,6 +212,7 @@ void algoritmoClock(int pPid, int pPagina, int tamanioContenidoPagina, void *con
 bool filtrarPorBitDePresencia(void *data);
 
 void handShakeCpu(int *socketBuff);
+
 
 int main(int argc , char **argv){
 
@@ -495,12 +503,6 @@ void cambioProcesoActivo(int *socket, int *pid){
 		perror("recv");
 	*pid = atoi(buffer);
 
-	// 0+PAGE_SIZE
-	sprintf(buffer,"0%04d",umcGlobalParameters.marcosSize);
-
-	if ( send(*socket,(void *)buffer,5,0) == -1 )
-		perror("send");
-
 }
 
 void atenderKernel(int * socketBuff){
@@ -589,6 +591,7 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 		cantidad_bytes_recibidos,
 		pid_aux;
 	char buffer[4];
+	CLOCK *nuevoProceso = NULL;
 
 	// levanto los 4 bytes q son del pid
 	cantidad_bytes_recibidos = recv(*socketBuff, (void*) (buffer), 4, 0);
@@ -608,6 +611,15 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 	if ( (cantidadDePaginasSolicitadas+stack_size) <= paginasLibresEnSwap) {	// Se puede almacenar el nuevo proceso , respondo que SI
 
 		recibirYAlmacenarNuevoProceso(socketBuff,cantidadDePaginasSolicitadas,pid_aux);
+
+		if ( headerPunterosClock == NULL)
+			headerPunterosClock	= list_create();
+
+		nuevoProceso = (CLOCK *) malloc(sizeof(CLOCK));
+		nuevoProceso->pid = pid_aux;
+		nuevoProceso->pag = NULL;
+
+		list_add(headerPunterosClock, nuevoProceso);		// Agrego el nuevo PID a la lista CLOCK , es para poder implementar Algoritmo CLOCK
 
 		char trama_handshake[4];
 		sprintf(trama_handshake,"%04d",cantidadDePaginasSolicitadas);
@@ -898,13 +910,13 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 	int 	_pagina,
 			_offset,
 			_tamanio,
-			tamanioContenidoPagina;
-	char buffer[4];
+			tamanioContenidoPagina,
+			indice_buff;
+	char 	buffer[4];
 	t_list * headerTablaDePaginas = NULL;
-	PAGINA *aux = NULL;
+	PAGINA 	*aux = NULL,
+			*temp = NULL;
 	void *contenidoPagina  = NULL;
-	int indice_buff;
-	PAGINA *temp = NULL;
 
 	// levanto nro de pagina
 	if(recv(*socketBuff, (void*) buffer, 4, 0) <= 0 )
@@ -972,37 +984,13 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 	}
 }
 
+// Para tener que aplicar el algoritmo , la situacion es que hay al menos 1 pagina en memoria principal , y necesito seleccionar alguno de los marcos asignados a ese PID para reemplazar
 void algoritmoClock(int pPid, int pPagina, int tamanioContenidoPagina, void *contenidoPagina) {
 
-	t_list 	* headerTablaDePagina = NULL,
-	 				* paginasEnMP = NULL;
-	PAGINA *aux;
-	headerTablaDePagina = obtenerTablaDePaginasDePID(headerListaDePids,pPid);
-
-	paginasEnMP = list_filter(headerTablaDePagina, filtrarPorBitDePresencia);
-
-	// Voy a tener una lista de punteros a PAGINAS, donde lo que indican es LA ULTIMA VICTIMA que el algoritmo selecciono. OJO, esta lista es global para el THREAD , NO PARA EL PROCESO ATENTI !!
-	// Por cada nuevo PID ,  tengo que agregar uno nuevo .
-	if (puntero global -> pagina == NULL) // primera vez que se ejecuta el codigo , ¿ donde debe apuntar ? AL ULTIMO NODO DE LA LISTA , que seria la primer pagina que se asigno a un marco ( FIFO )
-			puntero global -> pagina = Ultimo nodo de la lista  paginasenMP;
-	while(1){
-		if ( puntero global -> pagina . bit de uso == 0)
-		{
-			if (bit de modificado == 0 )
-				Reemplazo la pagina
-				seteo bit de uso a 1
-				break;
-			else{
-				Mando Pagina a SWAP
-				Reemplazo la pagina
-				seteo bit de uso a 1
-				break;
-			}
-		}
-		puntero global -> pagina . bit de uso = 0;
-		puntero global = puntero global -> next;
-	}
 }
+
+
+
 
 bool filtrarPorBitDePresencia(void *data){
 
@@ -1110,6 +1098,14 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 
 	void *comienzoPaginaLibre = NULL;
 	int indice;
+
+
+	if ( headerFIFOxPID == NULL)			// si es el primer marco que se va a cargar en memoria
+		headerFIFOxPID = list_create();
+
+	if ()
+
+
 
 	comienzoPaginaLibre = obtenerMarcoLibreEnMP(&indice);	// levanto el primer MARCO LIBRE en MP
 
