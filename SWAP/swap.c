@@ -181,7 +181,7 @@ int umc_handshake(){
 		int SIZE_TRAMA = 5;
 		char* respuesta = malloc(SIZE_TRAMA);
 		char tramaAEnviar[SIZE_TRAMA];
-		sprintf(respuesta,"S%d", paginas_CantidadPaginasLibres());
+		sprintf(respuesta,"1%04d", paginas_CantidadPaginasLibres());
 
 		// Le quito el \0 al final
 		for(i=0; i < SIZE_TRAMA; i++){
@@ -349,8 +349,6 @@ void init_Server(){
 	void* buffer = malloc(sizeof(int));
 	int handshakeOK = 0;
 	int operacion = 0;
-	char aux;
-
 
 	while(1){
 		if(handshakeOK){
@@ -358,7 +356,7 @@ void init_Server(){
 
 			puts("[INFO] Waiting for UMC request");
 
-			if(recv(umcSocket,buffer,sizeof(int),0) <= 0){
+			if(recv(umcSocket,buffer,sizeof(char),0) <= 0){
 				free(buffer);
 				close(umcSocket);
 				close(swapSocket);
@@ -370,10 +368,8 @@ void init_Server(){
 			 * Leo el codigo de operacion
 			 * y convierto el char a int
 			 ****************************/
-			memcpy(&aux,buffer,1);
-			operacion = aux - '0';
-
-			free(buffer);
+            operacion = atoi(buffer);
+            free(buffer);
 
 			switch (operacion) {
 				case ESCRIBIR: //pid(int), numeroPagina(int), codigo (undefined)
@@ -481,33 +477,27 @@ void umc_escribir(){
 	char tramaAEnviar[SIZE_TRAMA];
 
 	//Recibo el PID
-	if(recv(umcSocket, buffer, 1, 0)<= 0)
-		exit(1);
+	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0) {
+		exit(1); }
 
-	char aux;
-	memcpy(&aux,buffer,1);
-	//free(buffer);
-	pid = aux - '0';
+	pid = atoi(buffer);
 
 	free(buffer);
 	buffer = malloc(sizeof(int));
 
 	//Recibo el numero pagina
-	if(recv(umcSocket, buffer, 1, 0)<= 0)
-		exit(1);
-
-	memcpy(&aux,buffer,1);
-	//free(buffer);
-	numeroPagina = aux - '0';
+	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0) {
+		exit(1); }
+	numeroPagina = atoi(buffer);
 
 	free(buffer);
 	buffer = malloc(sizeof(char[TAMANIO_PAGINA]));
 
 	//Recibimos el codigo
-	if(recv(umcSocket, buffer, sizeof(char[TAMANIO_PAGINA]), 0)<= 0)
-		exit(1);
+	if(recv(umcSocket, buffer, sizeof(char)*TAMANIO_PAGINA, 0)<= 0) {
+		exit(1); }
 
-	memcpy(codigo, buffer, sizeof(char[TAMANIO_PAGINA]));
+	memcpy(codigo, buffer, sizeof(char)*TAMANIO_PAGINA);
 
 	//Hacemos el request
 	int resultadoRequest = request_EscrituraPagina(pid, numeroPagina, codigo);
@@ -515,8 +505,8 @@ void umc_escribir(){
 	if(resultadoRequest > -1){ //ENVIAMOS A UMC 1+cantPaginasLibres
 		char* respuesta;
 
-		respuesta = malloc(sizeof(char[SIZE_TRAMA]));
-		sprintf(respuesta,"S%d", paginas_CantidadPaginasLibres());
+		respuesta = malloc(sizeof(char)*SIZE_TRAMA);
+		sprintf(respuesta,"1%04d", paginas_CantidadPaginasLibres());
 
 		int i = 0;// Le quito el \0 al final
 		for(i=0; i < SIZE_TRAMA; i++){
@@ -566,7 +556,7 @@ void umc_finalizarPrograma(){
 	int resultadoRequest = request_FinalizacionPrograma(pid);
 
 	if(resultadoRequest > 0){ //ENVIAMOS A UMC 1+cantPaginasLibres
-		char* respuesta = malloc(sizeof(char[SIZE_TRAMA]));
+		char* respuesta = malloc(sizeof(char)*SIZE_TRAMA);
 		sprintf(respuesta,"S%d", paginas_CantidadPaginasLibres());
 
 		char tramaAEnviar[SIZE_TRAMA];
@@ -659,7 +649,7 @@ int init_SwapFile(){
 
 int init_BitMap(){
 	//Creamos y limpiamos el BitMap
-	bitMap = malloc(sizeof(char[CANTIDAD_PAGINAS]));
+	bitMap = malloc(sizeof(char)*CANTIDAD_PAGINAS);
 	bitArrayStruct = bitarray_create(bitMap,CANTIDAD_PAGINAS/8);
 
 	int i; //Inicializamos todos los bits en cero (vacio)
@@ -942,7 +932,7 @@ char* paginas_LeerPagina(int posicion){
 
 	fseek(fp,posicion,SEEK_SET);
 
-	char* contenidoObtenido = malloc(TAMANIO_PAGINA*sizeof(sizeof(char))); //CUIDADO ACA
+	char* contenidoObtenido = malloc(TAMANIO_PAGINA*sizeof(char)); //CUIDADO ACA
 
 	//Leemos, si es distinto al count, fallo
 
