@@ -1,16 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <netdb.h>
 #include <unistd.h>
 
 //Librerias propias
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/bitarray.h>
-#include <commons/collections/list.h>
 #include "socketCommons.h"
 
 
@@ -19,11 +16,11 @@
 #define LECTURA 2
 #define FINALIZARPROG 3
 
-#define PATH_CONF "swapConf"
+#define PATH_CONF "/home/alan/repos/tp-2016-1c-Vamo-a-calmarno/SWAP/swapConf"
 #define PACKAGE_SIZE 1024
-//#define IPSWAP "127.0.0.1"
-#define IPSWAP "192.168.0.28"
-#define PUERTOSWAP 45008
+#define IPSWAP "127.0.0.1"
+//#define IPSWAP "192.168.0.28"
+#define PUERTOSWAP 6800
 
 
 /************************
@@ -36,7 +33,7 @@ char* bitMap;
 t_bitarray* bitArrayStruct;
 int SWAP_BLOCKSIZE;
 
-typedef struct InformacionPagina {
+struct InformacionPagina {
    int pid;
    int pageNumber;
    int positionInSWAP;
@@ -345,7 +342,7 @@ int init_Config(){
 void init_Server(){
 	puts(".:: INITIALIZING SERVER PROCESS ::. \n");
 
-	setServerSocket(&swapSocket,IPSWAP,PUERTOSWAP);
+	setServerSocket(&swapSocket,IP_SWAP,atoi(PUERTO_SWAP));
 
 	acceptConnection(&umcSocket, &swapSocket);
 
@@ -796,7 +793,7 @@ int swap_Compactar(){
 
 	puts("\n .:: BEGINING DEFRAGMETATION ::. \n");
 
-	sleep(RETARDO_COMPACTACION);
+	sleep(*RETARDO_COMPACTACION);
 
 	int espacioActual, espacioLibre = 0;
 	while(bitarray_test_bit(bitArrayStruct, espacioLibre)){ //Encontramos el primer espacio libre
