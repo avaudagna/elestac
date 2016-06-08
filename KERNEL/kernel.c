@@ -8,6 +8,7 @@ gcc -I/usr/include/commons -I/usr/include/commons/collections -o umc umc.c -L/us
  * Y la consola asi:
 gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
 */
+#include <libs/pcb.h>
 #include "kernel.h"
 
 /* BEGIN OF GLOBAL STUFF I NEED EVERYWHERE */
@@ -92,6 +93,10 @@ int loadConfig(char* configFile){
 		/* END pueden cambiar en tiempo de ejecucion */
 		setup.IO_ID=config_get_array_value(config,"IO_ID");
 		setup.IO_SLEEP=config_get_array_value(config,"IO_SLEEP");
+
+		int i=0;
+		while
+
 		setup.SEM_ID=config_get_array_value(config,"SEM_ID");
 		setup.SEM_INIT=config_get_array_value(config,"SEM_INIT");
 		setup.SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
@@ -125,9 +130,9 @@ int requestPages2UMC(char* PID, int ansisopLen,char* code,int clientUMC){ //TODO
 	char* buffer;
 	char buffer_4[4];
 	int bufferLen=1+4+4+4+ansisopLen; //1+PID+req_pages+size+code
-	sprintf(buffer_4, "%04d", (int) (ansisopLen/setup.PAGE_SIZE)+1);
+	sprintf(buffer_4, "%04d", (ansisopLen/setup.PAGE_SIZE)+1);
 	asprintf(&buffer, "%d%s%s%04d%s", 1,PID,buffer_4, ansisopLen,code);
-	send(clientUMC, buffer, bufferLen, 0);
+	send(clientUMC, buffer, (size_t) bufferLen, 0);
 	recv(clientUMC, buffer_4, 4, 0);
 	int code_pages = atoi(buffer_4);
 	free(buffer);
@@ -169,18 +174,16 @@ void check_CPU_FD_ISSET(void *cpu){
 		if (recv(laCPU->clientID, cpu_protocol, 1, 0) > 0){
 			log_info(kernel_log,"CPU dijo: %s - Ejecutar protocolo correspondiente",cpu_protocol);
 			switch (atoi(cpu_protocol)) {
-			case 1: // Quantum finish
-			case 2: // Program END
-            case 3:				//3== IO
+			case 1:// Quantum end
+			case 2:// Program END
+            case 3:// IO
                 recv(laCPU->clientID, tmp_buff, 4, 0);
 				pcb_size=atoi(tmp_buff);
-				recv(laCPU->clientID, pcb_serializado, pcb_size, 0);
+				recv(laCPU->clientID, pcb_serializado, (size_t) pcb_size, 0);
      	        deserialize_pcb(&incomingPCB,&pcb_serializado,&pcb_size);
-				switch (incomingPCB->status) {
-				case READY:
-					list_add(PCB_READY,incomingPCB);
-					break;
-				case BLOCKED:
+				if (laCPU->status == EXIT || incomingPCB->status == EXIT) {
+					list_add(PCB_EXIT,incomingPCB);
+				}else if(incomingPCB->status == BLOCKED){
 					list_add(PCB_BLOCKED,incomingPCB);
 					t_io *io_op = malloc(sizeof(t_io));
 					io_op->pid=laCPU->pid;
@@ -188,24 +191,20 @@ void check_CPU_FD_ISSET(void *cpu){
 					recv(laCPU->clientID, io_op->io_name, (size_t) atoi(tmp_buff), 0);
 					recv(laCPU->clientID, io_op->io_units, 4, 0);
 					list_add(solicitudes_io, io_op); // TODO check how we manage the different queues.
-						// TODO I could create the i/o queues when loading the settings with a loop around the array.
-					break;
-				case EXIT:
-					list_add(PCB_EXIT,incomingPCB);
-					break;
-				default:
-					log_error(kernel_log,"Error with CPU protocol. Function check_CPU_FD_ISSET.");
+					// TODO I could create the i/o queues when loading the settings with a loop around the array.
+				}else{
+					list_add(PCB_READY,incomingPCB);
 				}
-				laCPU->status=READY;
-				laCPU->pid=0;
+				laCPU->status = READY;
+				laCPU->pid = 0;
 				list_add(cpus_conectadas, laCPU); /* return the CPU to the queue */
 				break;
-			case 4:				//4== semaforo
+			case 4:// semaforo
 				//wait   [identificador de semáforo]
 				//signal [identificador de semáforo]
 				log_warning(kernel_log,"Error with CPU protocol and semaphore operation. Function check_CPU_FD_ISSET.");
 				break;
-			case 5:				//5== var compartida
+			case 5:// var compartida
 				//obtener_valor [identificador de variable compartida]
 				//grabar_valor  [identificador de variable compartida] [valor a grabar]
 				log_warning(kernel_log,"Error with CPU protocol and shared variable operation. Function check_CPU_FD_ISSET.");
@@ -242,36 +241,11 @@ void check_CONSOLE_FD_ISSET(void *console){
 		if (recv(cliente->clientID, buffer_4, 2, 0) > 0){
 			log_error(kernel_log,"Consola no deberia enviar nada pero dijo: %s",buffer_4);
 		} else {
-			char PID[4];
-			sprintf(PID, "%04d", cliente->clientID);
-			printf(" .:: A console has closed the connection, the associated PID %s will be terminated ::. \n", PID);
-			/* Delete the PCB */
-			bool match_PCB(void *pcb){
-				t_pcb *unPCB = pcb;
-				bool matchea = (cliente->clientID==unPCB->pid);
-				if (matchea && unPCB->status==2){
-					// if pcb is being held by CPU -> wait ! -> add it to the PCB_EXIT list
-					/* find the CPU who's running this pcb and change cpu->status to EXIT
-					 */
-				}
-				return matchea;
-			}
-			if(list_size(PCB_READY)>0)
-				list_remove_and_destroy_by_condition(PCB_READY,match_PCB,destroy_PCB);
-			if(list_size(PCB_BLOCKED)>0)
-				list_remove_and_destroy_by_condition(PCB_BLOCKED,match_PCB,destroy_PCB);
-			if(list_size(PCB_EXIT)>0)
-				list_remove_and_destroy_by_condition(PCB_EXIT,match_PCB,destroy_PCB);
-			close(cliente->clientID);
-			bool getConsoleIndex(void *nbr){
-				t_Client *unCliente = nbr;
-				bool matchea= (cliente->clientID == unCliente->clientID);
-				return matchea;
-			}
-			list_remove_by_condition(consolas_conectadas, getConsoleIndex);
-			free(buffer_4);
+			printf(" .:: A console has closed the connection, the associated PID %04d will be terminated ::. \n", cliente->clientID);
+			end_program(cliente->clientID, false);
 		}
 	}
+	free(buffer_4);
 }
 
 int control_clients(){
@@ -308,7 +282,7 @@ int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista){
 					t_Client *cliente=malloc(sizeof(t_Client));
 					cliente->clientID=aceptado;
 					cliente->pid=0;
-					cliente->status=0;
+					cliente->status = 0;
 					list_add(lista, cliente);
 					printf(" .:: New %s arriving (%d) ::.\n",what,list_size(lista));
 				}
@@ -376,17 +350,77 @@ void round_robin(){
 	send(laCPU->clientID, tmp_buffer, tmp_buffer_size,0);
 }
 
-void end_program() {
+void end_program(int pid, bool consoleStillOpen) { /* Search everywhere for the PID and kill it ! */
+	char* buffer=malloc(5);
+	bool pcb_found = false;
+	t_pcb *byePCB;
 
+	bool match_PCB(void *pcb){
+		t_pcb *unPCB = pcb;
+		bool matchea = (pid==unPCB->pid);
+		if (matchea){
+			pcb_found = true;
+			if (unPCB->status == EXECUTING) {
+				// if pcb is being held by CPU -> wait ! -> add it to the PCB_EXIT list
+				/* find the CPU who's running this pcb and change cpu->status to EXIT */
+			}
+		}
+		return matchea;
+	}
+	// Kill it if it's READY, BLOCKED or EXIT
+	if(list_size(PCB_READY)>0)
+		list_remove_and_destroy_by_condition(PCB_READY,match_PCB,destroy_PCB);
+	if(list_size(PCB_BLOCKED)>0)
+		list_remove_and_destroy_by_condition(PCB_BLOCKED,match_PCB,destroy_PCB);
+	if(list_size(PCB_EXIT)>0)
+		list_remove_and_destroy_by_condition(PCB_EXIT,match_PCB,destroy_PCB);
+
+	// If it's executing or attending IO wait and then kill it:
+
+
+	// Else... it's new... (probably waiting for UMC to reply with requested pages...
+	// I think if I don't close the socket, next time it will enter here with PCB->status=new
+
+	pcb_found = true; // TODO Delete !
+
+	if (pcb_found) {
+		sprintf(buffer, "%d%04d", 2, pid);
+		send(clientUMC, buffer, 5, 0);
+		if (consoleStillOpen) send(pid, "0", 1, 0); // send exit code to console
+		close(pid); // close console socket
+
+		bool getConsoleIndex(void *nbr) {
+			t_Client *unCliente = nbr;
+			bool matchea = (cliente->clientID == unCliente->clientID);
+			return matchea;
+		}
+		list_remove_by_condition(consolas_conectadas, getConsoleIndex);
+	}
+	free(buffer);
 }
 
 void process_io() {
-	int i=0;
-	while(strlen(setup.IO_ID[i])>0){
-		// aca detectar el IO y procesar la solicitud
-		i++;
+	int i;
+	while(list_size(solicitudes_io)>0){
+		t_io *io_op;
+		io_op = list_remove(solicitudes_io,0);
+		i=0;
+		while(strlen(setup.IO_ID[i])>0){
+			if (io_op->io_name==setup.IO_ID[i]){
+
+			}
+			/*
+			 * lanzar un thread por cada cola de i/o
+			 * en el thread, cada vez que un proceso termina su espera,
+			 * matchear con el PCB y agregarlo en la lista pcb_ready
+			    t_pcb *elPCB;
+				elPCB = list_remove(PCB_BLOCKED,0);
+			 */
+			i++;
+		}
+		free(io_op);
+		// si llego aca hay exception -> el io_id esta mal
 	}
-	// si llego aca hay exception -> el io_id esta mal
 }
 
 void call_handlers() {

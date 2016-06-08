@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <math.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <sys/time.h>
 #include <commons/log.h>
 #include <commons/config.h>
@@ -59,5 +60,6 @@ void 	round_robin();
 void	add2FD_SET(void *client);
 void 	check_CPU_FD_ISSET(void *client);
 void	check_CONSOLE_FD_ISSET(void *client);
+void    end_program(int pid, bool consoleStillOpen);
 
 #endif /* KERNEL_H_ */
