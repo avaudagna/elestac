@@ -13,6 +13,8 @@
 
 #define PAGINA_INVALIDA_ID "2"
 #define PAGINA_VALIDA_ID "1"
+#define STACK_OVERFLOW_ID "3"
+#define OPERACION_EXITOSA_ID "1"
 
     //typedef t_var* t_posicion;
     typedef u_int32_t t_posicion; // el foro dice que es  ((n° de pagina) * tamaño de pagina) + offset

@@ -147,7 +147,8 @@ void obtain_Logical_Address(logical_addr* direccion, t_puntero posicion) {
 	direccion->offset = posicion % setup->PAGE_SIZE;
 	direccion->tamanio = ANSISOP_VAR_SIZE;
 }
-
+//t_puntero is of the same type as t_posicion
+//TODO: Decide to use whether t_puntero or t_posicion in the whole file
 void asignar(t_puntero puntero, t_valor_variable variable) {
     usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 
@@ -158,7 +159,8 @@ void asignar(t_puntero puntero, t_valor_variable variable) {
 	//Hacemos el request a la UMC con el codigo 3 para almacenar los bytes
 	char* umc_request_buffer = NULL;
 	asprintf(&umc_request_buffer, "3%04d%04d%04d%04d", direccion_generada->page_number, direccion_generada->offset, direccion_generada->tamanio, variable);
-	if( send(umcSocketClient, umc_request_buffer, 13, 0) < 0) {
+    int request_size = sizeof(int) * 4 + sizeof(char);
+    if(send(umcSocketClient, umc_request_buffer, (size_t) request_size, 0) < 0) {
 		log_error(cpu_log, "UMC expected addr send failed");
 		return;
 	}
@@ -167,7 +169,7 @@ void asignar(t_puntero puntero, t_valor_variable variable) {
 	free(umc_request_buffer);
 
 	//Obtenemos la respuesta de la UMC de un byte
-	char * umc_response_buffer = calloc(1, 1);
+	char * umc_response_buffer = calloc(1, sizeof(char));
 	if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
 		free(umc_response_buffer);
 		log_error(cpu_log, "UMC response recv failed");
@@ -175,21 +177,21 @@ void asignar(t_puntero puntero, t_valor_variable variable) {
 	}
 
 	//StackOverflow: 3
-	if(strcmp(umc_response_buffer, "3") == 0){
+	if(strcmp(umc_response_buffer, STACK_OVERFLOW_ID) == 0){
 		free(umc_response_buffer);
 		log_error(cpu_log, "UMC raised Exception: STACKOVERFLOW");
 		return;
 	}
 
 	//EXITO (Se podria loggear de que la operacion fue exitosa)
-	if(strcmp(umc_response_buffer, "1") == 0){
+	if(strcmp(umc_response_buffer, OPERACION_EXITOSA_ID) == 0){
+        log_info(cpu_log, "asignar variable to UMC with value %d was successful", variable);
 		free(umc_response_buffer);
 		return;
 	}
 
 	free(umc_response_buffer);
 	log_error(cpu_log, "UMC raised Exception: Unknown exception");
-	return;
 }
 
 void imprimir(t_valor_variable valor) {
