@@ -8,20 +8,25 @@ gcc -I/usr/include/commons -I/usr/include/commons/collections -o umc umc.c -L/us
  * Y la consola asi:
 gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
 */
-#include <libs/pcb.h>
 #include "kernel.h"
 
 /* BEGIN OF GLOBAL STUFF I NEED EVERYWHERE */
 int consoleServer, cpuServer, clientUMC;
 int maxSocket=0;
-t_list	*PCB_READY, *PCB_BLOCKED, *PCB_EXIT; /* I think I don't need queues 4 NEW & EXECUTING */
-t_list *cpus_conectadas, *consolas_conectadas, *solicitudes_io;
-fd_set 	allSockets;
-t_log* kernel_log;
+t_log   *kernel_log;
+t_list  *PCB_READY, *PCB_BLOCKED, *PCB_EXIT;
+t_list  *consolas_conectadas, *cpus_conectadas, *cpus_executing;
+t_list **solicitudes_io;
+fd_set 	 allSockets;
 /* END OF GLOBAL STUFF I NEED EVERYWHERE */
 
 int main (int argc, char **argv){
 	kernel_log = log_create("kernel.log", "Elestac-KERNEL", true, LOG_LEVEL_TRACE);
+	PCB_READY = list_create();
+	PCB_BLOCKED = list_create();
+	PCB_EXIT = list_create();
+	cpus_conectadas = list_create();
+	consolas_conectadas = list_create();
 	if (start_kernel(argc, argv[1])<0) return 0; //load settings
 	//clientUMC=connect2UMC();
 	clientUMC=100;setup.PAGE_SIZE=1024; //TODO Delete -> lo hace connect2UMC()
@@ -29,12 +34,6 @@ int main (int argc, char **argv){
 		log_error(kernel_log, "Could not connect to the UMC. Please, try again.");
 		return 0;
 	}
-	PCB_READY = list_create();
-	PCB_BLOCKED = list_create();
-	PCB_EXIT = list_create();
-	cpus_conectadas = list_create();
-	consolas_conectadas = list_create();
-	solicitudes_io = list_create();
 	if(setServerSocket(&consoleServer, setup.KERNEL_IP, setup.PUERTO_PROG)<0){
 		log_error(kernel_log,"Error while creating the CONSOLE server.");
 		return 0;
@@ -44,10 +43,9 @@ int main (int argc, char **argv){
 		return 0;
 	}
 	maxSocket=cpuServer;
-	printf(" .:: Servers to CPUs and consoles up and running ::.\n");
-	printf(" .:: Waiting for incoming connections ::.\n\n");
+	log_info(kernel_log,"Servers to CPUs and consoles up and running. Waiting for incoming connections.");
 	while (control_clients());
-	log_error(kernel_log, "Closing kernel");
+	log_error(kernel_log, "Closing kernel.");
 	close(consoleServer);
 	close(cpuServer);
 	close(clientUMC); // TODO un-comment when real UMC is present
@@ -61,7 +59,6 @@ int start_kernel(int argc, char* configFile){
 	printf("\n\t===========================================\n\n");
 	if (argc==2){
 		if (loadConfig(configFile)<0){
-    		puts(" Config file can not be loaded.\n Please, try again.\n");
 			log_error(kernel_log, "Config file can not be loaded. Please, try again.");
     		return -1;
     	}
@@ -80,26 +77,77 @@ int start_kernel(int argc, char* configFile){
 	return 0;
 }
 
+void* do_work(void *p) { // TODO cuando se crea io_op es NULL
+	int miID = *((int *) p);
+	t_io *io_op;
+	log_info(kernel_log, "do_work: Starting the device %s with a sleep of %s milliseconds\n", setup.IO_ID[miID], setup.IO_SLEEP[miID]);
+	while(1){
+		sem_wait(&semaforo_io[miID]);
+		log_info(kernel_log, "A new I/O request arrived at %s", setup.IO_ID[miID]);
+		pthread_mutex_lock(&mut_io_list);
+		io_op = list_remove(solicitudes_io[miID], 0);
+		pthread_mutex_unlock(&mut_io_list);
+		if (io_op != NULL){
+			log_info(kernel_log,"%s will perform %s operations.", setup.IO_ID[miID], io_op->io_units);
+			int processing_io = atoi(setup.IO_SLEEP[miID]) * atoi(io_op->io_units) * 1000;
+			// TODO Carefull here !! usleep() may fail when processing_io is > 1 sec.
+			// TODO Example provided in setup.data has delays bigger than 1 sec.
+			usleep((useconds_t) processing_io);
+			int pid = io_op->pid;
+			bool match_PCB(void *pcb){
+				t_pcb *unPCB = pcb;
+				bool matchea = (pid==unPCB->pid);
+				return matchea;
+			}
+			t_pcb *elPCB;
+			elPCB = list_remove_by_condition(PCB_BLOCKED, match_PCB);
+			if (elPCB != NULL ){
+				elPCB->status = READY;
+				list_add(PCB_READY,elPCB);
+			} // Else -> The PCB was killed by end_program while performing I/O
+			log_info(kernel_log, "do_work: Finished an io operation on device %s requested by PID %d\n", setup.IO_ID[miID], io_op->pid);
+		}
+	}
+}
+
 int loadConfig(char* configFile){
+	int counter = 0, i = 0;
+	pthread_t *io_device;
 	if (configFile == NULL)	return -1;
 	t_config *config = config_create(configFile);
-	printf(" .:: Loading settings ::.\n");
+	log_info(kernel_log, "Loading settings\n");
 	if (config != NULL){
-		setup.PUERTO_PROG=config_get_int_value(config,"PUERTO_PROG");
-		setup.PUERTO_CPU=config_get_int_value(config,"PUERTO_CPU");
+		setup.PUERTO_PROG = config_get_int_value(config,"PUERTO_PROG");
+		setup.PUERTO_CPU = config_get_int_value(config,"PUERTO_CPU");
 		/* BEGIN pueden cambiar en tiempo de ejecucion */
-		setup.QUANTUM=config_get_int_value(config,"QUANTUM");
-		setup.QUANTUM_SLEEP=config_get_int_value(config,"QUANTUM_SLEEP");
+		setup.QUANTUM = config_get_int_value(config,"QUANTUM");
+		setup.QUANTUM_SLEEP = config_get_int_value(config,"QUANTUM_SLEEP");
 		/* END pueden cambiar en tiempo de ejecucion */
-		setup.IO_ID=config_get_array_value(config,"IO_ID");
-		setup.IO_SLEEP=config_get_array_value(config,"IO_SLEEP");
-
-		int i=0;
-		while
-
+		setup.IO_ID = config_get_array_value(config,"IO_ID");
+		setup.IO_SLEEP = config_get_array_value(config,"IO_SLEEP");
+		while(setup.IO_ID[counter])
+			counter++;
+		setup.IO_COUNT = counter;
+		solicitudes_io = realloc(solicitudes_io, counter * sizeof(t_list));
+		semaforo_io = realloc(semaforo_io, counter * sizeof(sem_t));
+		io_device = malloc(sizeof(pthread_t) * counter);
+		for (i = 0; i < counter; i++) {
+			solicitudes_io[i] = list_create();
+			sem_init(&semaforo_io[i], 0, 0);
+			int *thread_id = malloc(sizeof(int));
+			*thread_id=i;
+			pthread_create(&io_device[i],NULL,do_work, thread_id);
+		}
 		setup.SEM_ID=config_get_array_value(config,"SEM_ID");
 		setup.SEM_INIT=config_get_array_value(config,"SEM_INIT");
+		counter=0;
 		setup.SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
+		while(setup.SHARED_VARS[counter])
+			counter++;
+		setup.SHARED_VALUES = realloc(setup.SHARED_VALUES, counter * sizeof(int));
+		for (i = 0; i < counter; i++) {
+			setup.SHARED_VALUES[counter]=0;
+		}
 		setup.STACK_SIZE=config_get_int_value(config,"STACK_SIZE");
 		setup.PUERTO_UMC=config_get_int_value(config,"PUERTO_UMC");
 		setup.IP_UMC=config_get_string_value(config,"IP_UMC");
@@ -181,20 +229,43 @@ void check_CPU_FD_ISSET(void *cpu){
 				pcb_size=atoi(tmp_buff);
 				recv(laCPU->clientID, pcb_serializado, (size_t) pcb_size, 0);
      	        deserialize_pcb(&incomingPCB,&pcb_serializado,&pcb_size);
-				if (laCPU->status == EXIT || incomingPCB->status == EXIT) {
+				t_io *io_op = malloc(sizeof(t_io));
+				switch(incomingPCB->status) {
+				case EXIT:
 					list_add(PCB_EXIT,incomingPCB);
-				}else if(incomingPCB->status == BLOCKED){
-					list_add(PCB_BLOCKED,incomingPCB);
-					t_io *io_op = malloc(sizeof(t_io));
+					break;
+				case BLOCKED:
 					io_op->pid=laCPU->pid;
 					recv(laCPU->clientID, tmp_buff, 4, 0); // size of the io_name
 					recv(laCPU->clientID, io_op->io_name, (size_t) atoi(tmp_buff), 0);
 					recv(laCPU->clientID, io_op->io_units, 4, 0);
-					list_add(solicitudes_io, io_op); // TODO check how we manage the different queues.
-					// TODO I could create the i/o queues when loading the settings with a loop around the array.
-				}else{
-					list_add(PCB_READY,incomingPCB);
+					io_op->io_index = getIOindex(io_op->io_name);
+					if(io_op->io_index < 0 || laCPU->status == EXIT){
+						log_error(kernel_log, "AnSisOp program request an unplugged device or the console has been closed. #VamoACalmarno");
+						list_add(PCB_EXIT,incomingPCB);
+					}else{
+						pthread_mutex_lock(&mut_io_list);
+						list_add(solicitudes_io[io_op->io_index], io_op);
+						pthread_mutex_unlock(&mut_io_list);
+						list_add(PCB_BLOCKED,incomingPCB);
+					}
+					break;
+				case READY:
+					if (laCPU->status == EXIT){
+						list_add(PCB_EXIT, incomingPCB);
+					} else {
+						list_add(PCB_READY, incomingPCB);
+					}
+					break;
+				default:
+					log_error(kernel_log, "recv() a broken PCB");
 				}
+				bool getCPUIndex(void *nbr){
+					t_Client *unaCPU = nbr;
+					bool matchea = (laCPU->clientID == unaCPU->clientID);
+					return matchea;
+				}
+				list_remove_by_condition(cpus_executing, getCPUIndex);
 				laCPU->status = READY;
 				laCPU->pid = 0;
 				list_add(cpus_conectadas, laCPU); /* return the CPU to the queue */
@@ -220,18 +291,20 @@ void check_CPU_FD_ISSET(void *cpu){
 				t_Client *unCliente = nbr;
 				bool matchea = (laCPU->clientID == unCliente->clientID);
 				if (matchea){
-					/* si matchea entonces matar el PCB y enviar error a consola */
+					end_program(laCPU->pid, true);
 				}
 				return matchea;
 			}
 			list_remove_by_condition(cpus_conectadas, getCPUIndex);
 		}
 	}
+	free(cpu_protocol);
+	free(tmp_buff);
 }
 
 void destroy_PCB(void *pcb){
 	t_pcb *unPCB = pcb;
-	free(unPCB); // TODO check if this will actually CLEAN the PCB;
+	free(unPCB);
 }
 
 void check_CONSOLE_FD_ISSET(void *console){
@@ -332,67 +405,77 @@ void accept_new_PCB(int newConsole){
 }
 
 void round_robin(){
-	t_Client *laCPU=list_remove(cpus_conectadas,0);
-	void * pcb_buffer = NULL;
-	void * tmp_buffer = NULL;
-	int tmp_buffer_size = 1+4+4+4; /* 1+QUANTUM+QUANTUM_SLEEP+PCB_SIZE */
-	int pcb_buffer_size = 0;
-	t_pcb *tuPCB;
-	tuPCB=list_remove(PCB_READY,0);
-	tuPCB->status=EXECUTING;
-	laCPU->status=EXECUTING;
-	laCPU->pid=tuPCB->pid;
+	int       tmp_buffer_size = 1+4+4+4; /* 1+QUANTUM+QUANTUM_SLEEP+PCB_SIZE */
+	int       pcb_buffer_size = 0;
+	void     *pcb_buffer = NULL;
+	void     *tmp_buffer = NULL;
+	t_Client *laCPU = list_remove(cpus_conectadas,0);
+	t_pcb    *tuPCB = list_remove(PCB_READY,0);
+	tuPCB->status = EXECUTING;
+	laCPU->status = EXECUTING;
+	laCPU->pid = tuPCB->pid;
 	serialize_pcb(tuPCB, &pcb_buffer, &pcb_buffer_size);
 	tmp_buffer = malloc((size_t) tmp_buffer_size+pcb_buffer_size);
-	asprintf(&tmp_buffer, "%d%04d%04d%04d", 1,setup.QUANTUM,setup.QUANTUM_SLEEP, pcb_buffer_size);
+	asprintf(&tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
 	serialize_data(pcb_buffer, (size_t ) pcb_buffer_size, &tmp_buffer, &tmp_buffer_size );
-	log_info(kernel_log,"Submitting to CPU %d the PID %d",laCPU->clientID, tuPCB->pid);
-	send(laCPU->clientID, tmp_buffer, tmp_buffer_size,0);
+	log_info(kernel_log,"Submitting to CPU %d the PID %d", laCPU->clientID, tuPCB->pid);
+	send(laCPU->clientID, tmp_buffer, tmp_buffer_size, 0);
+	free(tmp_buffer);
+	list_add(cpus_executing,laCPU);
 }
 
 void end_program(int pid, bool consoleStillOpen) { /* Search everywhere for the PID and kill it ! */
+/*
+ * CASOS
+ *
+ * 1) CPU cierra la conexion -> no tengo el PCB en ningun lado, tengo el PID
+ *      a) Avisar a UMC
+ *      b) Avisar a consola
+ * 2) Consola cierra la conexion -> tengo el PID
+ *      a) Avisar a UMC
+ *      b) Buscar PCB y borrarlo
+ *          i) puede estar ready, blocked o exit (casos lindos)
+ *          ii) puede estar executing -> cambiar status de CPU
+ * 3) Programa termina, hay error en ejecución de CPU o problema en UMC -> esta en PCB_EXIT
+ *      a) Avisar a UMC
+ *      b) Buscar PCB y borrarlo
+ *          i) seguro está en exit (pero no pierdo nada con buscar en los otros)
+ *      c) Avisar a consola
+ * 4) It's new... (probably waiting for UMC to reply with requested pages)
+ *      a) Puedo ignorar este caso si no cierro el socket con consola... en la próxima vuelta el PCB va a estar en PCB_READY.
+ */
 	char* buffer=malloc(5);
 	bool pcb_found = false;
-	t_pcb *byePCB;
-
 	bool match_PCB(void *pcb){
 		t_pcb *unPCB = pcb;
 		bool matchea = (pid==unPCB->pid);
-		if (matchea){
+		if (matchea)
 			pcb_found = true;
-			if (unPCB->status == EXECUTING) {
-				// if pcb is being held by CPU -> wait ! -> add it to the PCB_EXIT list
-				/* find the CPU who's running this pcb and change cpu->status to EXIT */
-			}
-		}
 		return matchea;
 	}
-	// Kill it if it's READY, BLOCKED or EXIT
-	if(list_size(PCB_READY)>0)
+	if (list_size(PCB_READY) > 0)
 		list_remove_and_destroy_by_condition(PCB_READY,match_PCB,destroy_PCB);
-	if(list_size(PCB_BLOCKED)>0)
+	if (list_size(PCB_BLOCKED) > 0)
 		list_remove_and_destroy_by_condition(PCB_BLOCKED,match_PCB,destroy_PCB);
-	if(list_size(PCB_EXIT)>0)
+	if (list_size(PCB_EXIT) > 0)
 		list_remove_and_destroy_by_condition(PCB_EXIT,match_PCB,destroy_PCB);
-
-	// If it's executing or attending IO wait and then kill it:
-
-
-	// Else... it's new... (probably waiting for UMC to reply with requested pages...
-	// I think if I don't close the socket, next time it will enter here with PCB->status=new
-
-	pcb_found = true; // TODO Delete !
-
-	if (pcb_found) {
+	if (list_size(cpus_executing) > 0){
+		bool getCPUIndex(void *nbr) {
+			t_Client *aCPU = nbr;
+			return (pid == aCPU->pid);
+		}
+		t_Client *theCPU;
+		theCPU = list_find(cpus_executing, getCPUIndex);
+		theCPU->status = EXIT; /* TODO TEST if this will actually work when check_CPU_FD_ISSET recv() a PCB_BLOCKED from the CPU */
+	}
+	if (pcb_found == true) {
 		sprintf(buffer, "%d%04d", 2, pid);
 		send(clientUMC, buffer, 5, 0);
 		if (consoleStillOpen) send(pid, "0", 1, 0); // send exit code to console
 		close(pid); // close console socket
-
 		bool getConsoleIndex(void *nbr) {
 			t_Client *unCliente = nbr;
-			bool matchea = (cliente->clientID == unCliente->clientID);
-			return matchea;
+			return (pid == unCliente->clientID);
 		}
 		list_remove_by_condition(consolas_conectadas, getConsoleIndex);
 	}
@@ -401,32 +484,29 @@ void end_program(int pid, bool consoleStillOpen) { /* Search everywhere for the 
 
 void process_io() {
 	int i;
-	while(list_size(solicitudes_io)>0){
-		t_io *io_op;
-		io_op = list_remove(solicitudes_io,0);
-		i=0;
-		while(strlen(setup.IO_ID[i])>0){
-			if (io_op->io_name==setup.IO_ID[i]){
-
-			}
-			/*
-			 * lanzar un thread por cada cola de i/o
-			 * en el thread, cada vez que un proceso termina su espera,
-			 * matchear con el PCB y agregarlo en la lista pcb_ready
-			    t_pcb *elPCB;
-				elPCB = list_remove(PCB_BLOCKED,0);
-			 */
-			i++;
+	for (i = 0; i < setup.IO_COUNT; i++) {
+		if (list_size(solicitudes_io[i]) > 0) {
+			sem_post(&semaforo_io[i]);
 		}
-		free(io_op);
-		// si llego aca hay exception -> el io_id esta mal
 	}
 }
 
-void call_handlers() {
-	if(list_size(PCB_BLOCKED)>0) process_io();
-	if(list_size(PCB_EXIT)>0) end_program();
-	if (list_size(cpus_conectadas) > 0 && list_size(PCB_READY) > 0 ){
-		round_robin();
+int getIOindex(char *io_name) {
+	int i;
+	for (i = 0; i < setup.IO_COUNT; i++) {
+		if (strcmp(setup.IO_ID[i],io_name) == 0) {
+			return i;
+		}
 	}
+	return -1;
+}
+
+void call_handlers() {
+	while (list_size(PCB_EXIT) > 0) {
+		t_pcb *elPCB;
+		elPCB = list_get(PCB_EXIT, 0);
+		end_program(elPCB->pid, true);
+	}
+	if (list_size(PCB_BLOCKED) > 0) process_io();
+	while (list_size(cpus_conectadas) > 0 && list_size(PCB_READY) > 0 ) round_robin();
 }
