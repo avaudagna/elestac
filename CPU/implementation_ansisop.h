@@ -12,7 +12,8 @@
 #define ANSISOP_VAR_SIZE 4
 
 
-    typedef t_var* t_posicion;
+    //typedef t_var* t_posicion;
+    typedef u_int32_t t_posicion; // el foro dice que es  ((n° de pagina) * tamaño de pagina) + offset
 
     extern int umcSocketClient;
 	extern int kernelSocketClient;
@@ -26,12 +27,14 @@
 
     logical_addr * armar_direccion_logica(int pointer, int size);
     int add_stack_variable(int *stack_pointer, t_stack **stack, t_var *nueva_variable);
+    t_posicion get_t_posicion(const t_var *nueva_variable);
 
     //#2
     t_puntero obtenerPosicionVariable(t_nombre_variable variable);
 
     //#3
     t_valor_variable dereferenciar(t_puntero puntero);
+    void obtain_Logical_Address(logical_addr* direccion, t_puntero posicion);
 
     //#4
     void asignar(t_puntero puntero, t_valor_variable variable);

@@ -5,7 +5,7 @@ static const int CONTENIDO_VARIABLE = 20;
 static const int POSICION_MEMORIA = 0x10;
 
 
-t_puntero definirVariable(t_nombre_variable variable) {
+t_posicion definirVariable(t_nombre_variable variable) {
 
     usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 
@@ -40,7 +40,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
     }
     free(umc_response_buffer);
 
-    //5) Si esta bien, retornamos el nuevo t_var a ser agregado al stack
+    //5) Si esta bien, agregamos la nueva t_var al stack
     t_var * nueva_variable = calloc(1, sizeof(t_var));
     nueva_variable->var_id = variable;
     nueva_variable->page_number = direccion_espectante->page_number;
@@ -49,8 +49,13 @@ t_puntero definirVariable(t_nombre_variable variable) {
     free(direccion_espectante);
     add_stack_variable(&actual_stack_pointer, &actual_stack_index, nueva_variable);
 
-    return (t_puntero) actual_stack_pointer;
+    //6) y retornamos la t_posicion asociada
+    t_posicion posicion_nueva_variable = get_t_posicion(nueva_variable);
+    return posicion_nueva_variable;
+}
 
+t_posicion get_t_posicion(const t_var *variable) {
+    return (t_posicion) (variable->page_number * setup->PAGE_SIZE) + variable->offset;
 }
 
 logical_addr * armar_direccion_logica(int stack_index_actual, int page_size) {
@@ -103,7 +108,7 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 	free(umc_request_buffer);
 
 	//Obtenemos la respuesta de la UMC
-	char * umc_response_buffer = calloc(1, sizeof(char));
+	char * umc_response_buffer = calloc(1, sizeof(t_valor_variable));
 	if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
 		free(umc_response_buffer);
 		log_error(cpu_log, "UMC response recv failed");
@@ -111,31 +116,31 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 	}
 
 	//Pagina invalida
-	if(umc_response_buffer == '2'){
+	if(strcmp(umc_response_buffer, PAGINA_INVALIDA_ID) == 0){
 		free(umc_response_buffer);
-		log_error(cpu_log, "UMC response: invalid page");
+		log_error(cpu_log, "UMC raised Exception: Invalid page");
 		return 0;
 	}
 
 	//EXITO
-	if(umc_response_buffer == '1'){
+	if(strcmp(umc_response_buffer, PAGINA_VALIDA_ID) == 0){
 		free(umc_response_buffer);
 		umc_response_buffer = calloc(1, 4);
 
-		if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
+		if( recv(umcSocketClient , umc_response_buffer , sizeof(t_valor_variable) , 0) < 0) {
 			free(umc_response_buffer);
 			log_error(cpu_log, "UMC response recv failed");
 			return 0;
 		}
 
-		return (t_valor_variable) atoi(umcSocketClient);
+		return (t_valor_variable) atoi(umc_response_buffer);
 	}
 
 	//Error :(
 	return 0;
 }
 
-void obtain_Logical_Address(logical_addr* direccion, t_puntero posicion){
+void obtain_Logical_Address(logical_addr* direccion, t_puntero posicion) {
 	direccion->page_number = posicion / setup->PAGE_SIZE;
 	direccion->offset = posicion % setup->PAGE_SIZE;
 	direccion->tamanio = ANSISOP_VAR_SIZE;
