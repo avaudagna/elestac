@@ -105,6 +105,8 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 		log_error(cpu_log, "UMC expected addr send failed");
 		return 0;
 	}
+
+	free(direccion_generada);
 	free(umc_request_buffer);
 
 	//Obtenemos la respuesta de la UMC
@@ -148,7 +150,46 @@ void obtain_Logical_Address(logical_addr* direccion, t_puntero posicion) {
 
 void asignar(t_puntero puntero, t_valor_variable variable) {
     usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
-	printf("Asignando en %d el valor %d\n", puntero, variable);
+
+	//Generamos la direccion logica a partir del puntero
+	logical_addr * direccion_generada = calloc(1, sizeof(logical_addr));
+	obtain_Logical_Address(direccion_generada, puntero);
+
+	//Hacemos el request a la UMC con el codigo 3 para almacenar los bytes
+	char* umc_request_buffer = NULL;
+	asprintf(&umc_request_buffer, "3%04d%04d%04d%04d", direccion_generada->page_number, direccion_generada->offset, direccion_generada->tamanio, variable);
+	if( send(umcSocketClient, umc_request_buffer, 13, 0) < 0) {
+		log_error(cpu_log, "UMC expected addr send failed");
+		return;
+	}
+
+	free(direccion_generada);
+	free(umc_request_buffer);
+
+	//Obtenemos la respuesta de la UMC de un byte
+	char * umc_response_buffer = calloc(1, 1);
+	if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
+		free(umc_response_buffer);
+		log_error(cpu_log, "UMC response recv failed");
+		return;
+	}
+
+	//StackOverflow: 3
+	if(strcmp(umc_response_buffer, "3") == 0){
+		free(umc_response_buffer);
+		log_error(cpu_log, "UMC raised Exception: STACKOVERFLOW");
+		return;
+	}
+
+	//EXITO (Se podria loggear de que la operacion fue exitosa)
+	if(strcmp(umc_response_buffer, "1") == 0){
+		free(umc_response_buffer);
+		return;
+	}
+
+	free(umc_response_buffer);
+	log_error(cpu_log, "UMC raised Exception: Unknown exception");
+	return;
 }
 
 void imprimir(t_valor_variable valor) {
