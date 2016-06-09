@@ -11,6 +11,8 @@
 
 #define ANSISOP_VAR_SIZE 4
 
+#define PAGINA_INVALIDA_ID "2"
+#define PAGINA_VALIDA_ID "1"
 
     //typedef t_var* t_posicion;
     typedef u_int32_t t_posicion; // el foro dice que es  ((n° de pagina) * tamaño de pagina) + offset
