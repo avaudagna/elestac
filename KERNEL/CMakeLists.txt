@@ -23,4 +23,4 @@ LINK_DIRECTORIES(/usr/lib)
 
 add_executable(KERNEL ${SOURCE_FILES})
 
-TARGET_LINK_LIBRARIES(KERNEL parser-ansisop commons)
+TARGET_LINK_LIBRARIES(KERNEL parser-ansisop commons pthread)

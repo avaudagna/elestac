@@ -3,3 +3,222 @@
 [ERROR] 15:10:03:18 Elestac-KERNEL/(23934:23934): Could not connect to the UMC. Please, try again.
 [ERROR] 13:57:26:356 Elestac-KERNEL/(20482:20482): Error while creating the CONSOLE server.
 [ERROR] 14:05:03:506 Elestac-KERNEL/(21849:21849): Error while creating the CONSOLE server.
+[WARNING] 03:56:08:775 Elestac-KERNEL/(9212:9262): A new I/O request arrived at Impresora
+[ERROR] 04:40:09:445 Elestac-KERNEL/(12597:12597): Error while creating the CONSOLE server.
+[WARNING] 04:40:34:589 Elestac-KERNEL/(12674:12678): A new I/O request arrived at Disco
+[WARNING] 04:53:08:315 Elestac-KERNEL/(13597:13597): Los list_size son: 0 y 1
+[WARNING] 04:53:44:772 Elestac-KERNEL/(13597:13597): Los list_size son: 0 y 1
+[WARNING] 04:55:09:31 Elestac-KERNEL/(13802:13802): Los list_size son: 6324544 y 6321984
+[WARNING] 04:58:31:171 Elestac-KERNEL/(14136:14136): Los list_size son: 0 y 0
+[WARNING] 04:58:42:960 Elestac-KERNEL/(14136:14136): Los list_size son: 0 y 0
+[WARNING] 04:58:47:229 Elestac-KERNEL/(14136:14136): Los list_size son: 0 y 0
+[WARNING] 04:58:50:664 Elestac-KERNEL/(14136:14136): Los list_size son: 0 y 0
+[WARNING] 04:59:00:346 Elestac-KERNEL/(14136:14143): A new I/O request arrived at Coso
+[WARNING] 04:59:00:347 Elestac-KERNEL/(14136:14143): Coso will perform 4212600 operations.
+[WARNING] 05:00:05:189 Elestac-KERNEL/(14136:14136): Los list_size son: 0 y 0
+[WARNING] 05:00:05:189 Elestac-KERNEL/(14136:14136): Los list_size son: 0 y 0
+[WARNING] 05:00:05:189 Elestac-KERNEL/(14136:14136): Los list_size son: 0 y 0
+[WARNING] 05:00:05:189 Elestac-KERNEL/(14136:14136): Los list_size son: 0 y 0
+[WARNING] 05:00:05:190 Elestac-KERNEL/(14136:14143): A new I/O request arrived at Coso
+[WARNING] 05:00:05:190 Elestac-KERNEL/(14136:14143): Coso will perform 4212600 operations.
+[WARNING] 05:02:30:4 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:02:30:5 Elestac-KERNEL/(14404:14408): Coso will perform 4212600 operations.
+[WARNING] 05:02:35:5 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:02:35:5 Elestac-KERNEL/(14404:14408): Coso will perform 4212600 operations.
+[WARNING] 05:02:40:5 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:02:40:5 Elestac-KERNEL/(14404:14408): Coso will perform 4212600 operations.
+[WARNING] 05:02:45:5 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:02:45:6 Elestac-KERNEL/(14404:14408): Coso will perform 4212600 operations.
+[WARNING] 05:02:50:6 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:02:50:6 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:02:50:6 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:02:50:6 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:02:50:6 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:02:50:6 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:02:50:6 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:02:50:6 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:02:50:6 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:02:50:6 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:02:50:6 Elestac-KERNEL/(14404:14408): A new I/O request arrived at Coso
+[WARNING] 05:03:30:722 Elestac-KERNEL/(14487:14494): A new I/O request arrived at Coso
+[WARNING] 05:03:30:722 Elestac-KERNEL/(14487:14494): Coso will perform 4212632 operations.
+[WARNING] 05:03:48:60 Elestac-KERNEL/(14537:14541): A new I/O request arrived at Coso
+[WARNING] 05:03:48:60 Elestac-KERNEL/(14537:14541): Coso will perform 4212632 operations.
+[WARNING] 05:03:51:60 Elestac-KERNEL/(14537:14541): A new I/O request arrived at Coso
+[WARNING] 05:03:51:60 Elestac-KERNEL/(14537:14541): Coso will perform 4212632 operations.
+[WARNING] 05:03:54:61 Elestac-KERNEL/(14537:14541): A new I/O request arrived at Coso
+[WARNING] 05:03:54:61 Elestac-KERNEL/(14537:14541): Coso will perform 4212632 operations.
+[WARNING] 05:03:57:61 Elestac-KERNEL/(14537:14541): A new I/O request arrived at Coso
+[WARNING] 05:03:57:61 Elestac-KERNEL/(14537:14541): Coso will perform 4212632 operations.
+[WARNING] 05:04:00:61 Elestac-KERNEL/(14537:14541): A new I/O request arrived at Coso
+[WARNING] 05:04:00:62 Elestac-KERNEL/(14537:14541): A new I/O request arrived at Coso
+[WARNING] 05:04:00:62 Elestac-KERNEL/(14537:14541): A new I/O request arrived at Coso
+[WARNING] 05:04:00:62 Elestac-KERNEL/(14537:14541): A new I/O request arrived at Coso
+[WARNING] 05:04:00:62 Elestac-KERNEL/(14537:14541): A new I/O request arrived at Coso
+[WARNING] 05:07:14:168 Elestac-KERNEL/(14773:14774): A new I/O request arrived at Disco
+[WARNING] 05:07:14:168 Elestac-KERNEL/(14773:14777): A new I/O request arrived at Coso
+[WARNING] 05:07:14:168 Elestac-KERNEL/(14773:14774): Disco will perform 5 operations.
+[WARNING] 05:07:14:169 Elestac-KERNEL/(14773:14777): Coso will perform 4 operations.
+[WARNING] 05:07:17:169 Elestac-KERNEL/(14773:14774): A new I/O request arrived at Disco
+[WARNING] 05:07:17:169 Elestac-KERNEL/(14773:14777): A new I/O request arrived at Coso
+[WARNING] 05:07:17:169 Elestac-KERNEL/(14773:14774): Disco will perform 5 operations.
+[WARNING] 05:07:17:169 Elestac-KERNEL/(14773:14777): Coso will perform 4 operations.
+[WARNING] 05:07:20:170 Elestac-KERNEL/(14773:14774): A new I/O request arrived at Disco
+[WARNING] 05:07:20:170 Elestac-KERNEL/(14773:14777): A new I/O request arrived at Coso
+[WARNING] 05:10:43:141 Elestac-KERNEL/(14998:14999): A new I/O request arrived at Disco
+[WARNING] 05:10:43:142 Elestac-KERNEL/(14998:15002): A new I/O request arrived at Coso
+[WARNING] 05:10:43:142 Elestac-KERNEL/(14998:14999): Disco will perform 5 operations.
+[WARNING] 05:10:43:142 Elestac-KERNEL/(14998:15002): Coso will perform 4 operations.
+[WARNING] 05:10:46:142 Elestac-KERNEL/(14998:14999): A new I/O request arrived at Disco
+[WARNING] 05:10:46:142 Elestac-KERNEL/(14998:14999): Disco will perform 5 operations.
+[WARNING] 05:10:46:142 Elestac-KERNEL/(14998:15002): A new I/O request arrived at Coso
+[WARNING] 05:10:46:142 Elestac-KERNEL/(14998:15002): Coso will perform 4 operations.
+[WARNING] 05:10:49:142 Elestac-KERNEL/(14998:14999): A new I/O request arrived at Disco
+[WARNING] 05:10:49:142 Elestac-KERNEL/(14998:14999): Disco will perform 5 operations.
+[WARNING] 05:10:49:143 Elestac-KERNEL/(14998:15002): A new I/O request arrived at Coso
+[WARNING] 05:10:49:143 Elestac-KERNEL/(14998:15002): Coso will perform 4 operations.
+[WARNING] 05:10:52:143 Elestac-KERNEL/(14998:14999): A new I/O request arrived at Disco
+[WARNING] 05:10:52:143 Elestac-KERNEL/(14998:14999): Disco will perform 5 operations.
+[WARNING] 05:10:52:145 Elestac-KERNEL/(14998:15002): A new I/O request arrived at Coso
+[WARNING] 05:10:52:145 Elestac-KERNEL/(14998:15002): Coso will perform 4 operations.
+[WARNING] 05:10:55:144 Elestac-KERNEL/(14998:14999): A new I/O request arrived at Disco
+[WARNING] 05:10:55:144 Elestac-KERNEL/(14998:14999): A new I/O request arrived at Disco
+[WARNING] 05:10:55:144 Elestac-KERNEL/(14998:14999): A new I/O request arrived at Disco
+[WARNING] 05:10:55:144 Elestac-KERNEL/(14998:14999): A new I/O request arrived at Disco
+[WARNING] 05:10:55:144 Elestac-KERNEL/(14998:14999): A new I/O request arrived at Disco
+[WARNING] 05:10:55:145 Elestac-KERNEL/(14998:15002): A new I/O request arrived at Coso
+[WARNING] 05:10:55:145 Elestac-KERNEL/(14998:15002): A new I/O request arrived at Coso
+[WARNING] 05:10:55:145 Elestac-KERNEL/(14998:15002): A new I/O request arrived at Coso
+[WARNING] 05:10:55:146 Elestac-KERNEL/(14998:15002): A new I/O request arrived at Coso
+[WARNING] 05:10:55:146 Elestac-KERNEL/(14998:15002): A new I/O request arrived at Coso
+[INFO] 05:15:02:288 Elestac-KERNEL/(15259:15263): do_work: Starting the device Coso with a sleep of 10 milliseconds
+
+[INFO] 05:15:02:288 Elestac-KERNEL/(15259:15262): do_work: Starting the device Scanner with a sleep of 1000 milliseconds
+
+[INFO] 05:15:02:288 Elestac-KERNEL/(15259:15261): do_work: Starting the device Impresora with a sleep of 2000 milliseconds
+
+[INFO] 05:15:02:288 Elestac-KERNEL/(15259:15260): do_work: Starting the device Disco with a sleep of 1000 milliseconds
+
+[INFO] 05:15:03:289 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[INFO] 05:15:03:289 Elestac-KERNEL/(15259:15263): A new I/O request arrived at Coso
+[WARNING] 05:15:03:289 Elestac-KERNEL/(15259:15260): Disco will perform 5 operations.
+[WARNING] 05:15:03:289 Elestac-KERNEL/(15259:15263): Coso will perform 4 operations.
+[INFO] 05:15:03:329 Elestac-KERNEL/(15259:15263): do_work: Finished an io operation on device Coso requested by PID 0
+
+[INFO] 05:15:04:290 Elestac-KERNEL/(15259:15263): A new I/O request arrived at Coso
+[WARNING] 05:15:04:290 Elestac-KERNEL/(15259:15263): Coso will perform 4 operations.
+[INFO] 05:15:04:330 Elestac-KERNEL/(15259:15263): do_work: Finished an io operation on device Coso requested by PID 1
+
+[INFO] 05:15:05:291 Elestac-KERNEL/(15259:15263): A new I/O request arrived at Coso
+[WARNING] 05:15:05:291 Elestac-KERNEL/(15259:15263): Coso will perform 4 operations.
+[INFO] 05:15:05:331 Elestac-KERNEL/(15259:15263): do_work: Finished an io operation on device Coso requested by PID 2
+
+[INFO] 05:15:06:292 Elestac-KERNEL/(15259:15263): A new I/O request arrived at Coso
+[WARNING] 05:15:06:292 Elestac-KERNEL/(15259:15263): Coso will perform 4 operations.
+[INFO] 05:15:06:332 Elestac-KERNEL/(15259:15263): do_work: Finished an io operation on device Coso requested by PID 3
+
+[INFO] 05:15:08:289 Elestac-KERNEL/(15259:15260): do_work: Finished an io operation on device Disco requested by PID 0
+
+[INFO] 05:15:08:289 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[WARNING] 05:15:08:289 Elestac-KERNEL/(15259:15260): Disco will perform 5 operations.
+[INFO] 05:15:13:290 Elestac-KERNEL/(15259:15260): do_work: Finished an io operation on device Disco requested by PID 1
+
+[INFO] 05:15:13:290 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[WARNING] 05:15:13:290 Elestac-KERNEL/(15259:15260): Disco will perform 5 operations.
+[INFO] 05:15:18:290 Elestac-KERNEL/(15259:15260): do_work: Finished an io operation on device Disco requested by PID 2
+
+[INFO] 05:15:18:291 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[WARNING] 05:15:18:291 Elestac-KERNEL/(15259:15260): Disco will perform 5 operations.
+[INFO] 05:15:23:291 Elestac-KERNEL/(15259:15260): do_work: Finished an io operation on device Disco requested by PID 3
+
+[INFO] 05:15:23:291 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[INFO] 05:15:23:291 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[INFO] 05:15:23:292 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[INFO] 05:15:23:292 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[INFO] 05:15:23:292 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[INFO] 05:15:23:292 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[INFO] 05:15:23:292 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[INFO] 05:15:23:292 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[INFO] 05:15:23:292 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[INFO] 05:15:23:292 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[INFO] 05:15:23:292 Elestac-KERNEL/(15259:15260): A new I/O request arrived at Disco
+[INFO] 05:27:56:888 Elestac-KERNEL/(16020:16024): do_work: Starting the device Coso with a sleep of 10 milliseconds
+
+[INFO] 05:27:56:888 Elestac-KERNEL/(16020:16023): do_work: Starting the device Scanner with a sleep of 1000 milliseconds
+
+[INFO] 05:27:56:888 Elestac-KERNEL/(16020:16022): do_work: Starting the device Impresora with a sleep of 2000 milliseconds
+
+[INFO] 05:27:56:888 Elestac-KERNEL/(16020:16021): do_work: Starting the device Disco with a sleep of 1000 milliseconds
+
+[INFO] 05:27:57:889 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 05:27:57:889 Elestac-KERNEL/(16020:16024): A new I/O request arrived at Coso
+[INFO] 05:27:57:889 Elestac-KERNEL/(16020:16021): Disco will perform 5 operations.
+[INFO] 05:27:57:889 Elestac-KERNEL/(16020:16024): Coso will perform 4 operations.
+[INFO] 05:27:57:929 Elestac-KERNEL/(16020:16024): do_work: Finished an io operation on device Coso requested by PID 0
+
+[INFO] 05:27:58:889 Elestac-KERNEL/(16020:16024): A new I/O request arrived at Coso
+[INFO] 05:27:58:889 Elestac-KERNEL/(16020:16024): Coso will perform 4 operations.
+[INFO] 05:27:58:929 Elestac-KERNEL/(16020:16024): do_work: Finished an io operation on device Coso requested by PID 1
+
+[INFO] 05:27:59:890 Elestac-KERNEL/(16020:16024): A new I/O request arrived at Coso
+[INFO] 05:27:59:890 Elestac-KERNEL/(16020:16024): Coso will perform 4 operations.
+[INFO] 05:27:59:930 Elestac-KERNEL/(16020:16024): do_work: Finished an io operation on device Coso requested by PID 2
+
+[INFO] 05:28:00:891 Elestac-KERNEL/(16020:16024): A new I/O request arrived at Coso
+[INFO] 05:28:00:891 Elestac-KERNEL/(16020:16024): Coso will perform 4 operations.
+[INFO] 05:28:00:931 Elestac-KERNEL/(16020:16024): do_work: Finished an io operation on device Coso requested by PID 3
+
+[INFO] 05:28:02:889 Elestac-KERNEL/(16020:16021): do_work: Finished an io operation on device Disco requested by PID 0
+
+[INFO] 05:28:02:889 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 05:28:02:889 Elestac-KERNEL/(16020:16021): Disco will perform 5 operations.
+[INFO] 05:28:07:889 Elestac-KERNEL/(16020:16021): do_work: Finished an io operation on device Disco requested by PID 1
+
+[INFO] 05:28:07:890 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 05:28:07:891 Elestac-KERNEL/(16020:16021): Disco will perform 5 operations.
+[INFO] 05:28:12:891 Elestac-KERNEL/(16020:16021): do_work: Finished an io operation on device Disco requested by PID 2
+
+[INFO] 05:28:12:891 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 05:28:12:891 Elestac-KERNEL/(16020:16021): Disco will perform 5 operations.
+[INFO] 05:28:17:891 Elestac-KERNEL/(16020:16021): do_work: Finished an io operation on device Disco requested by PID 3
+
+[INFO] 05:28:17:892 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 05:28:17:892 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 05:28:17:892 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 05:28:17:892 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 05:28:17:892 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 05:28:17:892 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 05:28:17:892 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 05:28:17:892 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 05:28:17:892 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 05:28:17:892 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 05:28:17:892 Elestac-KERNEL/(16020:16021): A new I/O request arrived at Disco
+[INFO] 07:03:30:949 Elestac-KERNEL/(21392:21396): do_work: Starting the device Disco with a sleep of 1000 milliseconds
+
+[INFO] 07:03:30:949 Elestac-KERNEL/(21392:21398): do_work: Starting the device Impresora with a sleep of 2000 milliseconds
+
+[INFO] 07:03:30:953 Elestac-KERNEL/(21392:21399): do_work: Starting the device Scanner with a sleep of 1000 milliseconds
+
+[INFO] 07:03:30:957 Elestac-KERNEL/(21392:21402): do_work: Starting the device Coso with a sleep of 10 milliseconds
+
+[INFO] 07:13:47:896 Elestac-KERNEL/(21995:21995): Loading settings
+
+[INFO] 07:13:47:896 Elestac-KERNEL/(21995:21999): do_work: Starting the device Coso with a sleep of 10 milliseconds
+
+[INFO] 07:13:47:896 Elestac-KERNEL/(21995:21998): do_work: Starting the device Scanner with a sleep of 1000 milliseconds
+
+[INFO] 07:13:47:897 Elestac-KERNEL/(21995:21997): do_work: Starting the device Impresora with a sleep of 2000 milliseconds
+
+[INFO] 07:13:47:905 Elestac-KERNEL/(21995:21996): do_work: Starting the device Disco with a sleep of 1000 milliseconds
+
+[INFO] 07:14:44:113 Elestac-KERNEL/(22089:22089): Loading settings
+
+[INFO] 07:14:44:113 Elestac-KERNEL/(22089:22091): do_work: Starting the device Impresora with a sleep of 2000 milliseconds
+
+[INFO] 07:14:44:113 Elestac-KERNEL/(22089:22092): do_work: Starting the device Scanner with a sleep of 1000 milliseconds
+
+[INFO] 07:14:44:113 Elestac-KERNEL/(22089:22089): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 07:14:44:113 Elestac-KERNEL/(22089:22090): do_work: Starting the device Disco with a sleep of 1000 milliseconds
+
+[INFO] 07:14:44:115 Elestac-KERNEL/(22089:22093): do_work: Starting the device Coso with a sleep of 10 milliseconds
+
