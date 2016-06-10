@@ -280,6 +280,21 @@ void check_CPU_FD_ISSET(void *cpu){
 				//grabar_valor  [identificador de variable compartida] [valor a grabar]
 				log_warning(kernel_log,"Error with CPU protocol and shared variable operation. Function check_CPU_FD_ISSET.");
 				break;
+			case 6:// imprimirValor
+				recv(laCPU->clientID, tmp_buff, 4, 0);
+				send(laCPU->pid, "1", 1, 0);
+				send(laCPU->pid, tmp_buff, 4, 0); // send the value to the console
+				break;
+			case 7:// imprimirTexto
+				recv(laCPU->clientID, tmp_buff, 4, 0);
+				size_t txtSize = (size_t) atoi(tmp_buff);
+				char *theTXT = malloc(txtSize);
+				recv(laCPU->clientID, theTXT, txtSize, 0);
+				char *txt2console = NULL;
+				asprintf(&txt2console, "%d%04d%s", 2, txtSize, theTXT);
+				send(laCPU->pid, txt2console, (5+txtSize), 0); // send the text to the console
+				free(theTXT);
+				break;
 			default:
 				log_error(kernel_log,"Caso no contemplado. CPU dijo: %s",cpu_protocol);
 			}
