@@ -93,29 +93,31 @@ int main(int argc, char *argv[]) {
 	while (1);
 
 	do {
-		if (recv(kernelSocketClient, kernel_reply, 2, 0) < 0) {
-			puts("recv failed");
-			break;
-		}
-		recv(kernelSocketClient, kernel_reply, 2, 0);
-		if (!strcmp(kernel_reply, "ID")) {
-			//recibo luego 5 -> 1 variable + 4 valor_variable
-			char *var = malloc(1);
-			char *valor = malloc(4);
-			recv(kernelSocketClient, var, 1, 0);
-			recv(kernelSocketClient, valor, 4, 0);
-			printf("El valor de la variable %s es: %s", var, valor);//controlar este printf
-			free(var);
-			free(valor);
+		if (kernelSocketClient, kernel_reply, 1, 0) > 0){
+			log_info(kernel_log,"CPU dijo: %s - Ejecutar protocolo correspondiente",cpu_protocol);
+			switch (atoi(cpu_protocol)) {
+				case 0:// Program END
+					printf("Vamo a recontra calmarno. El programa finalizó correctamente\n");
+					break;
+				case 1:// Print value
+					//recibo 5 bytes -> 1 variable + 4 valor_variable
+					char *var = malloc(1);
+					char *valor = malloc(4);
+					recv(kernelSocketClient, var, 1, 0);
+					recv(kernelSocketClient, valor, 4, 0);
+					printf("El valor de la variable %s es: %s", var, valor);//controlar este printf
+					free(var);
+					free(valor);
+				case 2:// Print text
+					//recibo 4 del tamaño + texto
+					char textSize[4];
+					recv(kernelSocketClient, textSize, 4, 0);
+					int textLen = atoi(textSize);
+					recv(kernelSocketClient, kernel_reply, textLen, 0);
+					printf("%s\n", kernel_reply);//controlar este printf
+					break;
+			}
 
-		} else if(!strcmp(kernel_reply, "IT")) {
-			//recibo 4 del tamaño + texto
-			char textSize[4];
-
-			recv(kernelSocketClient, textSize, 4, 0);
-			int textLen=atoi(textSize);
-			recv(kernelSocketClient, kernel_reply, textLen, 0);
-			printf("%s\n", kernel_reply);//controlar este printf
 		}
 
 	}
