@@ -85,10 +85,26 @@ int add_stack_variable(int *stack_pointer, t_stack **stack, t_var *nueva_variabl
 
 
 
-t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
+t_posicion obtenerPosicionVariable(t_nombre_variable variable) {
     usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
-	printf("Obtener posicion de %c\n", variable);
-	return POSICION_MEMORIA;
+
+    logical_addr direccion_logica;
+
+    //1) Obtener el stack index actual
+    t_stack_entry* actual_stack_index = actual_pcb->stack_index;
+    //2) Obtener puntero a las variables
+    t_var* indice_variable = actual_stack_index->vars;
+
+    for (int i = 0; i <= actual_stack_index->cant_vars ; i++) {
+        if((strcmp(indice_variable->var_id, variable))== 0){
+            direccion_logica->page_number = indice_variable->page_number;
+            direccion_logica->offset = indice_variable->offset;
+            direccion_logica->tamanio = indice_variable->tamanio;
+        }
+        indice_variable++;
+    }
+
+    return (t_posicion) (direccion_logica->page_number * setup->PAGE_SIZE) + direccion_logica->offset;
 }
 
 t_valor_variable dereferenciar(t_puntero puntero) {
@@ -196,10 +212,38 @@ void asignar(t_puntero puntero, t_valor_variable variable) {
 
 void imprimir(t_valor_variable valor) {
     usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
-	printf("Imprimir %d\n", valor);
+
+    char* kernel_request_buffer = NULL;
+    char* mensaje = (char*) malloc(5);
+
+    char* kernel_buffer = NULL;
+    asprintf(&kernel_buffer, "%04d", valor);
+    strcpy(mensaje, "6");
+    strcat(mensaje, kernel_buffer);
+    if(send(kernelSocketClient, mensaje, 5, 0) < 0) {
+        log_error(cpu_log, "KERNEL expected value send failed");
+        return;
+    }
+
+    free(kernel_buffer);
 }
 
 void imprimirTexto(char* texto) {
     usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
-	printf("ImprimirTexto: %s", texto);
+    char* kernel_buffer = NULL;
+    int sizeMsj = strlen("7") + 5 + (int) sizeof(texto);
+    char* mensaje = (char*) malloc(sizeMsj);
+
+    asprintf(&kernel_buffer, "%04d", (int) sizeof(texto));
+    strcpy(mensaje, "7");
+    strcat(mensaje, kernel_buffer);
+    strcat(mensaje, texto);
+
+    if(send(kernelSocketClient, mensaje, sizeMsj, 0) < 0) {
+        log_error(cpu_log, "KERNEL expected text send failed");
+        return;
+    }
+
+    free(kernel_buffer);
+
 }
