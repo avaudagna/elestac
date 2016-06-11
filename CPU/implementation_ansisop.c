@@ -1,5 +1,6 @@
 
 #include "implementation_ansisop.h"
+#include "libs/pcb.h"
 
 static const int CONTENIDO_VARIABLE = 20;
 static const int POSICION_MEMORIA = 0x10;
@@ -206,40 +207,45 @@ void asignar(t_posicion direccion_variable, t_valor_variable valor) {
 	log_error(cpu_log, "UMC raised Exception: Unknown exception");
 }
 
-void imprimir(t_valor_variable valor) {
-    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
-
-    char* kernel_request_buffer = NULL;
-    char* mensaje = (char*) malloc(5);
-
-    char* kernel_buffer = NULL;
-    asprintf(&kernel_buffer, "%04d", valor);
-    strcpy(mensaje, "6");
-    strcat(mensaje, kernel_buffer);
-    if(send(kernelSocketClient, mensaje, 5, 0) < 0) {
-        log_error(cpu_log, "KERNEL expected value send failed");
-        return;
-    }
-
-    free(kernel_buffer);
+void irAlLabel(t_nombre_etiqueta etiqueta) {
+    metadata_buscar_etiqueta(etiqueta, actual_pcb->etiquetas, (const t_size) actual_pcb->etiquetas_size);
 }
 
-void imprimirTexto(char* texto) {
+
+void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar) {
+
+}
+
+void retornar(t_valor_variable retorno) {
+
+}
+
+int imprimir(t_valor_variable valor) {
     usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
-    char* kernel_buffer = NULL;
-    int sizeMsj = strlen("7") + 5 + (int) sizeof(texto);
-    char* mensaje = (char*) malloc(sizeMsj);
 
-    asprintf(&kernel_buffer, "%04d", (int) sizeof(texto));
-    strcpy(mensaje, "7");
-    strcat(mensaje, kernel_buffer);
-    strcat(mensaje, texto);
+    char* buffer = NULL;
+    int buffer_size = sizeof(char) + sizeof(int);
+    asprintf(&buffer, "6%04d", valor);
+    if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
+        log_error(cpu_log, "imprimir value %d send to KERNEL failed", valor);
+        return ERROR;
+    }
+    free(buffer);
+    return (int) strlen(string_itoa(valor));
+}
 
-    if(send(kernelSocketClient, mensaje, sizeMsj, 0) < 0) {
-        log_error(cpu_log, "KERNEL expected text send failed");
-        return;
+int imprimirTexto(char* texto) {
+    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
+
+    char* buffer = NULL;
+    asprintf(&buffer, "7%s", texto);
+    int buffer_size = (int) strlen(buffer);
+
+    if(send(kernelSocketClient, buffer, (t_size) buffer_size, 0) < 0) {
+        log_error(cpu_log, "imprimirTexto send failed");
+        return ERROR;
     }
 
-    free(kernel_buffer);
-
+    free(buffer);
+    return buffer_size;
 }

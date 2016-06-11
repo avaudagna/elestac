@@ -46,9 +46,13 @@
     void asignar(t_posicion direccion_variable, t_valor_variable valor);
 
     //#5
-    void imprimir(t_valor_variable valor);
+    int imprimir(t_valor_variable valor);
 
     //#6
-    void imprimirTexto(char* texto);
+    int imprimirTexto(char* texto);
+
+    //#7
+    void irAlLabel(t_nombre_etiqueta etiqueta);
+
 
 #endif

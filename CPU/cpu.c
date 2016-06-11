@@ -14,6 +14,7 @@ AnSISOP_funciones funciones_generales_ansisop = {
         .AnSISOP_obtenerPosicionVariable= obtenerPosicionVariable,
         .AnSISOP_dereferenciar			= dereferenciar,
         .AnSISOP_asignar				= asignar,
+        .AnSISOP_irAlLabel              = irAlLabel,
         .AnSISOP_imprimir				= imprimir,
         .AnSISOP_imprimirTexto			= imprimirTexto,
 
