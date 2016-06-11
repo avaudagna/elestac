@@ -24,19 +24,19 @@ t_posicion definirVariable(t_nombre_variable variable) {
 	asprintf(&umc_request_buffer, "3%04d%04d%04d%s", direccion_espectante->page_number, direccion_espectante->offset, direccion_espectante->tamanio, value);
 	if( send(umcSocketClient, umc_request_buffer, 12, 0) < 0) {
         log_error(cpu_log, "UMC expected addr send failed");
-		return 0;
+		return ERROR;
 	}
     free(umc_request_buffer);
 
 	char * umc_response_buffer = calloc(1, sizeof(char));
 	if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
 		log_error(cpu_log, "UMC response recv failed");
-		return 0;
+		return ERROR;
 	}
 
     if(strncmp(umc_response_buffer, "3", sizeof(char)) != 0) {
         log_error(cpu_log, "PAGE FAULT");
-        return 0;
+        return ERROR;
     }
     free(umc_response_buffer);
 
@@ -75,12 +75,12 @@ int add_stack_variable(int *stack_pointer, t_stack **stack, t_var *nueva_variabl
     aux_buffer = realloc(last_entry->vars, last_entry->cant_vars*sizeof(t_var));
     if(aux_buffer == NULL) {
         log_error(cpu_log, "Error resizing last_entry vars");
-        return -1;
+        return ERROR;
     }
     last_entry->vars = (t_var*) aux_buffer;
     memcpy(last_entry->vars+last_entry->cant_vars, nueva_variable, sizeof(t_var));
     *stack_pointer = *stack_pointer + nueva_variable->tamanio;
-    return *stack_pointer;
+    return SUCCESS;
 }
 
 
@@ -91,7 +91,7 @@ t_posicion obtenerPosicionVariable(t_nombre_variable variable) {
     logical_addr * direccion_logica = NULL;
 	int i = 0;
     //1) Obtener el stack index actual
-    t_stack_entry* current_stack_index = (t_stack_entry*) actual_pcb->stack_index->elements->head;
+    t_stack_entry* current_stack_index = (t_stack_entry*) queue_peek(actual_pcb->stack_index);
     //2) Obtener puntero a las variables
     t_var* indice_variable = current_stack_index->vars;
 
@@ -102,22 +102,22 @@ t_posicion obtenerPosicionVariable(t_nombre_variable variable) {
         indice_variable++;
     }
 
-    return -1;
+    return ERROR;
 }
 
-t_valor_variable dereferenciar(t_puntero puntero) {
+t_valor_variable dereferenciar(t_posicion direccion_variable) {
     usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 
     //Generamos la direccion logica a partir del puntero
     logical_addr * direccion_generada = calloc(1, sizeof(logical_addr));
-    obtain_Logical_Address(direccion_generada, puntero);
+    obtain_Logical_Address(direccion_generada, direccion_variable);
 
     //Hacemos el request a la UMC con el codigo 2
     char* umc_request_buffer = NULL;
     asprintf(&umc_request_buffer, "2%04d%04d%04d", direccion_generada->page_number, direccion_generada->offset, direccion_generada->tamanio);
 	if( send(umcSocketClient, umc_request_buffer, 13, 0) < 0) {
 		log_error(cpu_log, "UMC expected addr send failed");
-		return 0;
+		return ERROR;
 	}
 
 	free(direccion_generada);
@@ -128,14 +128,14 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 	if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
 		free(umc_response_buffer);
 		log_error(cpu_log, "UMC response recv failed");
-		return 0;
+		return ERROR;
 	}
 
 	//Pagina invalida
 	if(strcmp(umc_response_buffer, PAGINA_INVALIDA_ID) == 0){
 		free(umc_response_buffer);
 		log_error(cpu_log, "UMC raised Exception: Invalid page");
-		return 0;
+		return ERROR;
 	}
 
 	//EXITO
@@ -146,14 +146,13 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 		if( recv(umcSocketClient , umc_response_buffer , sizeof(t_valor_variable) , 0) < 0) {
 			free(umc_response_buffer);
 			log_error(cpu_log, "UMC response recv failed");
-			return 0;
+			return ERROR;
 		}
 
 		return (t_valor_variable) atoi(umc_response_buffer);
 	}
 
-	//Error :(
-	return 0;
+	return ERROR;
 }
 
 void obtain_Logical_Address(logical_addr* direccion, t_puntero posicion) {
@@ -161,18 +160,17 @@ void obtain_Logical_Address(logical_addr* direccion, t_puntero posicion) {
 	direccion->offset = posicion % setup->PAGE_SIZE;
 	direccion->tamanio = ANSISOP_VAR_SIZE;
 }
-//t_puntero is of the same type as t_posicion
-//TODO: Decide to use whether t_puntero or t_posicion in the whole file
-void asignar(t_puntero puntero, t_valor_variable variable) {
+
+void asignar(t_posicion direccion_variable, t_valor_variable valor) {
     usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 
 	//Generamos la direccion logica a partir del puntero
 	logical_addr * direccion_generada = calloc(1, sizeof(logical_addr));
-	obtain_Logical_Address(direccion_generada, puntero);
+	obtain_Logical_Address(direccion_generada, direccion_variable);
 
 	//Hacemos el request a la UMC con el codigo 3 para almacenar los bytes
 	char* umc_request_buffer = NULL;
-	asprintf(&umc_request_buffer, "3%04d%04d%04d%04d", direccion_generada->page_number, direccion_generada->offset, direccion_generada->tamanio, variable);
+	asprintf(&umc_request_buffer, "3%04d%04d%04d%04d", direccion_generada->page_number, direccion_generada->offset, direccion_generada->tamanio, valor);
     int request_size = sizeof(int) * 4 + sizeof(char);
     if(send(umcSocketClient, umc_request_buffer, (size_t) request_size, 0) < 0) {
 		log_error(cpu_log, "UMC expected addr send failed");
@@ -199,7 +197,7 @@ void asignar(t_puntero puntero, t_valor_variable variable) {
 
 	//EXITO (Se podria loggear de que la operacion fue exitosa)
 	if(strcmp(umc_response_buffer, OPERACION_EXITOSA_ID) == 0){
-        log_info(cpu_log, "asignar variable to UMC with value %d was successful", variable);
+        log_info(cpu_log, "Asignar variable to UMC with value %d was successful", valor);
 		free(umc_response_buffer);
 		return;
 	}

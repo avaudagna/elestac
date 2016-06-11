@@ -8,6 +8,8 @@
 #include "cpu.h"
 #include "cpu_structs.h"
 
+#define SUCCESS 0
+#define ERROR -1
 
 #define ANSISOP_VAR_SIZE 4
 
@@ -37,11 +39,11 @@
     t_posicion obtenerPosicionVariable(t_nombre_variable variable);
 
     //#3
-    t_valor_variable dereferenciar(t_puntero puntero);
+    t_valor_variable dereferenciar(t_posicion direccion_variable);
     void obtain_Logical_Address(logical_addr* direccion, t_puntero posicion);
 
     //#4
-    void asignar(t_puntero puntero, t_valor_variable variable);
+    void asignar(t_posicion direccion_variable, t_valor_variable valor);
 
     //#5
     void imprimir(t_valor_variable valor);
