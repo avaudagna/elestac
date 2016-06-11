@@ -180,22 +180,16 @@ int umc_handshake(){
 		//Armo la trama a responder char[]: S+cantPaginasLibres
 		int SIZE_TRAMA = 5;
 		char* respuesta = malloc(SIZE_TRAMA);
-		char tramaAEnviar[SIZE_TRAMA];
-		sprintf(respuesta,"1%04d", paginas_CantidadPaginasLibres());
+		sprintf(respuesta,"S%04d", paginas_CantidadPaginasLibres());
 
-		// Le quito el \0 al final
-		for(i=0; i < SIZE_TRAMA; i++){
-			tramaAEnviar[i]=respuesta[i];
-		}
-
-		free(respuesta);
-
-		if(send(umcSocket,(void *) tramaAEnviar, SIZE_TRAMA,0) == -1){
+		if(send(umcSocket,(void *) respuesta, SIZE_TRAMA,0) == -1){
 			puts("[ERROR] Error while trying to complete handshake");
 			return handshakeOK;
 		}
 
-		printf("[INFO] Handshake with UMC succesfully done. Page size received: %d \n", TAMANIO_PAGINA);
+        free(respuesta);
+
+        printf("[INFO] Handshake with UMC succesfully done. Page size received: %d \n", TAMANIO_PAGINA);
 
 		handshakeOK = 1;
 
@@ -411,7 +405,6 @@ void umc_leer(){
 	int numeroPagina;
 
 	char* buffer = malloc(sizeof(int));
-	char tramaAEnviar[TAMANIO_PAGINA];
 
 	//Recibo el PID
 	if(recv(umcSocket, buffer, 1, 0)<= 0)
@@ -443,12 +436,7 @@ void umc_leer(){
 		char* respuesta = malloc(sizeof(char[TAMANIO_PAGINA]));
 		sprintf(respuesta,"%s", resultadoRequest);
 
-		int i = 0;// Le quito el \0 al final
-		for(i=0; i < TAMANIO_PAGINA; i++){
-			tramaAEnviar[i]=respuesta[i];
-		}
-
-		if(send(umcSocket,(void *) tramaAEnviar, TAMANIO_PAGINA,0) == -1){
+		if(send(umcSocket,(void *) respuesta, TAMANIO_PAGINA,0) == -1){
 			perror("send");
 			exit(1);
 		}
@@ -473,8 +461,6 @@ void umc_escribir(){
 	int pid;
 	int numeroPagina;
 	char* codigo = malloc(sizeof(char[TAMANIO_PAGINA]));
-
-	char tramaAEnviar[SIZE_TRAMA];
 
 	//Recibo el PID
 	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0) {
@@ -508,12 +494,7 @@ void umc_escribir(){
 		respuesta = malloc(sizeof(char)*SIZE_TRAMA);
 		sprintf(respuesta,"1%04d", paginas_CantidadPaginasLibres());
 
-		int i = 0;// Le quito el \0 al final
-		for(i=0; i < SIZE_TRAMA; i++){
-			tramaAEnviar[i]=respuesta[i];
-		}
-
-		if(send(umcSocket,(void *) tramaAEnviar, SIZE_TRAMA,0) == -1){
+		if(send(umcSocket,(void *) respuesta, SIZE_TRAMA,0) == -1){
 			perror("send");
 			exit(1);
 		}
@@ -559,14 +540,7 @@ void umc_finalizarPrograma(){
 		char* respuesta = malloc(sizeof(char)*SIZE_TRAMA);
 		sprintf(respuesta,"S%d", paginas_CantidadPaginasLibres());
 
-		char tramaAEnviar[SIZE_TRAMA];
-
-		int i = 0;// Le quito el \0 al final
-		for(i=0; i < SIZE_TRAMA; i++){
-			tramaAEnviar[i]=respuesta[i];
-		}
-
-		if(send(umcSocket,(void *) tramaAEnviar, SIZE_TRAMA,0) == -1){
+		if(send(umcSocket,(void *) respuesta, SIZE_TRAMA,0) == -1){
 			perror("send");
 			exit(1);
 		}
