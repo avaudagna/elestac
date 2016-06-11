@@ -44,7 +44,7 @@
 #define S3_DECREMENT_Q 3
 
 //UMC operations
-#define HANDSHAKE_RESPONSE 0
+#define UMC_HANDSHAKE_RESPONSE_ID 0
 #define CAMBIO_PROCESO_ACTIVO 2
 #define PEDIDO_BYTES 3
 #define ALMACENAMIENTO_BYTES 4
@@ -62,7 +62,6 @@ int cpu_state_machine();
 int kernel_first_com();
 int umc_first_com();
 int get_pcb();
-int get_page_size();
 
 //execute process state machine
 int execute_state_machine();

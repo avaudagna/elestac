@@ -1,4 +1,3 @@
-#include <punycode.h>
 #include "cpu.h"
 
 
@@ -30,7 +29,6 @@ AnSISOP_kernel funciones_kernel_ansisop = { };
 // gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collections -o cpu libs/stack.c libs/pcb.c libs/serialize.c libs/socketCommons.c cpu.c implementation_ansisop.c -L/usr/lib -lcommons -lparser-ansisop -lm
 //
 
-void fetch_address_data();
 
 int main(int argc, char **argv) {
 
@@ -128,10 +126,6 @@ int cpu_state_machine() {
     return SUCCESS;
 }
 
-int umc_first_com() {
-    return (umc_handshake() && get_page_size());
-}
-
 int return_pcb() {
     //Serializo el PCB y lo envio a KERNEL
     actual_pcb = (t_pcb *) calloc(1,sizeof(t_pcb));
@@ -190,26 +184,23 @@ int get_execution_line(void ** instruction_line) {
     return SUCCESS;
 }
 
-int umc_handshake() {
-    //send handshake
+int umc_first_com() {
+    //Send handshake
     if( send(umcSocketClient , UMC_HANDSHAKE , sizeof(char), 0) < 0) {
         log_error(cpu_log, "Send UMC handshake %s failed", UMC_HANDSHAKE);
         return ERROR;
     }
-    //recv hanshake response
-    char umc_buffer[4];
-    if( recv(umcSocketClient , umc_buffer, sizeof(int) , 0) <= 0) {
-        log_error(cpu_log, "Recv UMC PAGE_SIZE failed");
+    //Recv hanshake operation response
+    char operation[2];
+    if( recv(umcSocketClient , operation, sizeof(char) , 0) <= 0) {
+        log_error(cpu_log, "Recv UMC bad operation");
         return ERROR;
     }
-    if(strcmp(umc_buffer, string_itoa(HANDSHAKE_RESPONSE)) != 0) {
+    if(strcmp(operation, string_itoa(UMC_HANDSHAKE_RESPONSE_ID)) != 0) {
+        log_error(cpu_log, "Recv UMC bad operation: %c", operation);
         return ERROR;
     }
-    return SUCCESS;
-}
-int get_page_size() {
-
-    //recv page size
+    //Recv Page Size
     char umc_buffer[4];
     if( recv(umcSocketClient , umc_buffer, sizeof(int) , 0) <= 0) {
         log_error(cpu_log, "Recv UMC PAGE_SIZE failed");
@@ -227,6 +218,7 @@ int change_active_process() {
         log_error(cpu_log, "Send pid %d to UMC failed", actual_pcb->pid);
         return ERROR;
     }
+    log_info(cpu_log, "Changed active process to current pid : %d", actual_pcb->pid);
     return SUCCESS;
 }
 
