@@ -220,7 +220,7 @@ bool pidEstaEnListaFIFOxPID(t_list *headerFifos, int pPid);
 
 bool pidEstaEnListaDeUltRemp(t_list *headerPunteros, int pPid);
 
-t_link_element *obtenerPaginaDeFifo(t_list *fifoDePid, int pagina);
+CLOCK_PAGINA * obtenerPaginaDeFifo(t_list *fifoDePid, int pagina);
 
 FIFO_INDICE * obtenerPunteroClockxPID(t_list *clock, int pid);
 
@@ -231,6 +231,8 @@ void PedidoPaginaASwap(int pid, int pagina, int operacion);
 void AlmacenarBytes(int *socketBuff, int *pid_actual);
 
 void guardarBytesEnPagina(int *pid_actual, int pagina, int offset, int tamanio, void *bytesAGuardar);
+
+void setBitModificado(int pPid, int pagina, int valorBitModificado);
 
 int main(int argc , char **argv){
 
@@ -1050,23 +1052,43 @@ void AlmacenarBytes(int *socketBuff, int *pid_actual) {
 				else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo , y una vez que ya se trajo la pagina a MP,  ahi si guardo los bytes
 					algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
 					guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
+					setBitDeUso(*pid_actual,_pagina,1);
 				}
 			}else{		// hay marcos disponibles
 
 				if  ( cantPagDisponiblesxPID(pid_actual) > 0){ // SI EL PROCESO TIENE MARGEN PARA ALMACENAR MAS PAGINAS EN MEMORIA
 					almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, tamanioContenidoPagina);
 					guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
+					setBitDeUso(*pid_actual,_pagina,1);
 				}
 				else{	// el proceso llego a la maxima cantidad de marcos proceso
 					algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
 					guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
+					setBitDeUso(*pid_actual,_pagina,1);
 				}
 			}
 		}
 		else { // La pagina se encuentra en memoria principal , almaceno de una , seteo bit de modificacion y bit de uso = 1
 			guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
+			setBitDeUso(*pid_actual,_pagina,1);
+			setBitModificado(*pid_actual,_pagina,1);
+
 		}
 	}
+
+}
+
+void setBitModificado(int pPid, int pagina, int valorBitModificado) {
+
+	t_list * aux = NULL;
+	CLOCK_PAGINA * paginaClock = NULL;
+
+	aux = obtenerHeaderFifoxPid(headerFIFOxPID,pPid);
+
+	paginaClock = obtenerPaginaDeFifo(aux, pagina);
+
+	paginaClock->bitDeModificado = valorBitModificado;
+
 
 }
 
@@ -1395,7 +1417,7 @@ t_list *obtenerHeaderFifoxPid(t_list *headerFifos, int pPid) {
 void setBitDeUso(int pPid, int pPagina, int valorBitDeUso) {
 
 	t_list *fifoDePid = NULL;
-	t_link_element *pagina = NULL;
+	CLOCK_PAGINA *pagina = NULL;
 	//PAGINA * pagina = NULL;
 	//tablaDePaginas = obtenerTablaDePaginasDePID(headerListaDePids, pPid);
 	//pagina = obtenerPaginaDeTablaDePaginas(tablaDePaginas, pPagina);
@@ -1405,11 +1427,11 @@ void setBitDeUso(int pPid, int pPagina, int valorBitDeUso) {
 
 	pagina = obtenerPaginaDeFifo(fifoDePid,pPagina);
 
-	((CLOCK_PAGINA *)pagina->data)->bitDeUso=valorBitDeUso;
+	pagina->bitDeUso=valorBitDeUso;
 
 }
 
-t_link_element *obtenerPaginaDeFifo(t_list *fifoDePid, int pagina) {
+CLOCK_PAGINA * obtenerPaginaDeFifo(t_list *fifoDePid, int pagina) {
 
 	t_link_element *aux = NULL;
 
@@ -1417,7 +1439,7 @@ t_link_element *obtenerPaginaDeFifo(t_list *fifoDePid, int pagina) {
 
 	while ( aux != NULL){
 		if ( ((CLOCK_PAGINA *)aux->data)->nroPagina == pagina )
-			return aux;
+			return ((CLOCK_PAGINA *)aux->data);
 		aux = aux->next;
 	}
 
