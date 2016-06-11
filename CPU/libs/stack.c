@@ -2,6 +2,71 @@
 #include "stack.h"
 
 /*
+ * Creates a new stack entry container.
+ */
+t_stack_entry * stack_entry_create(void) {
+    t_stack_entry * new_stack_entry = calloc(1, sizeof(t_stack_entry));
+}
+
+/*
+ * Adds a new ret_var to the stack entry.
+ *
+ * stack_entry : pointer to the stack entry position.
+ * ret_var : return variable to be added.
+ */
+int add_ret_var(t_stack_entry ** stack_entry, t_ret_var *ret_var) {
+    void * aux_buffer = NULL;
+    aux_buffer = realloc(*stack_entry, ((*stack_entry)->cant_ret_vars + 1)* sizeof(t_ret_var));
+    if(aux_buffer == NULL) {
+        return ERROR;
+    }
+    (*stack_entry)->ret_vars = aux_buffer;
+    if( memcpy(((*stack_entry)->ret_vars + (*stack_entry)->cant_ret_vars), ret_var, sizeof(t_ret_var)) == NULL) {
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+
+/*
+ * Adds a new arg to the stack entry.
+ *
+ * stack_entry : pointer to the stack entry position.
+ * arg : argument variable to be added.
+ */
+int add_arg(t_stack_entry ** stack_entry, t_arg *arg) {
+    void * aux_buffer = NULL;
+    aux_buffer = realloc(*stack_entry, ((*stack_entry)->cant_args + 1)* sizeof(t_arg));
+    if(aux_buffer == NULL) {
+        return ERROR;
+    }
+    (*stack_entry)->args = aux_buffer;
+    if( memcpy(((*stack_entry)->args + (*stack_entry)->cant_args), arg, sizeof(t_arg)) == NULL) {
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+/*
+ * Adds a new local variable to the stack entry.
+ *
+ * stack_entry : pointer to the stack entry position.
+ * var : variable to be added.
+ */
+int add_var(t_stack_entry ** stack_entry, t_var *var) {
+    void * aux_buffer = NULL;
+    aux_buffer = realloc(*stack_entry, ((*stack_entry)->cant_vars + 1)* sizeof(t_var));
+    if(aux_buffer == NULL) {
+        return ERROR;
+    }
+    (*stack_entry)->vars = aux_buffer;
+    if( memcpy(((*stack_entry)->vars + (*stack_entry)->cant_vars), var, sizeof(t_var)) == NULL) {
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+/*
  * Serializa las entradas del stack en una char*.
  *
  * stack  : El stack que se quiere serializar.

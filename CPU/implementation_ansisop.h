@@ -8,7 +8,7 @@
 #include "cpu.h"
 #include "cpu_structs.h"
 
-#define SUCCESS 0
+#define SUCCESS 1
 #define ERROR -1
 
 #define ANSISOP_VAR_SIZE 4

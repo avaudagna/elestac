@@ -31,9 +31,9 @@
 #define UMC_HANDSHAKE "1"
 
 //cpu state machine states
-#define S0_KERNEL_FIRST_COM 0
+#define S0_FIRST_COMS 0
 #define S1_GET_PCB 1
-#define S2_GET_PAGE_SIZE 2
+#define S2_CHANGE_ACTIVE_PROCESS 2
 #define S3_EXECUTE 3
 #define S4_RETURN_PCB 4
 
@@ -43,15 +43,24 @@
 #define S2_EXECUTE_LINE 2
 #define S3_DECREMENT_Q 3
 
+//UMC operations
+#define HANDSHAKE_RESPONSE 0
+#define CAMBIO_PROCESO_ACTIVO 2
+#define PEDIDO_BYTES 3
+#define ALMACENAMIENTO_BYTES 4
+#define FIN_COMUNICACION_CPU 0
+
 int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer);
 t_list * armarDireccionLogica(t_intructions *actual_instruction);
 void tratarSeniales(int senial);
 int loadConfig(char* configFile);
-int get_instruction_line(int umcSocketClient, t_list *instruction_addresses_list, void ** instruction_line);
+int get_instruction_line(t_list *instruction_addresses_list, void ** instruction_line);
+int request_address_data(void ** buffer, logical_addr *address);
 
 //cpu state machine
 int cpu_state_machine();
 int kernel_first_com();
+int umc_first_com();
 int get_pcb();
 int get_page_size();
 
@@ -60,5 +69,7 @@ int execute_state_machine();
 int check_execution_state();
 int get_execution_line(void ** instruction_line);
 int execute_line(void *pVoid);
+int change_active_process();
+int return_pcb();
 
 #endif

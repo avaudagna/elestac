@@ -14,9 +14,12 @@ AnSISOP_funciones funciones_generales_ansisop = {
         .AnSISOP_obtenerPosicionVariable= obtenerPosicionVariable,
         .AnSISOP_dereferenciar			= dereferenciar,
         .AnSISOP_asignar				= asignar,
-        .AnSISOP_irAlLabel              = irAlLabel,
-        .AnSISOP_imprimir				= imprimir,
-        .AnSISOP_imprimirTexto			= imprimirTexto,
+        .AnSISOP_irAlLabel              = (void*) irAlLabel,
+        .AnSISOP_imprimir				= (void*) imprimir,
+        .AnSISOP_imprimirTexto			= (void*) imprimirTexto,
+        .AnSISOP_entradaSalida          = entradaSalida,
+        .AnSISOP_llamarConRetorno       = llamarConRetorno,
+        .AnSISOP_retornar               = retornar
 
 };
 AnSISOP_kernel funciones_kernel_ansisop = { };
@@ -26,6 +29,8 @@ AnSISOP_kernel funciones_kernel_ansisop = { };
 //Compilame asi:
 // gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collections -o cpu libs/stack.c libs/pcb.c libs/serialize.c libs/socketCommons.c cpu.c implementation_ansisop.c -L/usr/lib -lcommons -lparser-ansisop -lm
 //
+
+void fetch_address_data();
 
 int main(int argc, char **argv) {
 
@@ -99,23 +104,43 @@ int cpu_state_machine() {
 
     while(state != ERROR) {
         switch(state) {
-            case S0_KERNEL_FIRST_COM:
-                if (kernel_first_com() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; };
+            case S0_FIRST_COMS:
+                if (kernel_first_com() == SUCCESS && umc_first_com() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; };
                 break;
             case S1_GET_PCB:
-                if (get_pcb() == SUCCESS) { state = S2_GET_PAGE_SIZE; } else { state = ERROR; };
+                if (get_pcb() == SUCCESS) { state = S2_CHANGE_ACTIVE_PROCESS; } else { state = ERROR; };
                 break;
-            case S2_GET_PAGE_SIZE:
-                if (get_page_size() == SUCCESS) { state = S3_EXECUTE; } else { state = ERROR; };
+            case S2_CHANGE_ACTIVE_PROCESS:
+                if (change_active_process() == SUCCESS) { state = S3_EXECUTE; } else { state = ERROR; };
                 break;
             case S3_EXECUTE:
                 if (execute_state_machine() == SUCCESS) { state = S4_RETURN_PCB; } else { state = ERROR; };
+                break;
+            case S4_RETURN_PCB:
+                if (return_pcb() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; };
                 break;
             default:
             case ERROR:
                 return ERROR;
                 break;
         }
+    }
+    return SUCCESS;
+}
+
+int umc_first_com() {
+    return (umc_handshake() && get_page_size());
+}
+
+int return_pcb() {
+    //Serializo el PCB y lo envio a KERNEL
+    actual_pcb = (t_pcb *) calloc(1,sizeof(t_pcb));
+    void * serialized_pcb = NULL;
+    int serialized_buffer_index = 0;
+    serialize_pcb(actual_pcb, &serialized_pcb, &serialized_buffer_index);
+    if( send(umcSocketClient , serialized_pcb, (size_t) serialized_buffer_index, 0) < 0) {
+        log_error(cpu_log, "Send serialized_pcb to KERNEL failed");
+        return ERROR;
     }
     return SUCCESS;
 }
@@ -161,27 +186,29 @@ int check_execution_state() {
 int get_execution_line(void ** instruction_line) {
 
     t_list * instruction_addresses_list = armarDireccionLogica(actual_pcb->instrucciones_serializado+actual_pcb->program_counter);
-    get_instruction_line(umcSocketClient, instruction_addresses_list, instruction_line);
+    get_instruction_line(instruction_addresses_list, instruction_line);
     return SUCCESS;
 }
 
-int get_page_size() {
+int umc_handshake() {
     //send handshake
-    if( send(umcSocketClient , UMC_HANDSHAKE , 1, 0) < 0) {
+    if( send(umcSocketClient , UMC_HANDSHAKE , sizeof(char), 0) < 0) {
         log_error(cpu_log, "Send UMC handshake %s failed", UMC_HANDSHAKE);
         return ERROR;
     }
-    //send actual process pid
-    if( send(umcSocketClient , &actual_pcb->pid , sizeof(actual_pcb->pid ), 0) < 0) {
-        log_error(cpu_log, "Send pid %d to UMC failed", actual_pcb->pid);
+    //recv hanshake response
+    char umc_buffer[4];
+    if( recv(umcSocketClient , umc_buffer, sizeof(int) , 0) <= 0) {
+        log_error(cpu_log, "Recv UMC PAGE_SIZE failed");
         return ERROR;
     }
-    //recv operation tag
-    char identificador_operacion_umc;
-    if( recv(umcSocketClient , &identificador_operacion_umc , sizeof(char) , 0) < 0) {
-        log_error(cpu_log, "Recv UMC operation identifier failed");
+    if(strcmp(umc_buffer, string_itoa(HANDSHAKE_RESPONSE)) != 0) {
         return ERROR;
     }
+    return SUCCESS;
+}
+int get_page_size() {
+
     //recv page size
     char umc_buffer[4];
     if( recv(umcSocketClient , umc_buffer, sizeof(int) , 0) <= 0) {
@@ -189,6 +216,17 @@ int get_page_size() {
         return ERROR;
     }
     setup->PAGE_SIZE = atoi(umc_buffer);
+    return SUCCESS;
+}
+
+int change_active_process() {
+    //send actual process pid
+    char * buffer = NULL;
+    asprintf(&buffer, "%d%04d", CAMBIO_PROCESO_ACTIVO, actual_pcb->pid);
+    if( send(umcSocketClient , &buffer, sizeof(char) + sizeof(int), 0) < 0) {
+        log_error(cpu_log, "Send pid %d to UMC failed", actual_pcb->pid);
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -231,38 +269,43 @@ int kernel_first_com() {
     return SUCCESS;
 }
 
-int get_instruction_line(int umcSocketClient, t_list *instruction_addresses_list, void ** instruction_line) {
+int get_instruction_line(t_list *instruction_addresses_list, void ** instruction_line) {
 
     void * recv_bytes_buffer = NULL;
-    int index = 0, buffer_index = 0;
+    int buffer_index = 0;
 
     while(list_size(instruction_addresses_list) > 0) {
-        if( send(umcSocketClient , "2", sizeof(char), 0) < 0) {
-            puts("Send solicitar bytes de una pagina marker");
-            return ERROR;
-        }
+
         logical_addr * element = list_remove(instruction_addresses_list, 0);
-        void * buffer = NULL;
-        int buffer_size = 0;
-        asprintf(&buffer, "%04d%04d%04d", element->page_number, element->offset, element->tamanio);
-        log_info(cpu_log, "Fetching for (%d,%d,%d) in UMC", element->page_number, element->offset, element->tamanio);
-        if( send(umcSocketClient, buffer, 12, 0) < 0) {
-            puts("Send addr instruction_addr");
+
+        //Request and Response of bytes to UMC
+        if( !request_address_data(&recv_bytes_buffer, element)) {
             return ERROR;
         }
-
-        recv_bytes_buffer = calloc(1, (size_t) element->tamanio);
-        if( recv(umcSocketClient , recv_bytes_buffer , (size_t ) element->tamanio , 0) < 0) {
-            log_error(cpu_log, "UMC bytes recv failed");
-            return ERROR;
-        }
-        log_info(cpu_log, "Bytes Received: %s", recv_bytes_buffer);
-
-        *instruction_line = realloc(*instruction_line, (size_t) buffer_index +element->tamanio);
+        *instruction_line = realloc(*instruction_line, (size_t) buffer_index+element->tamanio);
         memcpy(*instruction_line+buffer_index, recv_bytes_buffer, (size_t) element->tamanio);
         buffer_index += element->tamanio;
         free(recv_bytes_buffer);
     }
+    return SUCCESS;
+}
+
+int request_address_data(void ** buffer, logical_addr *address) {
+    log_info(cpu_log, "Fetching for (%d,%d,%d) in UMC", address->page_number, address->offset, address->tamanio);
+    asprintf(buffer, "%d%04d%04d%04d", PEDIDO_BYTES, address->page_number, address->offset, address->tamanio);
+
+    //Send bytes request to UMC
+    if( send(umcSocketClient, *buffer, strlen(*buffer), 0) < 0) {
+        puts("Last Fetch failed");
+        return ERROR;
+    }
+    //Recv response
+    *buffer = calloc(1, (size_t) address->tamanio);
+    if( recv(umcSocketClient , *buffer , (size_t ) address->tamanio , 0) < 0) {
+        log_error(cpu_log, "UMC bytes recv failed");
+        return ERROR;
+    }
+    log_info(cpu_log, "Bytes Received: %s", *buffer);
     return SUCCESS;
 }
 
