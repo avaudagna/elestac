@@ -681,7 +681,8 @@ void dividirEnPaginas(int pid_aux, int paginasDeCodigo, char codigo[], int code_
 	int i = 0,
 		nroDePagina=0,
 		j = 0,
-		bytes_restantes=0,
+		bytesSobrantes=0,
+        bytesDeUltimaPagina=0,
 		size_trama = umcGlobalParameters.marcosSize+sizeof(pid_aux)+sizeof(nroDePagina) + 1;
 	char * aux_code,
 	     * trama = NULL;
@@ -700,14 +701,14 @@ void dividirEnPaginas(int pid_aux, int paginasDeCodigo, char codigo[], int code_
 			memcpy((void * )aux_code,&codigo[j],umcGlobalParameters.marcosSize);
 
 		}else {    // ultima pagina
-			bytes_restantes = (paginasDeCodigo * umcGlobalParameters.marcosSize) - code_size;
-			if (!bytes_restantes)    // si la cantidad de bytes es multiplo del tamaño de pagina , entonces la ultima pagina se llena x completo
+			bytesSobrantes = (paginasDeCodigo * umcGlobalParameters.marcosSize) - code_size;
+			bytesDeUltimaPagina = umcGlobalParameters.marcosSize - bytesSobrantes;
+			if (!bytesSobrantes)    // si la cantidad de bytes es multiplo del tamaño de pagina , entonces la ultima pagina se llena x completo
 				memcpy((void *) aux_code, &codigo[j], umcGlobalParameters.marcosSize);
 			else
-				memcpy((void *) aux_code, &codigo[j],
-					   bytes_restantes);    // LO QUE NO SE LLENA CON INFO, SE DEJA EN GARBAGE
-		}
-				// trama de escritura a swap : 1+pid+nroDePagina+aux_code
+				memcpy((void *) aux_code, &codigo[j], bytesDeUltimaPagina);    // LO QUE NO SE LLENA CON INFO, SE DEJA EN GARBAGE
+			}
+			// trama de escritura a swap : 1+pid+nroDePagina+aux_code
 			asprintf(&trama, "%d%04d%04d", 1, pid_aux, nroDePagina);
 			memcpy((void * )&trama[size_trama - umcGlobalParameters.marcosSize],aux_code,umcGlobalParameters.marcosSize);
 
