@@ -18,8 +18,11 @@
 #define STACK_OVERFLOW_ID "3"
 #define OPERACION_EXITOSA_ID "1"
 
+#define ENTRADA_SALIDA_ID "3"
+
     //typedef t_var* t_posicion;
-    typedef int t_posicion; // el foro dice que es  ((n° de pagina) * tamaño de pagina) + offset
+
+    typedef t_puntero t_posicion; // el foro dice que es  ((n° de pagina) * tamaño de pagina) + offset
 
     extern int umcSocketClient;
 	extern int kernelSocketClient;
@@ -53,6 +56,16 @@
 
     //#7
     void irAlLabel(t_nombre_etiqueta etiqueta);
+
+    //#8
+    void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar);
+
+    //#9
+    void retornar(t_valor_variable retorno);
+    t_posicion  obtener_t_posicion(logical_addr *address);
+
+    //#12
+    void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo);
 
 
 #endif

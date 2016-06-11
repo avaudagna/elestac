@@ -2,6 +2,7 @@
 #include "implementation_ansisop.h"
 #include "libs/pcb.h"
 #include "libs/stack.h"
+#include "cpu_structs.h"
 
 static const int CONTENIDO_VARIABLE = 20;
 static const int POSICION_MEMORIA = 0x10;
@@ -208,8 +209,9 @@ void asignar(t_posicion direccion_variable, t_valor_variable valor) {
 	log_error(cpu_log, "UMC raised Exception: Unknown exception");
 }
 
-int irAlLabel(t_nombre_etiqueta etiqueta) {
-    return metadata_buscar_etiqueta(etiqueta, actual_pcb->etiquetas, (const t_size) actual_pcb->etiquetas_size);
+
+void irAlLabel(t_nombre_etiqueta etiqueta) {
+    actual_pcb->program_counter = metadata_buscar_etiqueta(etiqueta, actual_pcb->etiquetas, (const t_size) actual_pcb->etiquetas_size);
 }
 
 
@@ -220,27 +222,61 @@ void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar) {
     t_stack * stack_index = actual_pcb->stack_index;
     //2) Creo la nueva entrada del stack
     t_stack_entry* new_stack_entry = create_new_stack_entry();
-    new_stack_entry->ret_pos = irAlLabel(etiqueta);
+    //3) Guardo la posicion de PC actual como retpos de la nueva entrada
+    new_stack_entry->ret_pos = actual_pcb->program_counter;
+    //4) Agrego la retvar a la entrada
     add_ret_var(&new_stack_entry, ret_var_addr);
+    //5) Agrego la strack entry a la queue de stack
     queue_push(actual_pcb->stack_index, new_stack_entry);
+    //6) Asigno el PC a la etiqueta objetivo
+    irAlLabel(etiqueta);
 }
 
 
 
 void retornar(t_valor_variable retorno) {
-
+    //1) Obtengo el stack index
+    t_stack * actual_stack_index = actual_pcb->stack_index;
+    //2) Obtengo la entrada actual
+    t_stack_entry *last_entry = (t_stack_entry *) queue_peek(actual_stack_index);
+    //3) Actualizo el PC a la posicion de retorno de la entrada actual
+    actual_pcb->program_counter = last_entry->ret_pos;
+    //4) Asigno el valor de retorno de la entrada actual a la variable de retorno
+    asignar(obtener_t_posicion(last_entry->ret_vars), retorno);
+    //5) Libero la ultima entrada del indice de stack
+    queue_pop(actual_stack_index);
 }
 
+t_posicion  obtener_t_posicion(logical_addr *address) {
+    return (t_posicion) address->page_number * setup->PAGE_SIZE + address->offset;
+}
 void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
     usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 
     char* buffer = NULL;
-    int buffer_size = sizeof(char) + sizeof(int);
+    int buffer_size = sizeof(char) + sizeof(int) * 2;
+    //1) Armo paquete de I/O operation
     asprintf(&buffer, "d%04d%04d", atoi(ENTRADA_SALIDA_ID), strlen(dispositivo), tiempo);
+    //2) Envio el paquete a KERNEL
     if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
-        log_error(cpu_log, "entrada salida send of dispositivo %s %d time send to KERNEL failed", dispositivo, tiempo);
+        log_error(cpu_log, "entrada salida of dispositivo %s %d time send to KERNEL failed", dispositivo, tiempo);
     }
     free(buffer);
+    buffer = calloc(1, sizeof(char));
+    //3) Espero por la respuesta, BLOQUEANTE
+    if( recv(umcSocketClient , buffer, sizeof(char) , 0) < 0) {
+        free(buffer);
+        log_error(cpu_log, "KERNEL I/O response recv failed");
+        return;
+    }
+    //SUCCESS
+    if(strcmp(buffer, string_itoa(SUCCESS)) == 0) {
+        log_info(cpu_log, "KERNEL I/O operation was successful");
+        return;
+    } else {
+        //ERROR
+        log_error(cpu_log, "KERNEL I/O operation was unsuccessful");
+    }
 }
 
 int imprimir(t_valor_variable valor) {
@@ -272,3 +308,7 @@ int imprimirTexto(char* texto) {
     free(buffer);
     return texto_len;
 }
+
+//En el wait me fijo si el kernel me dice de expropiarme o no, es medio choto porque no es responsabilidad del cpu de esperar estas cosas, sino del kernel.
+//En el signal le digo directamente que haga signal y sigo con mi Q, porque no hay expropiacion, sino tendria que expropiarme.
+//Para las variables compartidas es un simple recv o send y
