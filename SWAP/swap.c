@@ -427,13 +427,13 @@ void umc_leer(){
 	numeroPagina = aux - '0';
 
 	free(buffer);
-	buffer = malloc(sizeof(char[TAMANIO_PAGINA]));
+	buffer = malloc(sizeof(char) * TAMANIO_PAGINA);
 
 	//Hacemos el request
 	char* resultadoRequest = request_Lectura(pid, numeroPagina);
 
 	if(resultadoRequest != NULL){ //ENVIAMOS A UMC 1+cantPaginasLibres
-		char* respuesta = malloc(sizeof(char[TAMANIO_PAGINA]));
+		char* respuesta = malloc(sizeof(char) * TAMANIO_PAGINA);
 		sprintf(respuesta,"%s", resultadoRequest);
 
 		if(send(umcSocket,(void *) respuesta, TAMANIO_PAGINA,0) == -1){
@@ -460,7 +460,7 @@ void umc_escribir(){
 
 	int pid;
 	int numeroPagina;
-	char* codigo = malloc(sizeof(char[TAMANIO_PAGINA]));
+	char* codigo = malloc(sizeof(char) * TAMANIO_PAGINA);
 
 	//Recibo el PID
 	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0) {
@@ -477,7 +477,7 @@ void umc_escribir(){
 	numeroPagina = atoi(buffer);
 
 	free(buffer);
-	buffer = malloc(sizeof(char[TAMANIO_PAGINA]));
+	buffer = malloc(sizeof(char) * TAMANIO_PAGINA);
 
 	//Recibimos el codigo
 	if(recv(umcSocket, buffer, sizeof(char)*TAMANIO_PAGINA, 0)<= 0) {
