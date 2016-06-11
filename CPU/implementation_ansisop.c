@@ -88,23 +88,21 @@ int add_stack_variable(int *stack_pointer, t_stack **stack, t_var *nueva_variabl
 t_posicion obtenerPosicionVariable(t_nombre_variable variable) {
     usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 
-    logical_addr direccion_logica;
-
+    logical_addr * direccion_logica = NULL;
+	int i = 0;
     //1) Obtener el stack index actual
-    t_stack_entry* actual_stack_index = actual_pcb->stack_index;
+    t_stack_entry* current_stack_index = (t_stack_entry*) actual_pcb->stack_index->elements->head;
     //2) Obtener puntero a las variables
-    t_var* indice_variable = actual_stack_index->vars;
+    t_var* indice_variable = current_stack_index->vars;
 
-    for (int i = 0; i <= actual_stack_index->cant_vars ; i++) {
-        if((strcmp(indice_variable->var_id, variable))== 0){
-            direccion_logica->page_number = indice_variable->page_number;
-            direccion_logica->offset = indice_variable->offset;
-            direccion_logica->tamanio = indice_variable->tamanio;
+    for (i = 0; i < current_stack_index->cant_vars ; i++) {
+        if((strcmp(&(indice_variable + i)->var_id, &variable)) == 0) {
+            return (t_posicion) (indice_variable->page_number * setup->PAGE_SIZE) + indice_variable->offset;
         }
         indice_variable++;
     }
 
-    return (t_posicion) (direccion_logica->page_number * setup->PAGE_SIZE) + direccion_logica->offset;
+    return -1;
 }
 
 t_valor_variable dereferenciar(t_puntero puntero) {

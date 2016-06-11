@@ -17,7 +17,7 @@
 #define OPERACION_EXITOSA_ID "1"
 
     //typedef t_var* t_posicion;
-    typedef u_int32_t t_posicion; // el foro dice que es  ((n° de pagina) * tamaño de pagina) + offset
+    typedef int t_posicion; // el foro dice que es  ((n° de pagina) * tamaño de pagina) + offset
 
     extern int umcSocketClient;
 	extern int kernelSocketClient;
@@ -27,14 +27,14 @@
     extern t_kernel_data* actual_kernel_data;
 
     //#1
-    t_puntero definirVariable(t_nombre_variable variable);
+    t_posicion definirVariable(t_nombre_variable variable);
 
     logical_addr * armar_direccion_logica(int pointer, int size);
     int add_stack_variable(int *stack_pointer, t_stack **stack, t_var *nueva_variable);
     t_posicion get_t_posicion(const t_var *nueva_variable);
 
     //#2
-    t_puntero obtenerPosicionVariable(t_nombre_variable variable);
+    t_posicion obtenerPosicionVariable(t_nombre_variable variable);
 
     //#3
     t_valor_variable dereferenciar(t_puntero puntero);
