@@ -591,9 +591,9 @@ void  handShakeKernel(int * socketBuff){
 
 	// devuelvo TAMAÑO PAGINA
 
-	char buffer[umcGlobalParameters.marcosSize];
+	char buffer[sizeof(int)];
 
-	sprintf(buffer,"%04d",umcGlobalParameters.marcosSize);
+	sprintf(buffer,"%04d", umcGlobalParameters.marcosSize);
 
 	if ( send(*socketBuff,(void *)buffer, sizeof(int),0) == -1 ) {
 			perror("send");
