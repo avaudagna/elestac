@@ -744,11 +744,12 @@ void indexarPaginasDeStack(int _pid, int nroDePagina) {
 
 void enviarPaginasDeStackAlSwap(int _pid, int nroDePaginaInicial) {
 
-	int nroPaginaActual=0;
+	int nroPaginaActual=0,
+        i = 0;
 	char * trama = NULL;
 
 	// trama de escritura a swap : 1+pid+nroDePagina+aux_code
-	for(nroPaginaActual=nroDePaginaInicial;nroPaginaActual<stack_size; nroPaginaActual++) {
+	for(i =0 ,nroPaginaActual=nroDePaginaInicial; i<stack_size; i++, nroPaginaActual++) {
         asprintf(&trama, "%d%04d%04d", 1, _pid, nroPaginaActual);
 //		enviarPaginaAlSwap(trama,umcGlobalParameters.marcosSize + ( sizeof(_pid) * 2 ) ) ;
 		enviarPaginaAlSwap(trama, sizeof(char) + sizeof(int) + sizeof(int));
