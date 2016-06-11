@@ -595,7 +595,7 @@ void  handShakeKernel(int * socketBuff){
 
 	sprintf(buffer,"%04d",umcGlobalParameters.marcosSize);
 
-	if ( send(*socketBuff,(void *)buffer,umcGlobalParameters.marcosSize,0) == -1 ) {
+	if ( send(*socketBuff,(void *)buffer, sizeof(int),0) == -1 ) {
 			perror("send");
 			exit(1);
 		}
@@ -684,7 +684,7 @@ void dividirEnPaginas(int pid_aux, int paginasDeCodigo, char codigo[], int code_
 		bytes_restantes=0,
 		size_trama = umcGlobalParameters.marcosSize+sizeof(pid_aux)+sizeof(nroDePagina) + 1;
 	char * aux_code,
-		   trama[size_trama];
+	     * trama = NULL;
 	PAGINA * page_node;
 
 /*Cosas a Realizar por cada pagina :
@@ -708,8 +708,7 @@ void dividirEnPaginas(int pid_aux, int paginasDeCodigo, char codigo[], int code_
 					   bytes_restantes);    // LO QUE NO SE LLENA CON INFO, SE DEJA EN GARBAGE
 		}
 				// trama de escritura a swap : 1+pid+nroDePagina+aux_code
-			sprintf(trama,"1%04d",pid_aux);
-			sprintf(&trama[sizeof(pid_aux)],"%04d",nroDePagina);
+			asprintf(&trama, "%d%04d%04d", 1, pid_aux, nroDePagina);
 			memcpy((void * )&trama[size_trama - umcGlobalParameters.marcosSize],aux_code,umcGlobalParameters.marcosSize);
 
 			// envio al swap la pagina
@@ -744,18 +743,16 @@ void indexarPaginasDeStack(int _pid, int nroDePagina) {
 
 void enviarPaginasDeStackAlSwap(int _pid, int nroDePaginaInicial) {
 
-	int i=0;
-	char trama[sizeof(_pid)+sizeof(nroDePaginaInicial)+umcGlobalParameters.marcosSize];
+	int nroPaginaActual=0;
+	char * trama = NULL;
 
 	// trama de escritura a swap : 1+pid+nroDePagina+aux_code
-	sprintf(trama,"1%04d",_pid);
-
-	for(i=0;i<stack_size;i++,nroDePaginaInicial++){
-
-		sprintf(&trama[sizeof(_pid)],"%04d",nroDePaginaInicial);
-		enviarPaginaAlSwap(trama,umcGlobalParameters.marcosSize + ( sizeof(_pid) * 2 ) ) ;
+	for(nroPaginaActual=nroDePaginaInicial;nroPaginaActual<stack_size; nroPaginaActual++) {
+        asprintf(&trama, "%d%04d%04d", 1, _pid, nroPaginaActual);
+//		enviarPaginaAlSwap(trama,umcGlobalParameters.marcosSize + ( sizeof(_pid) * 2 ) ) ;
+		enviarPaginaAlSwap(trama, sizeof(char) + sizeof(int) + sizeof(int));
 		swapUpdate();
-		indexarPaginasDeStack(_pid,nroDePaginaInicial);
+		indexarPaginasDeStack(_pid,nroPaginaActual);
 	}
 
 }
