@@ -751,8 +751,10 @@ void enviarPaginasDeStackAlSwap(int _pid, int nroDePaginaInicial) {
 	// trama de escritura a swap : 1+pid+nroDePagina+aux_code
 	for(i =0 ,nroPaginaActual=nroDePaginaInicial; i<stack_size; i++, nroPaginaActual++) {
         asprintf(&trama, "%d%04d%04d", 1, _pid, nroPaginaActual);
+        trama = realloc(trama, strlen(trama) + umcGlobalParameters.marcosSize);
 //		enviarPaginaAlSwap(trama,umcGlobalParameters.marcosSize + ( sizeof(_pid) * 2 ) ) ;
-		enviarPaginaAlSwap(trama, sizeof(char) + sizeof(int) + sizeof(int));
+        //mando una pagina con basura
+		enviarPaginaAlSwap(trama, sizeof(char) + sizeof(int) + sizeof(int) + umcGlobalParameters.marcosSize);
 		swapUpdate();
 		indexarPaginasDeStack(_pid,nroPaginaActual);
 	}
@@ -876,7 +878,7 @@ void handShake_Swap(void){
 	char trama_handshake[SIZE_HANDSHAKE_SWAP];
 	buffer = (char * )malloc (SIZE_HANDSHAKE_SWAP);
 
-	sprintf(buffer,"U%d",umcGlobalParameters.marcosSize);
+	sprintf(buffer,"U%04d",umcGlobalParameters.marcosSize);
 
 	int i = 0;
 
@@ -1262,14 +1264,16 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 	void *	contenidoPagina;
 	int 	__pid;
 
-	sprintf(buffer, "1%04d%04d", *pid_actual, nroPagina);    // PIDO PAGINA
+	sprintf(buffer, "2%04d%04d", *pid_actual, nroPagina);    // PIDO PAGINA
+
+	// while(recv(swap) > 0 :
 
 	if (send(socketClienteSwap, buffer, 9, 0) <= 0)
 		perror("send");
 
 	// respuesta swap : pid+PAGINA
 
-	if (recv(*socketBuff, (void *) buff_pid, 4, 0) <= 0)    // SWAP ME DEVUELVE LA PAGINA
+	if (recv(socketClienteSwap, (void *) buff_pid, 4, 0) <= 0)    // SWAP ME DEVUELVE LA PAGINA
 		perror("recv");
 
 	__pid = atoi(buff_pid);
@@ -1279,7 +1283,7 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 
 		contenidoPagina = (void *) malloc(sizeof(umcGlobalParameters.marcosSize));
 
-		if ((*tamanioContenidoPagina = recv(*socketBuff, contenidoPagina, umcGlobalParameters.marcosSize, 0)) <= 0)
+		if ((*tamanioContenidoPagina = recv(socketClienteSwap, contenidoPagina, umcGlobalParameters.marcosSize, 0)) <= 0)
 			perror("recv");
 
 		return contenidoPagina;
@@ -1371,7 +1375,7 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 	setBitDePresencia(*pPid,pPagina,PRESENTE_MP);
 	setNroDeMarco(pPid,pPagina,indice);
 	// actualizo el valor cantPagEnMP asignado a ese PID
-	setcantPagEnMPxPID(*pPid,( getcantPagEnMPxPID(*pPid) - 1 ) );		// en realidad aca podria usar el campo count del headerFifo
+	setcantPagEnMPxPID(*pPid,( getcantPagEnMPxPID(*pPid) + 1 ) );		// en realidad aca podria usar el campo count del headerFifo
 	// actualizo bit de uso asociado al marco
 	setBitDeUso(*pPid,pPagina,1);
 
