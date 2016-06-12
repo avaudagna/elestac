@@ -151,29 +151,23 @@ int umc_handshake(){
 	char handShake;
 	int tamanioTrama = sizeof(char)+sizeof(int);
 
-	void* buffer = malloc(tamanioTrama);
+	void* buffer = malloc(sizeof(int));
 
-	if(recv(umcSocket, buffer,tamanioTrama,0)<= 0){
+    //recv el identificador de operacion (espero una 'U')
+	if(recv(umcSocket, &handShake, sizeof(char),0)<= 0){
 		free(buffer);
-		return handshakeOK;
+		return -1;
 	}
 
-	//Obtenemos el primer caracter
-	memcpy(&handShake, buffer,sizeof(char));
-
 	if(handShake == 'U'){ //El handshake es correcto
-		char aux[20], aux2[20];
 
-		memcpy(&aux, buffer, tamanioTrama);
-		int i, j=0;
-		for(i = 0; i < 20;i++){
-			if( aux[i] >= '0' && aux[i] <= '9' ){
-				aux2[j] = aux[i];
-				j++;
-			}
-		}
+        //recv el tamanio de pagina
+        if(recv(umcSocket, buffer,sizeof(int),0)<= 0){
+            free(buffer);
+            return -1;
+        }
 
-		TAMANIO_PAGINA = atoi(aux2);
+        TAMANIO_PAGINA = atoi(buffer);
 
 		init_BitMap();
 
@@ -340,65 +334,63 @@ void init_Server(){
 
 	acceptConnection(&umcSocket, &swapSocket);
 
-	void* buffer = malloc(sizeof(int));
-	int handshakeOK = 0;
+	void* buffer = NULL;
+//	int handshakeOK = 0;
 	int operacion = 0;
 
-	while(1){
-		if(handshakeOK){
-			buffer = malloc(sizeof(int));
 
-			puts("[INFO] Waiting for UMC request");
+    if(umc_handshake() != 1){
+        puts("[ERROR} Bad UMC hanshake");
+    }
 
-			if(recv(umcSocket,buffer,sizeof(char),0) <= 0){
-				free(buffer);
-				close(umcSocket);
-				close(swapSocket);
-
-				return;
-			}
-
-			/****************************
-			 * Leo el codigo de operacion
-			 * y convierto el char a int
-			 ****************************/
-            operacion = atoi(buffer);
+    while(1){
+        puts("[INFO] Waiting for UMC request");
+        buffer = malloc(sizeof(char));
+        if(recv(umcSocket,buffer,sizeof(char),0) <= 0){
             free(buffer);
+            close(umcSocket);
+            close(swapSocket);
 
-			switch (operacion) {
-				case ESCRIBIR: //pid(int), numeroPagina(int), codigo (undefined)
-					umc_escribir();
+            return;
+        }
 
-					break;
-				case LECTURA: //pid(int), numeroPagina(int)
-					umc_leer();
+        /****************************
+         * Leo el codigo de operacion
+         * y convierto el char a int
+         ****************************/
+        operacion = atoi(buffer);
+        free(buffer);
 
-					break;
-				case FINALIZARPROG: //pid(int)
-					umc_finalizarPrograma();
+        switch (operacion) {
+            case ESCRIBIR: //pid(int), numeroPagina(int), codigo (undefined)
+                umc_escribir();
 
-					break;
-				default:
-					printf("[Error] Request code unknown: %d \n", operacion);
+                break;
+            case LECTURA: //pid(int), numeroPagina(int)
+                umc_leer();
 
-					break;
-			}
+                break;
+            case FINALIZARPROG: //pid(int)
+                umc_finalizarPrograma();
 
-			operacion = -1;
-
-		} else { //HAGO EL HANDSHAKE
-			handshakeOK = umc_handshake();
-
-			char error[1] = {'E'};
-			if(send(umcSocket,(void *) error, 1,0) == -1) {
-				perror("send");
-			}
-
-		}
+                break;
+            default:
+                printf("[Error] Request code unknown: %d \n", operacion);
+                break;
+        }
+    }
+//        else { //volvemos a tratar de hacer el hand
+//			handshakeOK = umc_handshake();
+//
+//			char error[1] = {'E'};
+//			if(send(umcSocket,(void *) error, 1,0) == -1) {
+//				perror("send");
+//			}
+//
+//		}
 
 	}
 
-}
 
 void umc_leer(){
 	int pid;
@@ -407,24 +399,21 @@ void umc_leer(){
 	char* buffer = malloc(sizeof(int));
 
 	//Recibo el PID
-	if(recv(umcSocket, buffer, 1, 0)<= 0)
+	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
 		exit(1);
 
 	//Lo convertimos a int
-	char aux;
-	memcpy(&aux,buffer,1);
-	pid = aux - '0';
+	pid = atoi(buffer);
 
 	free(buffer);
 	buffer = malloc(sizeof(int));
 
 	//Recibo el numero pagina
-	if(recv(umcSocket, buffer, 1, 0)<= 0)
+	if(recv(umcSocket, buffer, sizeof(buffer), 0)<= 0)
 		exit(1);
 
 	//Lo convertimos a int
-	memcpy(&aux,buffer,1);
-	numeroPagina = aux - '0';
+	numeroPagina = atoi(buffer);
 
 	free(buffer);
 	buffer = malloc(sizeof(char) * TAMANIO_PAGINA);
@@ -433,10 +422,10 @@ void umc_leer(){
 	char* resultadoRequest = request_Lectura(pid, numeroPagina);
 
 	if(resultadoRequest != NULL){ //ENVIAMOS A UMC 1+cantPaginasLibres
-		char* respuesta = malloc(sizeof(char) * TAMANIO_PAGINA);
-		sprintf(respuesta,"%s", resultadoRequest);
+		void* respuesta = calloc(1, sizeof(int) + TAMANIO_PAGINA);
+		sprintf(respuesta,"%04d%s",pid, resultadoRequest);
 
-		if(send(umcSocket,(void *) respuesta, TAMANIO_PAGINA,0) == -1){
+		if(send(umcSocket, respuesta, sizeof(int) + TAMANIO_PAGINA,0) == -1){
 			perror("send");
 			exit(1);
 		}
@@ -538,7 +527,7 @@ void umc_finalizarPrograma(){
 
 	if(resultadoRequest > 0){ //ENVIAMOS A UMC 1+cantPaginasLibres
 		char* respuesta = malloc(sizeof(char)*SIZE_TRAMA);
-		sprintf(respuesta,"S%d", paginas_CantidadPaginasLibres());
+		sprintf(respuesta,"1%d", paginas_CantidadPaginasLibres());
 
 		if(send(umcSocket,(void *) respuesta, SIZE_TRAMA,0) == -1){
 			perror("send");
