@@ -59,6 +59,7 @@ int 	connect2UMC();
 int		control_clients();
 int 	accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista);
 int     getIOindex(char *io_name);
+int     getSharedIndex(char *shared_name);
 void    call_handlers();
 void	accept_new_PCB(int newConsole);
 void 	tratarSeniales(int);

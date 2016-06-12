@@ -26,6 +26,7 @@ int main (int argc, char **argv){
 	PCB_BLOCKED = list_create();
 	PCB_EXIT = list_create();
 	cpus_conectadas = list_create();
+	cpus_executing = list_create();
 	consolas_conectadas = list_create();
 	if (start_kernel(argc, argv[1])<0) return 0; //load settings
 	//clientUMC=connect2UMC();
@@ -213,6 +214,7 @@ void add2FD_SET(void *client){
 
 void check_CPU_FD_ISSET(void *cpu){
 	char *cpu_protocol = malloc(2);
+	int setValue = 0;
 	t_Client *laCPU = cpu;
 	int pcb_size;
 	void *pcb_serializado = NULL;
@@ -276,24 +278,47 @@ void check_CPU_FD_ISSET(void *cpu){
 				log_warning(kernel_log,"Error with CPU protocol and semaphore operation. Function check_CPU_FD_ISSET.");
 				break;
 			case 5:// var compartida
-				//obtener_valor [identificador de variable compartida]
-				//grabar_valor  [identificador de variable compartida] [valor a grabar]
-				log_warning(kernel_log,"Error with CPU protocol and shared variable operation. Function check_CPU_FD_ISSET.");
+				recv(laCPU->clientID, tmp_buff, 1, 0);
+				if (strncmp(tmp_buff, "1",1) == 0) setValue = 1;
+				recv(laCPU->clientID, tmp_buff, 4, 0);
+				size_t varNameSize = (size_t) atoi(tmp_buff);
+				char *theShared = malloc(varNameSize);
+				recv(laCPU->clientID, theShared, varNameSize, 0);
+				int sharedIndex = getSharedIndex(theShared);
+				if (setValue == 1) {
+					recv(laCPU->clientID, tmp_buff, 4, 0);//recv & set the value
+					int theVal = atoi(tmp_buff);
+					setup.SHARED_VALUES[sharedIndex] = theVal;
+				} else {
+					char *sharedValue = malloc(4);
+					sprintf(sharedValue, "%04d", setup.SHARED_VALUES[sharedIndex]);
+					send(laCPU->clientID, sharedValue, 4, 0); // send the value to the CPU
+					free(sharedValue);
+				}
+				free(theShared);
 				break;
 			case 6:// imprimirValor
 				recv(laCPU->clientID, tmp_buff, 4, 0);
-				send(laCPU->pid, "1", 1, 0);
-				send(laCPU->pid, tmp_buff, 4, 0); // send the value to the console
+				size_t nameSize = (size_t) atoi(tmp_buff);
+				char *theName = malloc(nameSize);
+				recv(laCPU->clientID, theName, nameSize, 0);
+				recv(laCPU->clientID, tmp_buff, 4, 0);
+				char *value2console = malloc(1+4+nameSize+4);
+				asprintf(&value2console, "%d%04d%s%04d", 1, nameSize, theName, tmp_buff);//1+nameSize+name+value
+				send(laCPU->pid, value2console, (9+nameSize), 0); // send the value to the console
+				free(theName);
+				free(value2console);
 				break;
 			case 7:// imprimirTexto
 				recv(laCPU->clientID, tmp_buff, 4, 0);
 				size_t txtSize = (size_t) atoi(tmp_buff);
 				char *theTXT = malloc(txtSize);
 				recv(laCPU->clientID, theTXT, txtSize, 0);
-				char *txt2console = NULL;
+				char *txt2console = malloc(1+4+txtSize);
 				asprintf(&txt2console, "%d%04d%s", 2, txtSize, theTXT);
 				send(laCPU->pid, txt2console, (5+txtSize), 0); // send the text to the console
 				free(theTXT);
+				free(txt2console);
 				break;
 			default:
 				log_error(kernel_log,"Caso no contemplado. CPU dijo: %s",cpu_protocol);
@@ -512,6 +537,17 @@ int getIOindex(char *io_name) {
 		if (strcmp(setup.IO_ID[i],io_name) == 0) {
 			return i;
 		}
+	}
+	return -1;
+}
+
+int getSharedIndex(char *shared_name) {
+	int i = 0;
+	while (setup.SHARED_VARS[i]){
+		if (strcmp(setup.SHARED_VARS[i],shared_name) == 0) {
+			return i;
+		}
+		i++;
 	}
 	return -1;
 }
