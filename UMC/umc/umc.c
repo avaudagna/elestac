@@ -215,6 +215,7 @@ void handShakeCpu(int *socketBuff);
 
 
 t_list *obtenerHeaderFifoxPid(t_list *headerFifos, int pPid);
+CLOCK_PID * obtenerCurrentClockPidEntry(t_list * headerFifos, int pid);
 
 bool pidEstaEnListaFIFOxPID(t_list *headerFifos, int pPid);
 
@@ -983,6 +984,8 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 
 					if  ( cantPagDisponiblesxPID(pid_actual) > 0){ // SI EL PROCESO TIENE MARGEN PARA ALMACENAR MAS PAGINAS EN MEMORIA
 						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, tamanioContenidoPagina);
+                        //TODO(Alan): llamado directo, fix temporal.
+                        resolverEnMP(socketBuff, aux, _offset, _tamanio);
 					}
 					else{	// el proceso llego a la maxima cantidad de marcos proceso
 						algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
@@ -1361,10 +1364,17 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 		list_add(headerFIFOxPID,pid_clock);
 	}
 
-	if ( (headerFifo = obtenerHeaderFifoxPid(headerFIFOxPID,*pPid)) == NULL) // si el PID todavia no tiene ningun marco asignado en memoria , creo la FIFO asociada a ese PID
-		headerFifo = list_create();
+    //TODO(Alan): Esto esta retornando un puntero a null, hay que retornar la estructura que lo contiene para inicializarlo.
+//	if ( (headerFifo = obtenerHeaderFifoxPid(headerFIFOxPID,*pPid)) == NULL) // si el PID todavia no tiene ningun marco asignado en memoria , creo la FIFO asociada a ese PID
+//		headerFifo = list_create();
+    CLOCK_PID * entry = NULL;
+    entry = obtenerCurrentClockPidEntry(headerFIFOxPID,*pPid);
+         if(entry->headerFifo == NULL) {  // si el PID todavia no tiene ningun marco asignado en memoria , creo la FIFO asociada a ese PID
+            entry->headerFifo = list_create();
+         }
 
-	list_add(headerFifo, pagina);	// agrego la pagina a la fifo (  se agregan al final de la lista)
+
+	list_add(entry->headerFifo, pagina);	// agrego la pagina a la fifo (  se agregan al final de la lista)
 
 
 	comienzoPaginaLibre = obtenerMarcoLibreEnMP(&indice);	// levanto el primer MARCO LIBRE en MP
@@ -1417,6 +1427,16 @@ t_list *obtenerHeaderFifoxPid(t_list *headerFifos, int pPid) {
 	return NULL;
 }
 
+CLOCK_PID * obtenerCurrentClockPidEntry(t_list * headerFifos, int pid) {
+	t_link_element * aux  = NULL;
+	aux = headerFifos->head ;
+	while ( aux != NULL){
+		if (((CLOCK_PID *) aux->data)->pid == pid )
+			return ((CLOCK_PID *) aux->data);
+		aux = aux->next;
+	}
+	return NULL;
+}
 void setBitDeUso(int pPid, int pPagina, int valorBitDeUso) {
 
 	t_list *fifoDePid = NULL;
@@ -1521,7 +1541,7 @@ void resolverEnMP(int *socketBuff, PAGINA *pPagina, int offset, int tamanio) {
 
 	memcpy(buffer,(vectorMarcos[pPagina->nroDeMarco].comienzoMarco)+offset,tamanio);
 
-	if (send(*socketBuff,buffer,tamanio+1,0) <= 0)	// envio a CPU la pagina
+	if (send(*socketBuff,buffer,tamanio,0) <= 0)	// envio a CPU la pagina
 		perror("send");
 
 }
