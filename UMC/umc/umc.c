@@ -96,8 +96,9 @@ typedef struct _marco {
 typedef struct _tlb {
 	int pid,
 		nroPagina,
-		indice,
-		estado;	// numero de marco en memoria principal
+		nroDeMarco,
+		estado,
+		contadorLRU;	// numero de marco en memoria principal
 }TLB;
 
 
@@ -238,6 +239,15 @@ void setBitModificado(int pPid, int pagina, int valorBitModificado);
 
 void EnviarOKACPU(int socketBuff, int pPid);
 
+void agregarPaginaATLB(int pPid, PAGINA *pPagina, int indice);
+
+bool hayEspacioEnTlb(int *indice);
+
+void AlgoritmoLRU(int *indice);
+void actualizarTlb(int *pPid,PAGINA * pPagina);
+
+void setEstadoMarco(int indice, int nuevoEstado);
+
 int main(int argc , char **argv){
 
 	if(argc != 2){
@@ -275,8 +285,9 @@ void init_TLB(void) {
 			aux = (TLB *) malloc(sizeof(TLB));
 			aux->pid=0;
 			aux->nroPagina=0;
-			aux->indice=0;
+			aux->nroDeMarco=0;
 			aux->estado=LIBRE;
+			aux->contadorLRU=0;
 			list_add(headerTLB,aux);
 		}
 	}
@@ -954,7 +965,7 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 	_tamanio=atoi(buffer);
 
 	if((umcGlobalParameters.entradasTLB > 0 ) && (consultarTLB(pid_actual,_pagina,&indice_buff))){	// ¿Se usa TLB ? y.. ¿Esta en TLB?
-		// si esta en la tabla,  ya tengo el indice y de ahi me voy a vectorMarcos[indice]
+		// si esta en la tabla,  ya tengo el nroDeMarco y de ahi me voy a vectorMarcos[nroDeMarco]
 
 		temp = (PAGINA *) malloc (sizeof(PAGINA));
 		temp->nroDeMarco = indice_buff;
@@ -1136,7 +1147,7 @@ void algoritmoClock(int pPid, int numPagNueva, int tamanioContenidoPagina, void 
 
 	fifoPID = obtenerHeaderFifoxPid(headerFIFOxPID, pPid);
 
-	PunteroPIDClock = obtenerPunteroClockxPID(headerPunterosClock, pPid);        // levanto el indice que me indica por donde iniciar la barrida de marcos para el algoritmo de reemplazo
+	PunteroPIDClock = obtenerPunteroClockxPID(headerPunterosClock, pPid);        // levanto el nroDeMarco que me indica por donde iniciar la barrida de marcos para el algoritmo de reemplazo
 
 	recorredor = list_get_nodo(fifoPID,PunteroPIDClock->indice);		// posiciono el puntero donde quedo la ultima vez que tuve que utilizar el algoritmo
 
@@ -1167,7 +1178,7 @@ void algoritmoClock(int pPid, int numPagNueva, int tamanioContenidoPagina, void 
 					((CLOCK_PAGINA *)recorredor->data)->bitDeUso =1;
 					((CLOCK_PAGINA *)recorredor->data)->nroPagina=pagina_nueva->nroPagina;
 
-					PunteroPIDClock->indice++;	// actualizo el indice pa la proxima vez que se ejecute el CLOCK
+					PunteroPIDClock->indice++;	// actualizo el nroDeMarco pa la proxima vez que se ejecute el CLOCK
 
 					break;
 				}
@@ -1269,7 +1280,7 @@ bool consultarTLB(int *pPid, int pagina, int *indice) {
 	if ( aux == NULL)
 		return false;
 	else {
-		*indice = ((TLB *) aux->data)->indice;
+		*indice = ((TLB *) aux->data)->nroDeMarco;
 		return true;
 	}
 }
@@ -1393,7 +1404,7 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 
 
 	comienzoPaginaLibre = obtenerMarcoLibreEnMP(&indice);	// levanto el primer MARCO LIBRE en MP
-
+	setEstadoMarco(indice,OCUPADO);
 	// almaceno pagina en memoria principal
 	memcpy(comienzoPaginaLibre,codigo,tamanioPagina);
 	// actualizo bit de presencia y marco donde se encuentra almacenado en memoria principal
@@ -1403,6 +1414,12 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 	setcantPagEnMPxPID(*pPid,( getcantPagEnMPxPID(*pPid) + 1 ) );		// en realidad aca podria usar el campo count del headerFifo
 	// actualizo bit de uso asociado al marco
 	setBitDeUso(*pPid,pPagina,1);
+
+}
+
+void setEstadoMarco(int indice, int nuevoEstado) {
+
+	vectorMarcos[indice].estado = nuevoEstado;
 
 }
 
@@ -1587,22 +1604,76 @@ void limpiarPidDeTLB(t_list * Tlb , int pPid  ){
 
 }
 
-void agregarPaginaATLB(t_list *Tlb, int pPid, PAGINA *pPagina){
+
+void agregarPaginaATLB(int pPid, PAGINA *pPagina, int indice) {
 
 
-	t_link_element *aux = NULL;
+	TLB * aux = NULL;
 
-	aux = Tlb->head;
+	aux = (TLB *) malloc(sizeof(TLB));
+	aux->pid=pPid;
+	aux->nroPagina=pPagina->nroPagina;
+	aux->nroDeMarco = pPagina->nroDeMarco;
+	aux->estado = OCUPADO;
+	aux->contadorLRU=0;	// va en 0 porque acaba de ser referenciado
 
-	while (aux != NULL){	// barro toda la TLB hasta encontrar una entrada LIBRE, y ahi nomas reemplazo :)
-		if( ((TLB*)aux->data)->estado == LIBRE){
-			((TLB*)aux->data)->pid = pPid;
-			((TLB*)aux->data)->nroPagina=pPagina->nroPagina;
-			((TLB*)aux->data)->estado=OCUPADO;
-			break;
+	list_replace_and_destroy_element(headerTLB,indice,aux,free);	// hago el reemplazo
+
+}
+
+// te dice si hay espacio o no en la TLB, y , ademas , en caso de haber disponibilidad, te devuelve indice que indica donde podes hacer el reemplazo
+bool hayEspacioEnTlb(int *indice) {
+	int i = 0;
+	t_link_element * aux = NULL;
+
+	aux = headerTLB->head ;
+
+	while (aux != NULL){
+		if( ((TLB*)aux->data)->estado == LIBRE) {
+			*indice = i;
+			return true;
 		}
 		aux = aux->next;
+		i++;
 	}
+	*indice = -1;
+	return false;
+
+}
+
+
+
+void actualizarTlb(int *pPid,PAGINA * pPagina){
+
+	int ind_aux = 0;
+
+	if (hayEspacioEnTlb(&ind_aux) == false) {    // si no hay espacio en TLB, entonces aplico LRU
+		AlgoritmoLRU(&ind_aux);
+	}
+
+	agregarPaginaATLB(*pPid,pPagina,ind_aux);
+
+
+}
+
+// lo unico que hago es obtener el indice del marco que lleva mas tiempo sin ser referenciado
+void AlgoritmoLRU(int *indice) {
+
+	t_link_element *aux = NULL;
+	int indice_max = 0,
+		contador_max = 0,
+		i = 0;
+
+	aux = headerTLB->head;
+
+	for(i=0;(i<headerTLB->elements_count) && (aux != NULL);i++,aux=aux->next){
+		if(contador_max < ((TLB*)aux->data)->contadorLRU ){
+			contador_max = ((TLB*)aux->data)->contadorLRU ;
+			indice_max = i;
+		}
+	}
+
+	*indice = indice_max;
 
 }
 
