@@ -128,6 +128,9 @@ PAGINA * obtenerPaginaDeTablaDePaginas(t_list *headerTablaPaginas, int nroPagina
 #define ESCRITURA 1
 #define LECTURA	3
 
+#define ABORTAR_PROCESO "6"
+#define OK "1"
+
 // Funciones para operar con el swap
 void init_Swap(void);
 void handShake_Swap(void);
@@ -231,22 +234,24 @@ t_link_element * list_get_nodo(t_list *self, int index);
 
 void PedidoPaginaASwap(int pid, int pagina, int operacion);
 
-void AlmacenarBytes(int *socketBuff, int *pid_actual);
+void almacenarBytes(int *socketBuff, int *pid_actual);
 
 void guardarBytesEnPagina(int *pid_actual, int pagina, int offset, int tamanio, void *bytesAGuardar);
 
 void setBitModificado(int pPid, int pagina, int valorBitModificado);
 
-void EnviarOKACPU(int socketBuff, int pPid);
-
 void agregarPaginaATLB(int pPid, PAGINA *pPagina, int indice);
 
 bool hayEspacioEnTlb(int *indice);
 
-void AlgoritmoLRU(int *indice);
+void algoritmoLRU(int *indice);
 void actualizarTlb(int *pPid,PAGINA * pPagina);
 
 void setEstadoMarco(int indice, int nuevoEstado);
+void limpiarPidDeTLB(int pPid);
+void actualizarContadoresLRU(int pid , int pagina);
+
+void enviarMsgACPU(int *socketBuff, const char *mensaje, int size);
 
 int main(int argc , char **argv){
 
@@ -503,7 +508,7 @@ void atenderCPU(int *socketBuff){
 			estado = IDENTIFICADOR_OPERACION;
 			break;
 		case ALMACENAMIENTO_BYTES:
-			AlmacenarBytes(socketBuff,&pid_actual);
+			almacenarBytes(socketBuff, &pid_actual);
 			estado = IDENTIFICADOR_OPERACION;
 			break;
 		case FIN_COMUNICACION_CPU:
@@ -534,10 +539,15 @@ void handShakeCpu(int *socketBuff) {
 void cambioProcesoActivo(int *socket, int *pid){
 
 	char buffer[4];
+	// fflush de TLB
+	limpiarPidDeTLB(*pid);
+
 	// levanto el nuevo PID que esta ejecutando el CPU
 	if ( (recv(*socket, (void*) (buffer), 4, 0)) <= 0 )
 		perror("recv");
 	*pid = atoi(buffer);
+
+
 
 }
 
@@ -969,7 +979,9 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 
 		temp = (PAGINA *) malloc (sizeof(PAGINA));
 		temp->nroDeMarco = indice_buff;
+		temp->nroPagina=_pagina;
 		resolverEnMP(socketBuff,temp,_offset,_tamanio);	// lo hago asi para poder reutilizar resolverEnMP , que al fin y al cabo es lo que se termina haciendo
+		actualizarTlb(pid_actual,temp);
 		free(temp);
 
 	}
@@ -990,30 +1002,42 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 
 				if ( marcosDisponiblesEnMP() == 0){	// NO HAY MARCOS LIBRES EN MEMORIA
 					if( cantPagDisponiblesxPID(pid_actual) == umcGlobalParameters.marcosXProc ){// si el proceso no tiene asignado ningun marco
-						// SE ABORTA EL PROCESO
+						enviarMsgACPU(socketBuff,ABORTAR_PROCESO,1);
 					}
 					else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo
 						algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
+						actualizarTlb(pid_actual,aux);
 					}
 				}else{		// hay marcos disponibles
 
 					if  ( cantPagDisponiblesxPID(pid_actual) > 0){ // SI EL PROCESO TIENE MARGEN PARA ALMACENAR MAS PAGINAS EN MEMORIA
 						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, tamanioContenidoPagina);
+						actualizarTlb(pid_actual,aux);
                         //TODO(Alan): llamado directo, fix temporal.
                         resolverEnMP(socketBuff, aux, _offset, _tamanio);
 					}
 					else{	// el proceso llego a la maxima cantidad de marcos proceso
 						algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
+						actualizarTlb(pid_actual,aux);
 					}
 				}
 			}
 			else { // La pagina se encuentra en memoria principal
 				resolverEnMP(socketBuff, aux, _offset, _tamanio); // pagina en memoria principal , se la mando de una al CPU :)
+				actualizarTlb(pid_actual,aux);
 			}
 		}
 	}
 }
-void AlmacenarBytes(int *socketBuff, int *pid_actual) {
+
+void enviarMsgACPU(int *socketBuff, const char *mensaje, int size) {
+
+	if ( send(*socketBuff,mensaje,size,0) <= 0)
+		perror("send");
+
+}
+
+void almacenarBytes(int *socketBuff, int *pid_actual) {
 // PAGINA+OFFSET+TAMANIO+BYTES
 	int 	_pagina,
 			_offset,
@@ -1047,64 +1071,75 @@ void AlmacenarBytes(int *socketBuff, int *pid_actual) {
 	// levanto bytes a almacenar
 
 	bytesAlmacenar = (void * ) malloc (_tamanio);
+	temp = (PAGINA *) malloc(sizeof(PAGINA));
+	temp->nroPagina = _pagina;
 
 	if(recv(*socketBuff, (void*) bytesAlmacenar, _tamanio, 0) <= 0 )
 		perror("recv");
 
-	headerTablaDePaginas = obtenerTablaDePaginasDePID(headerListaDePids, *pid_actual);
 
-	aux = obtenerPaginaDeTablaDePaginas(headerTablaDePaginas, _pagina);
+	if((umcGlobalParameters.entradasTLB > 0 ) && (consultarTLB(pid_actual,_pagina,&indice_buff))){	// ¿Se usa TLB ? y.. ¿Esta en TLB?
+		// si esta en la tabla,  ya tengo el nroDeMarco y de ahi me voy a vectorMarcos[nroDeMarco]
 
-	if (aux == NULL) {	// valido pedido de pagina
-		pedidoDePaginaInvalida(socketBuff);
+		guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
+		setBitDeUso(*pid_actual,_pagina,1);
+		setBitModificado(*pid_actual,_pagina,1);
+		temp->nroDeMarco = indice_buff;
+		actualizarTlb(pid_actual,temp);
+
 	}
-	else {
+	else{
+		headerTablaDePaginas = obtenerTablaDePaginasDePID(headerListaDePids, *pid_actual);
 
-		if (aux->presencia == AUSENTE) {    // La pagina NO se encuentra en memoria principal
+		aux = obtenerPaginaDeTablaDePaginas(headerTablaDePaginas, _pagina);
 
-			contenidoPagina = pedirPaginaSwap(socketBuff, pid_actual, aux->nroPagina, &tamanioContenidoPagina); //1- Pedir pagina a Swap
+		if (aux == NULL) {	// valido pedido de pagina
+			pedidoDePaginaInvalida(socketBuff);
+		}
+		else {
 
-			if ( marcosDisponiblesEnMP() == 0){	// NO HAY MARCOS LIBRES EN MEMORIA
-				if( cantPagDisponiblesxPID(pid_actual) == umcGlobalParameters.marcosXProc ){// si el proceso no tiene asignado ningun marco
-					// SE ABORTA EL PROCESO
-				}
-				else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo , y una vez que ya se trajo la pagina a MP,  ahi si guardo los bytes
-					algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
-					guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
-					setBitDeUso(*pid_actual,_pagina,1);
-					EnviarOKACPU(*socketBuff,*pid_actual);
-				}
-			}else{		// hay marcos disponibles
+			if (aux->presencia == AUSENTE) {    // La pagina NO se encuentra en memoria principal
 
-				if  ( cantPagDisponiblesxPID(pid_actual) > 0){ // SI EL PROCESO TIENE MARGEN PARA ALMACENAR MAS PAGINAS EN MEMORIA
-					almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, tamanioContenidoPagina);
-					guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
-					setBitDeUso(*pid_actual,_pagina,1);
-					EnviarOKACPU(*socketBuff,*pid_actual);
-				}
-				else{	// el proceso llego a la maxima cantidad de marcos proceso
-					algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
-					guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
-					setBitDeUso(*pid_actual,_pagina,1);
-					EnviarOKACPU(*socketBuff,*pid_actual);
+				contenidoPagina = pedirPaginaSwap(socketBuff, pid_actual, aux->nroPagina, &tamanioContenidoPagina); //1- Pedir pagina a Swap
+
+				if ( marcosDisponiblesEnMP() == 0){	// NO HAY MARCOS LIBRES EN MEMORIA
+					if( cantPagDisponiblesxPID(pid_actual) == umcGlobalParameters.marcosXProc ){// si el proceso no tiene asignado ningun marco
+						// SE ABORTA EL PROCESO
+					}
+					else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo , y una vez que ya se trajo la pagina a MP,  ahi si guardo los bytes
+						algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
+						guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
+						setBitDeUso(*pid_actual,_pagina,1);
+						enviarMsgACPU(socketBuff,OK,1);
+						actualizarTlb(pid_actual,aux);
+					}
+				}else{		// hay marcos disponibles
+
+					if  ( cantPagDisponiblesxPID(pid_actual) > 0){ // SI EL PROCESO TIENE MARGEN PARA ALMACENAR MAS PAGINAS EN MEMORIA
+						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, tamanioContenidoPagina);
+						guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
+						setBitDeUso(*pid_actual,_pagina,1);
+						enviarMsgACPU(socketBuff,OK,1);
+						actualizarTlb(pid_actual,aux);
+					}
+					else{	// el proceso llego a la maxima cantidad de marcos proceso
+						algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
+						guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
+						setBitDeUso(*pid_actual,_pagina,1);
+						enviarMsgACPU(socketBuff,OK,1);
+						actualizarTlb(pid_actual,aux);
+					}
 				}
 			}
-		}
-		else { // La pagina se encuentra en memoria principal , almaceno de una , seteo bit de modificacion y bit de uso = 1
-			guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
-			setBitDeUso(*pid_actual,_pagina,1);
-			setBitModificado(*pid_actual,_pagina,1);
-			EnviarOKACPU(*socketBuff,*pid_actual);
-
+			else { // La pagina se encuentra en memoria principal , almaceno de una , seteo bit de modificacion y bit de uso = 1
+				guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
+				setBitDeUso(*pid_actual,_pagina,1);
+				setBitModificado(*pid_actual,_pagina,1);
+				enviarMsgACPU(socketBuff,OK,1);
+				actualizarTlb(pid_actual,aux);
+			}
 		}
 	}
-
-}
-
-void EnviarOKACPU(int socketBuff, int pPid) {
-
-	if ( send(socketBuff,"1",1,0) <= 0)
-		perror("send");
 
 }
 
@@ -1587,20 +1622,22 @@ void pedidoDePaginaInvalida(int *socketBuff) {
 
 //Funciones para el Manejo de TLB
 
-void limpiarPidDeTLB(t_list * Tlb , int pPid  ){
+void limpiarPidDeTLB(int pPid) {
 
 	t_link_element *aux = NULL;
 
-	aux = Tlb->head;
+	aux = headerTLB->head;
 
 	while(aux != NULL){
-		if ( ((TLB *)aux->data)->pid == pPid )
-			((TLB *)aux->data)->estado = LIBRE;
+		if ( ((TLB *)aux->data)->pid == pPid ) {
+
+			((TLB *) aux->data)->estado = LIBRE;
+			((TLB *) aux->data)->contadorLRU = 0;
+		}
 
 		aux =  aux->next;
 
 	}
-
 
 }
 
@@ -1648,16 +1685,16 @@ void actualizarTlb(int *pPid,PAGINA * pPagina){
 	int ind_aux = 0;
 
 	if (hayEspacioEnTlb(&ind_aux) == false) {    // si no hay espacio en TLB, entonces aplico LRU
-		AlgoritmoLRU(&ind_aux);
+		algoritmoLRU(&ind_aux);
 	}
 
 	agregarPaginaATLB(*pPid,pPagina,ind_aux);
-
+	actualizarContadoresLRU(*pPid,pPagina->nroPagina);
 
 }
 
 // lo unico que hago es obtener el indice del marco que lleva mas tiempo sin ser referenciado
-void AlgoritmoLRU(int *indice) {
+void algoritmoLRU(int *indice) {
 
 	t_link_element *aux = NULL;
 	int indice_max = 0,
@@ -1666,7 +1703,7 @@ void AlgoritmoLRU(int *indice) {
 
 	aux = headerTLB->head;
 
-	for(i=0;(i<headerTLB->elements_count) && (aux != NULL);i++,aux=aux->next){
+	for(i=0;(i<(headerTLB->elements_count)) && (aux != NULL);i++,aux=aux->next){
 		if(contador_max < ((TLB*)aux->data)->contadorLRU ){
 			contador_max = ((TLB*)aux->data)->contadorLRU ;
 			indice_max = i;
@@ -1674,7 +1711,23 @@ void AlgoritmoLRU(int *indice) {
 	}
 
 	*indice = indice_max;
-
 }
 
+void actualizarContadoresLRU(int pid , int pagina){
+	t_link_element * aux  = NULL;
+	aux = headerTLB->head;
+
+	while ( aux != NULL){
+
+		if (((TLB*)aux->data)->estado == OCUPADO)
+			((TLB*)aux->data)->contadorLRU++;
+
+		if ( ( ((TLB*)aux->data)->pid == pid ) && ( ((TLB*)aux->data)->nroPagina == pagina ) )
+			((TLB*)aux->data)->contadorLRU=0;
+
+		aux =  aux->next;
+
+	}
+
+}
 
