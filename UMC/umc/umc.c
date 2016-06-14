@@ -96,7 +96,8 @@ typedef struct _marco {
 typedef struct _tlb {
 	int pid,
 		nroPagina,
-		indice;	// numero de marco en memoria principal
+		indice,
+		estado;	// numero de marco en memoria principal
 }TLB;
 
 
@@ -235,6 +236,8 @@ void guardarBytesEnPagina(int *pid_actual, int pagina, int offset, int tamanio, 
 
 void setBitModificado(int pPid, int pagina, int valorBitModificado);
 
+void EnviarOKACPU(int socketBuff, int pPid);
+
 int main(int argc , char **argv){
 
 	if(argc != 2){
@@ -273,6 +276,7 @@ void init_TLB(void) {
 			aux->pid=0;
 			aux->nroPagina=0;
 			aux->indice=0;
+			aux->estado=LIBRE;
 			list_add(headerTLB,aux);
 		}
 	}
@@ -1057,6 +1061,7 @@ void AlmacenarBytes(int *socketBuff, int *pid_actual) {
 					algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
 					guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
 					setBitDeUso(*pid_actual,_pagina,1);
+					EnviarOKACPU(*socketBuff,*pid_actual);
 				}
 			}else{		// hay marcos disponibles
 
@@ -1064,11 +1069,13 @@ void AlmacenarBytes(int *socketBuff, int *pid_actual) {
 					almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, tamanioContenidoPagina);
 					guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
 					setBitDeUso(*pid_actual,_pagina,1);
+					EnviarOKACPU(*socketBuff,*pid_actual);
 				}
 				else{	// el proceso llego a la maxima cantidad de marcos proceso
 					algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
 					guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
 					setBitDeUso(*pid_actual,_pagina,1);
+					EnviarOKACPU(*socketBuff,*pid_actual);
 				}
 			}
 		}
@@ -1076,9 +1083,17 @@ void AlmacenarBytes(int *socketBuff, int *pid_actual) {
 			guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
 			setBitDeUso(*pid_actual,_pagina,1);
 			setBitModificado(*pid_actual,_pagina,1);
+			EnviarOKACPU(*socketBuff,*pid_actual);
 
 		}
 	}
+
+}
+
+void EnviarOKACPU(int socketBuff, int pPid) {
+
+	if ( send(socketBuff,"1",1,0) <= 0)
+		perror("send");
 
 }
 
@@ -1550,6 +1565,45 @@ void pedidoDePaginaInvalida(int *socketBuff) {
 
 	if ( send(*socketBuff,"2",1,0) == -1 )
 		perror("send");
+}
+
+
+//Funciones para el Manejo de TLB
+
+void limpiarPidDeTLB(t_list * Tlb , int pPid  ){
+
+	t_link_element *aux = NULL;
+
+	aux = Tlb->head;
+
+	while(aux != NULL){
+		if ( ((TLB *)aux->data)->pid == pPid )
+			((TLB *)aux->data)->estado = LIBRE;
+
+		aux =  aux->next;
+
+	}
+
+
+}
+
+void agregarPaginaATLB(t_list *Tlb, int pPid, PAGINA *pPagina){
+
+
+	t_link_element *aux = NULL;
+
+	aux = Tlb->head;
+
+	while (aux != NULL){	// barro toda la TLB hasta encontrar una entrada LIBRE, y ahi nomas reemplazo :)
+		if( ((TLB*)aux->data)->estado == LIBRE){
+			((TLB*)aux->data)->pid = pPid;
+			((TLB*)aux->data)->nroPagina=pPagina->nroPagina;
+			((TLB*)aux->data)->estado=OCUPADO;
+			break;
+		}
+		aux = aux->next;
+	}
+
 }
 
 
