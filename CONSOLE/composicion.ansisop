@@ -1,0 +1,42 @@
+begin 
+	variables a, b, d
+	a = 5
+	sumar6 &a
+	
+	io Impresora 30
+	
+	b = 5
+	sumarYRestar &b
+	
+#Verificar separacion de parametros
+	d <- restar a b
+	io Impresora 20
+	print d
+#d deberia ser 0
+	
+	io Disco 2
+	io Coso 13
+	
+end
+
+function sumarYRestar
+	*$0 = 9 + *$0
+#Corroborar si se puede hacer lo siguiente
+	function restar3 &0
+end
+
+funcion restar3
+	*$0 = *$0 - 3
+	io Scanner 20
+end
+
+function sumar6
+	*$0 = 6 + *$0
+	io Scanner 10
+end
+
+function restar
+variables f
+    f = *$0 - *$1
+    return f
+end

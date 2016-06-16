@@ -1,0 +1,10 @@
+begin
+	variables o, g, t
+	o = 13
+	io Coso 35
+	g = o * 4
+	io Impresora g
+	t = g - 45 
+	io Scanner t
+	print t
+end

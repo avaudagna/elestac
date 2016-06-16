@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 	fread(prog, sz + 1, 1, fp);
 	fclose(fp);
 
-	int sizeMsj = strlen("0") + 5 + (int) sz; //T1 no se lo voy a enviar más... sacar
+	int sizeMsj = strlen("0") + 5 + (int) sz;
 	char* mensaje = (char*) malloc(sizeMsj);
 
 	char buffer[20];
@@ -78,35 +78,33 @@ int main(int argc, char *argv[]) {
 		if (recv(kernelSocketClient, kernel_reply, 4, 0) < 0) {
 			puts("recv failed");
 			break;
-		} else if(!strcmp(kernel_reply, "0000")){
+		} else if (!strcmp(kernel_reply, "0000")) {
 			printf("No hay suficiente espacio en memoria para ejecutar el programa\n");
-		} else{
+		} else {
 			printf("Vamo a calmarno. Su programa se está ejecutando\n");
 			puts("Kernel reply :");
 			puts(kernel_reply);
 		}
 
-	}
-	/*
-	 * OJO con este while, ya no recibo "kernel"...
-	 */
-	while (1);
-
-	do {
-		if (kernelSocketClient, kernel_reply, 1, 0) > 0){
-			log_info(kernel_log,"CPU dijo: %s - Ejecutar protocolo correspondiente",cpu_protocol);
+		if ((kernelSocketClient, kernel_reply, 1, 0) > 0) {
+			//log_info(console_log, "CONSOLE dijo: %s - Ejecutar protocolo correspondiente", kernel_reply);
 			switch (atoi(cpu_protocol)) {
 				case 0:// Program END
 					printf("Vamo a recontra calmarno. El programa finalizó correctamente\n");
 					break;
 				case 1:// Print value
-					//recibo 5 bytes -> 1 variable + 4 valor_variable
-					char *var = malloc(1);
+					//recibo 8 bytes -> 4 sizeof(variable) + variable + 4 valor_variable
 					char *valor = malloc(4);
-					recv(kernelSocketClient, var, 1, 0);
+					char textSize[4];
+
+					recv(kernelSocketClient, textSize, 4, 0);
+					int textLen = atoi(textSize);
+					char *var = malloc(textLen);
+
+					recv(kernelSocketClient, var, textLen, 0);
 					recv(kernelSocketClient, valor, 4, 0);
 					printf("El valor de la variable %s es: %s", var, valor);//controlar este printf
-					free(var);
+					//free(var);
 					free(valor);
 				case 2:// Print text
 					//recibo 4 del tamaño + texto
@@ -119,8 +117,9 @@ int main(int argc, char *argv[]) {
 			}
 
 		}
-
 	}
+
+
 	while(1);
 
 	free(kernel_reply);
