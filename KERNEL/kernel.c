@@ -325,17 +325,20 @@ void check_CPU_FD_ISSET(void *cpu){
 			}
 			call_handlers();
 		} else {
-			printf(" .:: CPU %d has closed the connection ::. \n", laCPU->clientID);
+			log_info(kernel_log," .:: CPU %d has closed the connection ::. \n", laCPU->clientID);
 			close(laCPU->clientID);
 			bool getCPUIndex(void *nbr){
 				t_Client *unCliente = nbr;
 				bool matchea = (laCPU->clientID == unCliente->clientID);
 				if (matchea){
-					end_program(laCPU->pid, true);
+					end_program(laCPU->pid, true, false);
 				}
 				return matchea;
 			}
-			list_remove_by_condition(cpus_conectadas, getCPUIndex);
+			if (list_size(cpus_conectadas) > 0)
+				list_remove_by_condition(cpus_conectadas, getCPUIndex);
+			if (list_size(cpus_executing) > 0)
+				list_remove_by_condition(cpus_executing, getCPUIndex);
 		}
 	}
 	free(cpu_protocol);
@@ -354,8 +357,8 @@ void check_CONSOLE_FD_ISSET(void *console){
 		if (recv(cliente->clientID, buffer_4, 2, 0) > 0){
 			log_error(kernel_log,"Consola no deberia enviar nada pero dijo: %s",buffer_4);
 		} else {
-			printf(" .:: A console has closed the connection, the associated PID %04d will be terminated ::. \n", cliente->clientID);
-			end_program(cliente->clientID, false);
+			log_info(kernel_log," .:: A console has closed the connection, the associated PID %04d will be terminated ::. \n", cliente->clientID);
+			end_program(cliente->clientID, false, true);
 		}
 	}
 	free(buffer_4);
@@ -464,7 +467,7 @@ void round_robin(){
 	list_add(cpus_executing,laCPU);
 }
 
-void end_program(int pid, bool consoleStillOpen) { /* Search everywhere for the PID and kill it ! */
+void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen) { /* Search everywhere for the PID and kill it ! */
 /*
  * CASOS
  *
@@ -476,6 +479,7 @@ void end_program(int pid, bool consoleStillOpen) { /* Search everywhere for the 
  *      b) Buscar PCB y borrarlo
  *          i) puede estar ready, blocked o exit (casos lindos)
  *          ii) puede estar executing -> cambiar status de CPU
+ *          iii) la CPU puede haber muerto -> matar socket de consola y listo
  * 3) Programa termina, hay error en ejecución de CPU o problema en UMC -> esta en PCB_EXIT
  *      a) Avisar a UMC
  *      b) Buscar PCB y borrarlo
@@ -499,15 +503,21 @@ void end_program(int pid, bool consoleStillOpen) { /* Search everywhere for the 
 		list_remove_and_destroy_by_condition(PCB_BLOCKED,match_PCB,destroy_PCB);
 	if (list_size(PCB_EXIT) > 0)
 		list_remove_and_destroy_by_condition(PCB_EXIT,match_PCB,destroy_PCB);
-	if (list_size(cpus_executing) > 0){
-		bool getCPUIndex(void *nbr) {
-			t_Client *aCPU = nbr;
-			return (pid == aCPU->pid);
+
+	if (cpuStillOpen){
+		if (list_size(cpus_executing) > 0){
+			bool getCPUIndex(void *nbr) {
+				t_Client *aCPU = nbr;
+				return (pid == aCPU->pid);
+			}
+			t_Client *theCPU;
+			theCPU = list_find(cpus_executing, getCPUIndex);
+			theCPU->status = EXIT;
 		}
-		t_Client *theCPU;
-		theCPU = list_find(cpus_executing, getCPUIndex);
-		theCPU->status = EXIT; /* TODO TEST if this will actually work when check_CPU_FD_ISSET recv() a PCB_BLOCKED from the CPU */
+	}else{
+		pcb_found = true;
 	}
+
 	if (pcb_found == true) {
 		sprintf(buffer, "%d%04d", 2, pid);
 		send(clientUMC, buffer, 5, 0);
@@ -556,7 +566,7 @@ void call_handlers() {
 	while (list_size(PCB_EXIT) > 0) {
 		t_pcb *elPCB;
 		elPCB = list_get(PCB_EXIT, 0);
-		end_program(elPCB->pid, true);
+		end_program(elPCB->pid, true, true);
 	}
 	if (list_size(PCB_BLOCKED) > 0) process_io();
 	while (list_size(cpus_conectadas) > 0 && list_size(PCB_READY) > 0 ) round_robin();

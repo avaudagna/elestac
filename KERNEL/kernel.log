@@ -233,3 +233,14 @@
 
 [INFO] 07:20:19:425 Elestac-KERNEL/(22633:22637): do_work: Starting the device Coso with a sleep of 10 milliseconds
 
+[INFO] 15:30:28:595 Elestac-KERNEL/(15860:15860): Loading settings
+
+[INFO] 15:30:28:595 Elestac-KERNEL/(15860:15865): do_work: Starting the device Disco with a sleep of 1000 milliseconds
+
+[INFO] 15:30:28:595 Elestac-KERNEL/(15860:15866): do_work: Starting the device Impresora with a sleep of 2000 milliseconds
+
+[INFO] 15:30:28:596 Elestac-KERNEL/(15860:15867): do_work: Starting the device Scanner with a sleep of 1000 milliseconds
+
+[INFO] 15:30:28:596 Elestac-KERNEL/(15860:15868): do_work: Starting the device Coso with a sleep of 10 milliseconds
+
+[INFO] 15:30:28:596 Elestac-KERNEL/(15860:15860): Servers to CPUs and consoles up and running. Waiting for incoming connections.
