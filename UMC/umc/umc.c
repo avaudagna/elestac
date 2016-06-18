@@ -995,7 +995,6 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 		temp->nroPagina=_pagina;
 		resolverEnMP(socketBuff,temp,_offset,_tamanio);	// lo hago asi para poder reutilizar resolverEnMP , que al fin y al cabo es lo que se termina haciendo
 		actualizarTlb(pid_actual,temp);
-		enviarMsgACPU(socketBuff,OK,1);
 		free(temp);
 
 	}
