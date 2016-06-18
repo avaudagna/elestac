@@ -1093,6 +1093,8 @@ void almacenarBytes(int *socketBuff, int *pid_actual) {
 
 		aux = obtenerPaginaDeTablaDePaginas(headerTablaDePaginas, _pagina);
 
+
+
 		if (aux == NULL) {	// valido pedido de pagina
 			pedidoDePaginaInvalida(socketBuff);
 		}
@@ -1171,23 +1173,21 @@ void guardarBytesEnPagina(int *pid_actual, int pagina, int offset, int tamanio, 
 void algoritmoClock(int pPid, int numPagNueva, int tamanioContenidoPagina, void *contenidoPagina) {
 
 	t_list *fifoPID = NULL;
-	FIFO_INDICE *PunteroPIDClock = NULL;
+	FIFO_INDICE *punteroPIDClock = NULL;
 	t_link_element *recorredor = NULL;
 	int i=0;
 	PAGINA *pagina_victima = NULL,
 	       *pagina_nueva   = NULL;
 	void *bufferContenidoPagina = NULL;
 
-
-
 	fifoPID = obtenerHeaderFifoxPid(headerFIFOxPID, pPid);
 
-	PunteroPIDClock = obtenerPunteroClockxPID(headerPunterosClock, pPid);        // levanto el nroDeMarco que me indica por donde iniciar la barrida de marcos para el algoritmo de reemplazo
+	punteroPIDClock = obtenerPunteroClockxPID(headerPunterosClock, pPid);        // levanto el nroDeMarco que me indica por donde iniciar la barrida de marcos para el algoritmo de reemplazo
 
-	recorredor = list_get_nodo(fifoPID,PunteroPIDClock->indice);		// posiciono el puntero donde quedo la ultima vez que tuve que utilizar el algoritmo
+	recorredor = list_get_nodo(fifoPID,punteroPIDClock->indice);		// posiciono el puntero donde quedo la ultima vez que tuve que utilizar el algoritmo
 
 
-		for (i=PunteroPIDClock->indice;i<(fifoPID->elements_count) && recorredor != NULL;i++,recorredor=recorredor->next){
+		for (i=punteroPIDClock->indice;i<(fifoPID->elements_count) && recorredor != NULL;i++,recorredor=recorredor->next){
 
 				if (((CLOCK_PAGINA *)recorredor->data)->bitDeUso == 1){
 					((CLOCK_PAGINA *)recorredor->data)->bitDeUso =0;		// pongo en 0 y sigo recorriendo
@@ -1198,24 +1198,27 @@ void algoritmoClock(int pPid, int numPagNueva, int tamanioContenidoPagina, void 
 					pagina_victima = obtenerPagina(pPid, ((CLOCK_PAGINA *) recorredor->data)->nroPagina);
 
 					if (pagina_victima->modificado == 1)    // pagina modificada, enviarla a swap antes de reemplazarla
-						PedidoPaginaASwap(pPid,numPagNueva,ESCRITURA);
+						PedidoPaginaASwap(pPid,pagina_victima->nroPagina,ESCRITURA);
 					// Actualizaciones sobre la tabla de paginas ( actualizo campo nro de marco y bit de presencia )
-					setBitDePresencia(pPid,pagina_victima->nroPagina,AUSENTE);
 					pagina_nueva = obtenerPagina(pPid,numPagNueva);
 					pagina_nueva->nroDeMarco = pagina_victima->nroDeMarco ;
 					setBitDePresencia(pPid,numPagNueva,PRESENTE_MP);
+					setBitDePresencia(pPid,pagina_victima->nroPagina,AUSENTE);
+
 
 					bufferContenidoPagina = calloc(umcGlobalParameters.marcosSize,1);	// hago un calloc cosa de inicializar todo en \0 , puede que el tamaño de la pagina que venga a reemplazar NO ocupe todo el espacio asignado
-					memcpy(bufferContenidoPagina,contenidoPagina,tamanioContenidoPagina);	// reemplazo en memoria principal :)
+					memcpy(bufferContenidoPagina,contenidoPagina,tamanioContenidoPagina);	// guardo el contenido de la nueva pagina
 					// Reemplazo en memoria principal
 					memcpy(vectorMarcos[pagina_nueva->nroDeMarco].comienzoMarco,bufferContenidoPagina,umcGlobalParameters.marcosSize);		// reemplace pagina
 					// Actualizo el nodo de la FIFO ( bit de uso + nro de pagina )
 					((CLOCK_PAGINA *)recorredor->data)->bitDeUso =1;
 					((CLOCK_PAGINA *)recorredor->data)->nroPagina=pagina_nueva->nroPagina;
 
-					PunteroPIDClock->indice++;	// actualizo el nroDeMarco pa la proxima vez que se ejecute el CLOCK
+					punteroPIDClock->indice++;	// actualizo el nroDeMarco pa la proxima vez que se ejecute el CLOCK
+					if ( punteroPIDClock->indice > fifoPID->elements_count)		// si lo que reemplace, era el ultimo nodo de la fifo, entonces reinicio el indice :)
+						punteroPIDClock->indice=0;
 
-					break;
+					break;	// me tomo el palo, ya encontre la victima, reemplace, guarde, hice tuodo cheeee
 				}
 
 			if ( i == (fifoPID->elements_count) ){	// si ya llegue al final de la fifo,  vuelvo al COMIENZO
@@ -1237,11 +1240,14 @@ void PedidoPaginaASwap(int pid, int pagina, int operacion) {
 
 	trama = (char *) malloc(trama_size);
 
+	/*
 	if (operacion == ESCRITURA){
 		sprintf(trama,"%d%04d%04d",ESCRITURA,pid,pagina);
 	}else if ( operacion == LECTURA){
 		sprintf(trama,"%d%04d%04d",LECTURA,pid,pagina);
 	}
+	 */
+	sprintf(trama,"%d%04d%04d",operacion,pid,pagina);
 	memcpy((void * )&trama[9],vectorMarcos[pag->nroDeMarco].comienzoMarco,umcGlobalParameters.marcosSize);
 	enviarPaginaAlSwap(trama,trama_size);
 }
@@ -1644,7 +1650,6 @@ void limpiarPidDeTLB(int pPid) {
 
 void agregarPaginaATLB(int pPid, PAGINA *pPagina, int indice) {
 
-
 	TLB * aux = NULL;
 
 	aux = (TLB *) malloc(sizeof(TLB));
@@ -1714,6 +1719,7 @@ void algoritmoLRU(int *indice) {
 }
 
 void actualizarContadoresLRU(int pid , int pagina){
+
 	t_link_element * aux  = NULL;
 	aux = headerTLB->head;
 
