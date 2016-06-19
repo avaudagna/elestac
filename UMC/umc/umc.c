@@ -262,6 +262,8 @@ int getPosicionCLockPid(t_list * headerFIFOxPID,int pPid);
 
 int getPosicionListaPids(t_list * headerListaDePids, int pPid);
 
+void retardo(void);
+
 
 int main(int argc , char **argv){
 
@@ -389,7 +391,8 @@ void * funcion_menu (void * noseusa)
           switch(opcion)
           {
                case RETARDO:
-                    printf("\nRETARDO!!!!!");
+                    printf("\nIngrese nuevo retardo:");
+				  	scanf("%d",&umcGlobalParameters.retardo);
                     break;
                case DUMP:
                     printf("\nDUMP!!!!!");
@@ -580,10 +583,12 @@ void atenderKernel(int * socketBuff){
 			estado = IDENTIFICADOR_OPERACION;
 			break;
 		case SOLICITUD_NUEVO_PROCESO:		// 1
+				retardo();
 				procesoSolicitudNuevoProceso(socketBuff);
 			estado = IDENTIFICADOR_OPERACION;
 			break;
 		case FINALIZAR_PROCESO:	// 2
+				retardo();
 				finalizarProceso(socketBuff);
 			estado = REPOSO;
 			break;
@@ -1858,7 +1863,7 @@ void finalizarProceso(int *socketBuff){
 
 	pPid = atoi(buffer);
 
-	asprintf(trama,"%d%04d",FINALIZAR_PROCESO,pPid);
+	asprintf(&trama,"%d%04d",FINALIZAR_PROCESO,pPid);
 
 	enviarPaginaAlSwap(trama,strlen(trama));		// Elimnarlo en SWAP
 	limpiarPidDeTLB(pPid);							// Elimino PID de la TLB
@@ -1920,4 +1925,11 @@ int getPosicionListaPids(t_list * headerListaDePids, int pPid){
 		i++;
 	}
 
+}
+
+
+
+void retardo(void){
+
+	usleep(umcGlobalParameters.retardo * 1000);
 }
