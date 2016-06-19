@@ -20,9 +20,17 @@
 
 #define ENTRADA_SALIDA_ID "3"
 
+//UMC Interface
+#define ALMACENAMIENTO_BYTES 4
+
     //typedef t_var* t_posicion;
 
     typedef t_puntero t_posicion; // el foro dice que es  ((n° de pagina) * tamaño de pagina) + offset
+
+typedef struct {
+    int data_length;
+    char * data;
+} t_nodo_send;
 
     extern int umcSocketClient;
 	extern int kernelSocketClient;
@@ -34,8 +42,8 @@
     //#1
     t_posicion definirVariable(t_nombre_variable variable);
 
-    logical_addr * armar_direccion_logica(int pointer, int size);
-    int add_stack_variable(int *stack_pointer, t_stack **stack, t_var *nueva_variable);
+    logical_addr * armar_direccion_logica_variable(int pointer, int size);
+    void armar_pedidos_escritura(t_list ** pedidos, t_list *direcciones, int valor);
     t_posicion get_t_posicion(const t_var *nueva_variable);
 
     //#2
@@ -44,9 +52,11 @@
     //#3
     t_valor_variable dereferenciar(t_posicion direccion_variable);
     void obtain_Logical_Address(logical_addr* direccion, t_puntero posicion);
+    void construir_operaciones_lectura(t_list **pedidos, t_posicion posicion_variable);
 
     //#4
     void asignar(t_posicion direccion_variable, t_valor_variable valor);
+    void obtener_lista_operaciones_escritura(t_list ** pedidos, t_posicion posicion_variable, int offset, int valor);
 
     //#5
     int imprimir(t_valor_variable valor);
@@ -61,6 +71,9 @@
     void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar);
 
     //#9
+    void llamarSinRetorno (t_nombre_etiqueta etiqueta);
+
+    //#10
     void retornar(t_valor_variable retorno);
     t_posicion  obtener_t_posicion(logical_addr *address);
 

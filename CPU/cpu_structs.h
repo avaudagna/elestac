@@ -14,7 +14,6 @@ typedef struct {
     char** 	IO_ID;
     char** 	IO_SLEEP;
     char** 	SHARED_VARS;
-    int 	STACK_SIZE;
     int 	PAGE_SIZE;
     int 	PUERTO_UMC;
     char*	IP_UMC;

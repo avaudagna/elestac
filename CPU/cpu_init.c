@@ -11,6 +11,7 @@ int setup_config_init(char* config_file) {
 
 int cpu_init(int argc, char *config_file) {
     print_cpu_banner();
+//    mallopt(M_CHECK_ACTION, 3);
     signalsInit();
 
     return (usage_check(argc) && log_init() &&
@@ -83,7 +84,6 @@ int loadConfig(char* configFile){
         setup->SEM_ID=config_get_array_value(config,"SEM_ID");
         setup->SEM_INIT=config_get_array_value(config,"SEM_INIT");
         setup->SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
-        setup->STACK_SIZE=config_get_int_value(config,"STACK_SIZE");
         setup->PUERTO_UMC=config_get_int_value(config,"PUERTO_UMC");
         setup->IP_UMC=config_get_string_value(config,"IP_UMC");
     }

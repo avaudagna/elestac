@@ -1,12 +1,11 @@
-
+#include <parser/metadata_program.h>
 #include "implementation_ansisop.h"
-#include "libs/pcb.h"
 #include "libs/stack.h"
+#include "libs/pcb.h"
 #include "cpu_structs.h"
 
 static const int CONTENIDO_VARIABLE = 20;
 static const int POSICION_MEMORIA = 0x10;
-
 
 t_posicion definirVariable(t_nombre_variable variable) {
 
@@ -19,28 +18,34 @@ t_posicion definirVariable(t_nombre_variable variable) {
     int actual_stack_pointer = actual_pcb->stack_pointer;
 
     //3) Armamos la logical address requerida
-    logical_addr* direccion_espectante = armar_direccion_logica(actual_stack_pointer, setup->PAGE_SIZE);
+    logical_addr* direccion_espectante = armar_direccion_logica_variable(actual_stack_pointer, setup->PAGE_SIZE);
 
-    //4) Enviamos el pedido a la UMC para que nos diga si puede meter la variable ahi o no, si puede retornamos la addr.
-    char value [5]= "0000", *umc_request_buffer = NULL;
+    int valor = 0;
 
-	asprintf(&umc_request_buffer, "3%04d%04d%04d%s", direccion_espectante->page_number, direccion_espectante->offset, direccion_espectante->tamanio, value);
-	if( send(umcSocketClient, umc_request_buffer, 12, 0) < 0) {
-        log_error(cpu_log, "UMC expected addr send failed");
-		return ERROR;
-	}
-    free(umc_request_buffer);
+    t_list * pedidos = NULL;
+    obtener_lista_operaciones_escritura(&pedidos, actual_stack_pointer, ANSISOP_VAR_SIZE, valor);
 
-	char * umc_response_buffer = calloc(1, sizeof(char));
-	if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
-		log_error(cpu_log, "UMC response recv failed");
-		return ERROR;
-	}
-
-    if(strncmp(umc_response_buffer, "3", sizeof(char)) != 0) {
-        log_error(cpu_log, "PAGE FAULT");
-        return ERROR;
+    int index = 0;
+    t_nodo_send * nodo = NULL;
+    char * umc_response_buffer = calloc(1, sizeof(char));
+    while (list_size(pedidos) > 0) {
+        nodo = list_remove(pedidos, index);
+        if( send(umcSocketClient, nodo->data , (size_t ) nodo->data_length, 0) < 0) {
+            log_error(cpu_log, "UMC expected addr send failed");
+            return ERROR;
+        }
+        if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
+            log_error(cpu_log, "UMC response recv failed");
+            return ERROR;
+        }
+        if(strncmp(umc_response_buffer, string_itoa(UMC_OK_RESPONSE), sizeof(char)) != 0) {
+            log_error(cpu_log, "PAGE FAULT");
+            return ERROR;
+        }
     }
+
+    list_destroy(pedidos); //Liberamos la estructura de lista reservada
+
     free(umc_response_buffer);
 
     //5) Si esta bien, agregamos la nueva t_var al stack
@@ -49,10 +54,15 @@ t_posicion definirVariable(t_nombre_variable variable) {
     nueva_variable->page_number = direccion_espectante->page_number;
     nueva_variable->offset = direccion_espectante->offset;
     nueva_variable->tamanio = direccion_espectante->tamanio;
-    free(direccion_espectante);
-    add_stack_variable(&actual_stack_pointer, &actual_stack_index, nueva_variable);
 
-    //6) y retornamos la t_posicion asociada
+    //6) Actualizo el stack pointer
+    actual_pcb->stack_pointer += nueva_variable->tamanio;
+
+    free(direccion_espectante);
+    t_stack_entry *last_entry = (t_stack_entry *) queue_peek(actual_stack_index);
+    add_var( &last_entry, nueva_variable);
+
+    //7) y retornamos la t_posicion asociada
     t_posicion posicion_nueva_variable = get_t_posicion(nueva_variable);
     return posicion_nueva_variable;
 }
@@ -61,7 +71,7 @@ t_posicion get_t_posicion(const t_var *variable) {
     return (t_posicion) (variable->page_number * setup->PAGE_SIZE) + variable->offset;
 }
 
-logical_addr * armar_direccion_logica(int stack_index_actual, int page_size) {
+logical_addr * armar_direccion_logica_variable(int stack_index_actual, int page_size) {
     logical_addr * direccion_generada = calloc(1, sizeof(logical_addr));
     direccion_generada->page_number = stack_index_actual / page_size;
     direccion_generada->offset = stack_index_actual % page_size;
@@ -69,23 +79,34 @@ logical_addr * armar_direccion_logica(int stack_index_actual, int page_size) {
     return direccion_generada;
 
 }
-
-int add_stack_variable(int *stack_pointer, t_stack **stack, t_var *nueva_variable) {
-    t_stack_entry *last_entry = (t_stack_entry *) queue_peek(*stack);
-    //Redimensionamos el espacio donde se almacenan las entradas de variables, para agregar la nueva
-
-    void * aux_buffer = NULL;
-    aux_buffer = realloc(last_entry->vars, last_entry->cant_vars*sizeof(t_var));
-    if(aux_buffer == NULL) {
-        log_error(cpu_log, "Error resizing last_entry vars");
-        return ERROR;
-    }
-    last_entry->vars = (t_var*) aux_buffer;
-    memcpy(last_entry->vars+last_entry->cant_vars, nueva_variable, sizeof(t_var));
-    *stack_pointer = *stack_pointer + nueva_variable->tamanio;
-    return SUCCESS;
+void obtener_lista_operaciones_escritura(t_list ** pedidos, t_posicion posicion_variable, int offset, int valor) {
+    t_intructions instruccion_a_buscar;
+    instruccion_a_buscar.start = (t_puntero_instruccion) posicion_variable;
+    instruccion_a_buscar.offset = (t_size) offset;
+    t_list * lista_direcciones = armarDireccionesLogicasList(&instruccion_a_buscar);
+    armar_pedidos_escritura(pedidos, lista_direcciones, valor);
 }
 
+void armar_pedidos_escritura(t_list ** pedidos, t_list *direcciones, int valor) {
+    void *buffer = NULL;
+    t_nodo_send * nodo = NULL;
+    int index = 0, indice_copiado = 0;
+    logical_addr * address = NULL;
+    int buff_len = 0;
+    *pedidos = list_create();
+    while(list_size(direcciones) > 0) {
+        address = list_remove(direcciones, index);
+        nodo = calloc(1, sizeof(t_nodo_send));
+        buff_len = sizeof(char) + sizeof(int) *3;
+        buffer = malloc(sizeof(char) + sizeof(int) *3 + address->tamanio);
+        nodo->data = buffer;
+        sprintf(buffer, "4%04d%04d%04d", address->page_number, address->offset, address->tamanio);
+        serialize_data((&valor) + indice_copiado, (size_t) address->tamanio, &buffer, &buff_len);
+        indice_copiado += address->tamanio;
+        nodo->data_length = buff_len;
+        list_add(*pedidos,nodo);
+    }
+}
 
 
 t_posicion obtenerPosicionVariable(t_nombre_variable variable) {
@@ -99,8 +120,8 @@ t_posicion obtenerPosicionVariable(t_nombre_variable variable) {
     t_var* indice_variable = current_stack_index->vars;
 
     for (i = 0; i < current_stack_index->cant_vars ; i++) {
-        if((strcmp(&(indice_variable + i)->var_id, &variable)) == 0) {
-            return (t_posicion) (indice_variable->page_number * setup->PAGE_SIZE) + indice_variable->offset;
+        if( (indice_variable + i)->var_id == variable ) {
+            return get_t_posicion(indice_variable + i); // (t_posicion) (indice_variable->page_number * setup->PAGE_SIZE) + indice_variable->offset;
         }
         indice_variable++;
     }
@@ -111,102 +132,76 @@ t_posicion obtenerPosicionVariable(t_nombre_variable variable) {
 t_valor_variable dereferenciar(t_posicion direccion_variable) {
     usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 
-    //Generamos la direccion logica a partir del puntero
-    logical_addr * direccion_generada = calloc(1, sizeof(logical_addr));
-    obtain_Logical_Address(direccion_generada, direccion_variable);
-
     //Hacemos el request a la UMC con el codigo 2
+    t_list *pedidos = NULL;
+    construir_operaciones_lectura(&pedidos, direccion_variable);
+
     char* umc_request_buffer = NULL;
-    asprintf(&umc_request_buffer, "2%04d%04d%04d", direccion_generada->page_number, direccion_generada->offset, direccion_generada->tamanio);
-	if( send(umcSocketClient, umc_request_buffer, 13, 0) < 0) {
-		log_error(cpu_log, "UMC expected addr send failed");
-		return ERROR;
-	}
+    char * umc_response_buffer = NULL;
+    void * variable_buffer = calloc(1, ANSISOP_VAR_SIZE);
+    int variable_buffer_index = 0;
+    logical_addr * current_address = NULL;
+    while(list_size(pedidos) > 0) {
+        current_address  = list_remove(pedidos, 0);
+        umc_response_buffer = calloc(1, sizeof(t_valor_variable));
+        asprintf(&umc_request_buffer, "2%04d%04d%04d", current_address->page_number, current_address->offset, current_address->tamanio);
+        if( send(umcSocketClient, umc_request_buffer, 13, 0) < 0) {
+            log_error(cpu_log, "UMC expected addr send failed");
+            return ERROR;
+        }
+    }
 
-	free(direccion_generada);
 	free(umc_request_buffer);
-
-	//Obtenemos la respuesta de la UMC
-	char * umc_response_buffer = calloc(1, sizeof(t_valor_variable));
-	if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
-		free(umc_response_buffer);
-		log_error(cpu_log, "UMC response recv failed");
-		return ERROR;
-	}
-
-	//Pagina invalida
-	if(strcmp(umc_response_buffer, PAGINA_INVALIDA_ID) == 0){
-		free(umc_response_buffer);
-		log_error(cpu_log, "UMC raised Exception: Invalid page");
-		return ERROR;
-	}
-
-	//EXITO
-	if(strcmp(umc_response_buffer, PAGINA_VALIDA_ID) == 0){
-		free(umc_response_buffer);
-		umc_response_buffer = calloc(1, 4);
-
-		if( recv(umcSocketClient , umc_response_buffer , sizeof(t_valor_variable) , 0) < 0) {
-			free(umc_response_buffer);
-			log_error(cpu_log, "UMC response recv failed");
-			return ERROR;
-		}
-
-		return (t_valor_variable) atoi(umc_response_buffer);
-	}
-
-	return ERROR;
+    return (t_valor_variable) *(t_valor_variable*)variable_buffer;
 }
 
-void obtain_Logical_Address(logical_addr* direccion, t_puntero posicion) {
-	direccion->page_number = posicion / setup->PAGE_SIZE;
-	direccion->offset = posicion % setup->PAGE_SIZE;
-	direccion->tamanio = ANSISOP_VAR_SIZE;
+void construir_operaciones_lectura(t_list **pedidos, t_posicion posicion_variable) {
+    t_intructions instruccion_a_buscar;
+    instruccion_a_buscar.start = (t_puntero_instruccion) posicion_variable;
+    instruccion_a_buscar.offset = (t_size) ANSISOP_VAR_SIZE;
+    *pedidos = armarDireccionesLogicasList(&instruccion_a_buscar);
 }
 
 void asignar(t_posicion direccion_variable, t_valor_variable valor) {
     usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 
-	//Generamos la direccion logica a partir del puntero
-	logical_addr * direccion_generada = calloc(1, sizeof(logical_addr));
-	obtain_Logical_Address(direccion_generada, direccion_variable);
+    t_list * pedidos = NULL;
+    obtener_lista_operaciones_escritura(&pedidos, direccion_variable, ANSISOP_VAR_SIZE, valor);
 
-	//Hacemos el request a la UMC con el codigo 3 para almacenar los bytes
-	char* umc_request_buffer = NULL;
-	asprintf(&umc_request_buffer, "3%04d%04d%04d%04d", direccion_generada->page_number, direccion_generada->offset, direccion_generada->tamanio, valor);
-    int request_size = sizeof(int) * 4 + sizeof(char);
-    if(send(umcSocketClient, umc_request_buffer, (size_t) request_size, 0) < 0) {
-		log_error(cpu_log, "UMC expected addr send failed");
-		return;
-	}
+    char * umc_response_buffer = calloc(1, sizeof(char));
+    int index = 0;
+    t_nodo_send * nodo = NULL;
+    while (list_size(pedidos) > 0) {
+        nodo = list_remove(pedidos, index);
+        if( send(umcSocketClient, nodo->data , (size_t ) nodo->data_length, 0) < 0) {
+            log_error(cpu_log, "UMC expected addr send failed");
+            return;
+        }
 
-	free(direccion_generada);
-	free(umc_request_buffer);
+        //Obtenemos la respuesta de la UMC de un byte
+        if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
+            free(umc_response_buffer);
+            log_error(cpu_log, "UMC response recv failed");
+            return ;
+        }
 
-	//Obtenemos la respuesta de la UMC de un byte
-	char * umc_response_buffer = calloc(1, sizeof(char));
-	if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
-		free(umc_response_buffer);
-		log_error(cpu_log, "UMC response recv failed");
-		return;
-	}
+        //StackOverflow: 3
+        if(strcmp(umc_response_buffer, STACK_OVERFLOW_ID) == 0){
+            free(umc_response_buffer);
+            log_error(cpu_log, "UMC raised Exception: STACKOVERFLOW");
+            return ;
+        }
 
-	//StackOverflow: 3
-	if(strcmp(umc_response_buffer, STACK_OVERFLOW_ID) == 0){
-		free(umc_response_buffer);
-		log_error(cpu_log, "UMC raised Exception: STACKOVERFLOW");
-		return;
-	}
-
-	//EXITO (Se podria loggear de que la operacion fue exitosa)
-	if(strcmp(umc_response_buffer, OPERACION_EXITOSA_ID) == 0){
-        log_info(cpu_log, "Asignar variable to UMC with value %d was successful", valor);
-		free(umc_response_buffer);
-		return;
-	}
-
+        //EXITO (Se podria loggear de que la operacion fue exitosa)
+        if(strcmp(umc_response_buffer, OPERACION_EXITOSA_ID) == 0){
+            log_info(cpu_log, "Asignar variable operation to UMC with value was successful");
+        }
+        free(nodo);
+    }
+    list_destroy(pedidos); //Liberamos la estructura de lista reservada
+    free(nodo);
 	free(umc_response_buffer);
-	log_error(cpu_log, "UMC raised Exception: Unknown exception");
+	log_info(cpu_log, "Finished asignar variable operations");
 }
 
 
@@ -218,7 +213,7 @@ void irAlLabel(t_nombre_etiqueta etiqueta) {
 void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar) {
     t_ret_var * ret_var_addr = calloc(1, sizeof(t_ret_var));
     //1) Obtengo la direccion a donde apunta la variable de retorno
-    obtain_Logical_Address(ret_var_addr, donde_retornar);
+    ret_var_addr = armar_direccion_logica_variable(donde_retornar, setup->PAGE_SIZE);
     t_stack * stack_index = actual_pcb->stack_index;
     //2) Creo la nueva entrada del stack
     t_stack_entry* new_stack_entry = create_new_stack_entry();
@@ -229,6 +224,19 @@ void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar) {
     //5) Agrego la strack entry a la queue de stack
     queue_push(actual_pcb->stack_index, new_stack_entry);
     //6) Asigno el PC a la etiqueta objetivo
+    irAlLabel(etiqueta);
+}
+
+void llamarSinRetorno (t_nombre_etiqueta etiqueta){
+    t_ret_var * ret_var_addr = calloc(1, sizeof(t_ret_var));
+    t_stack * stack_index = actual_pcb->stack_index;
+    //1) Creo la nueva entrada del stack
+    t_stack_entry* new_stack_entry = create_new_stack_entry();
+    //2) Guardo la posicion de PC actual como retpos de la nueva entrada
+    new_stack_entry->ret_pos = actual_pcb->program_counter;
+    //3) Agrego la strack entry a la queue de stack
+    queue_push(actual_pcb->stack_index, new_stack_entry);
+    //4) Asigno el PC a la etiqueta objetivo
     irAlLabel(etiqueta);
 }
 

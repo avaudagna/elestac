@@ -1,4 +1,8 @@
+#include <parser/metadata_program.h>
 #include "cpu.h"
+#include "libs/pcb.h"
+#include "libs/stack.h"
+#include "cpu_structs.h"
 
 
 //Variables globales
@@ -18,7 +22,8 @@ AnSISOP_funciones funciones_generales_ansisop = {
         .AnSISOP_imprimirTexto			= (void*) imprimirTexto,
         .AnSISOP_entradaSalida          = entradaSalida,
         .AnSISOP_llamarConRetorno       = llamarConRetorno,
-        .AnSISOP_retornar               = retornar
+        .AnSISOP_retornar               = retornar,
+        .AnSISOP_llamarSinRetorno       = llamarSinRetorno
 
 };
 AnSISOP_kernel funciones_kernel_ansisop = { };
@@ -131,6 +136,9 @@ int return_pcb() {
     actual_pcb = (t_pcb *) calloc(1,sizeof(t_pcb));
     void * serialized_pcb = NULL;
     int serialized_buffer_index = 0;
+    if(actual_pcb->status == EXECUTING) {
+        actual_pcb->status = READY;
+    }
     serialize_pcb(actual_pcb, &serialized_pcb, &serialized_buffer_index);
     if( send(umcSocketClient , serialized_pcb, (size_t) serialized_buffer_index, 0) < 0) {
         log_error(cpu_log, "Send serialized_pcb to KERNEL failed");
@@ -146,16 +154,19 @@ int execute_state_machine() {
     while(actual_kernel_data->Q > 0)
     switch(execution_state) {
         case S0_CHECK_EXECUTION_STATE:
-            if (check_execution_state() == SUCCESS) { execution_state = S1_GET_EXECUTION_LINE; } else { execution_state = ERROR; };
+            if (check_execution_state() == SUCCESS) { execution_state = S1_GET_EXECUTION_LINE; }
+            else if (check_execution_state() == EXIT) { return SUCCESS; }
             break;
         case S1_GET_EXECUTION_LINE:
             if (get_execution_line(&instruction_line) == SUCCESS) { execution_state = S2_EXECUTE_LINE; } else { execution_state = ERROR; };
             break;
         case S2_EXECUTE_LINE:
-            if (execute_line(instruction_line) == SUCCESS) { execution_state = S3_DECREMENT_Q; } else { execution_state = ERROR; };
+            if (execute_line(instruction_line) == SUCCESS) { execution_state = S3_POSTPROCESS; } else { execution_state = ERROR; };
             break;
-        case S3_DECREMENT_Q:
+        case S3_POSTPROCESS:
             actual_kernel_data->Q--;
+            actual_pcb->program_counter++;
+            execution_state = S0_CHECK_EXECUTION_STATE;
             break;
         default:
         case ERROR:
@@ -173,13 +184,27 @@ int check_execution_state() {
 //    if(condicion de corte) {
 //        status FIN_DE_EJECUCION
 //    }
-    actual_pcb->status = EXECUTING;
+    switch (actual_pcb->status) {
+        case READY:
+            actual_pcb->status = EXECUTING;
+            break;
+        case BLOCKED:
+            //check if io has finished
+            //and waste Q
+            break;
+        case EXECUTING:
+        default:
+            break;
+        case EXIT:
+            return EXIT;
+    }
     return SUCCESS;
 }
 
 int get_execution_line(void ** instruction_line) {
 
-    t_list * instruction_addresses_list = armarDireccionLogica(actual_pcb->instrucciones_serializado+actual_pcb->program_counter);
+    t_list * instruction_addresses_list = armarDireccionesLogicasList(
+            actual_pcb->instrucciones_serializado + actual_pcb->program_counter);
     get_instruction_line(instruction_addresses_list, instruction_line);
     return SUCCESS;
 }
@@ -213,11 +238,12 @@ int umc_first_com() {
 int change_active_process() {
     //send actual process pid
     char * buffer = NULL;
-    asprintf(&buffer, "%d%04d", CAMBIO_PROCESO_ACTIVO, actual_pcb->pid);
-    if( send(umcSocketClient , &buffer, sizeof(char) + sizeof(int), 0) < 0) {
+    asprintf(&buffer, "2%04d", actual_pcb->pid);
+    if( send(umcSocketClient , buffer, sizeof(char) + sizeof(int), 0) < 0) {
         log_error(cpu_log, "Send pid %d to UMC failed", actual_pcb->pid);
         return ERROR;
     }
+    free(buffer);
     log_info(cpu_log, "Changed active process to current pid : %d", actual_pcb->pid);
     return SUCCESS;
 }
@@ -226,7 +252,7 @@ int get_pcb() {
     //Pido por kernel process data
     actual_kernel_data = calloc(1, sizeof(t_kernel_data));
     log_info(cpu_log, "Waiting for kernel PCB and Quantum data");
-    if( recibir_pcb(kernelSocketClient, actual_kernel_data) < 0) {
+    if (recibir_pcb(kernelSocketClient, actual_kernel_data) < 0) {
         log_error(cpu_log, "Error receiving PCB and Quantum data from KERNEL");
         return ERROR;
     }
@@ -236,6 +262,13 @@ int get_pcb() {
     actual_pcb = (t_pcb *) calloc(1,sizeof(t_pcb));
     int  last_buffer_index = 0;
     deserialize_pcb(&actual_pcb, actual_kernel_data->serialized_pcb, &last_buffer_index);
+
+    //Inicializo si tengo que
+    if (queue_peek(actual_pcb->stack_index)== NULL) {
+        actual_pcb->stack_index = queue_create();
+        t_stack_entry * first_empty_entry = calloc(1, sizeof(t_stack_entry));
+        queue_push(actual_pcb->stack_index, first_empty_entry);
+    }
     return SUCCESS;
 }
 
@@ -265,39 +298,57 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
 
     void * recv_bytes_buffer = NULL;
     int buffer_index = 0;
-
+    char aux_buffer[13];
     while(list_size(instruction_addresses_list) > 0) {
 
-        logical_addr * element = list_remove(instruction_addresses_list, 0);
+        logical_addr * element = list_get(instruction_addresses_list, 0);
 
-        //Request and Response of bytes to UMC
-        if( !request_address_data(&recv_bytes_buffer, element)) {
+        sprintf(aux_buffer, "%d%04d%04d%04d", PEDIDO_BYTES, element->page_number, element->offset, element->tamanio);
+        log_info(cpu_log, "Fetching for (%d,%d,%d) in UMC", element->page_number, element->offset, element->tamanio);
+        //Send bytes request to UMC
+        if( send(umcSocketClient, aux_buffer, strlen(aux_buffer), 0) < 0) {
+            puts("Last Fetch failed");
             return ERROR;
         }
+        //Recv response
+        recv_bytes_buffer = calloc(1, (size_t) element->tamanio);
+        if( recv(umcSocketClient , recv_bytes_buffer , (size_t ) element->tamanio , 0) < 0) {
+            log_error(cpu_log, "UMC bytes recv failed");
+            return ERROR;
+        }
+        log_info(cpu_log, "Bytes Received: %s", (char*) recv_bytes_buffer);
+
         *instruction_line = realloc(*instruction_line, (size_t) buffer_index+element->tamanio);
+
         memcpy(*instruction_line+buffer_index, recv_bytes_buffer, (size_t) element->tamanio);
         buffer_index += element->tamanio;
         free(recv_bytes_buffer);
+        list_remove_and_destroy_element(instruction_addresses_list, 0, free);
     }
+    *instruction_line = realloc(*instruction_line, (size_t) (1 + buffer_index));
+    * (char*)(*instruction_line+buffer_index) = '\0';
     return SUCCESS;
 }
 
 int request_address_data(void ** buffer, logical_addr *address) {
+    void * aux_buffer = calloc(1, sizeof(int) * 3 + sizeof(char));
+    sprintf(aux_buffer, "%d%04d%04d%04d", PEDIDO_BYTES, address->page_number, address->offset, address->tamanio);
     log_info(cpu_log, "Fetching for (%d,%d,%d) in UMC", address->page_number, address->offset, address->tamanio);
-    asprintf(buffer, "%d%04d%04d%04d", PEDIDO_BYTES, address->page_number, address->offset, address->tamanio);
-
+    printf("\nFetching for (%d,%d,%d) in UMC\n", address->page_number, address->offset, address->tamanio);
     //Send bytes request to UMC
-    if( send(umcSocketClient, *buffer, strlen(*buffer), 0) < 0) {
+    if( send(umcSocketClient, aux_buffer, strlen(aux_buffer), 0) < 0) {
         puts("Last Fetch failed");
         return ERROR;
     }
     //Recv response
+    free(aux_buffer);
     *buffer = calloc(1, (size_t) address->tamanio);
     if( recv(umcSocketClient , *buffer , (size_t ) address->tamanio , 0) < 0) {
         log_error(cpu_log, "UMC bytes recv failed");
         return ERROR;
     }
     log_info(cpu_log, "Bytes Received: %s", *buffer);
+    printf("Bytes Received: %s", (char*) *buffer);
     return SUCCESS;
 }
 
@@ -334,13 +385,8 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
     return SUCCESS;
 }
 
-t_list* armarDireccionLogica(t_intructions *actual_instruction) {
+t_list* armarDireccionesLogicasList(t_intructions *actual_instruction) {
 
-//    float actual_position = ((int) actual_instruction->start + 1)/ setup->PAGE_SIZE;
-//    addr->page_number = (int) ceilf(actual_position);
-//    addr->offset = (int) actual_instruction->start - (int) round(actual_position);
-//    addr->tamanio = actual_instruction->offset;
-//    return addr;
     t_list *address_list = list_create();
     logical_addr *addr = (logical_addr*) calloc(1,sizeof(logical_addr));
     int actual_page = 0;
@@ -349,8 +395,11 @@ t_list* armarDireccionLogica(t_intructions *actual_instruction) {
     addr->page_number =  (int) actual_instruction->start / setup->PAGE_SIZE;
     actual_page = addr->page_number;
     addr->offset = actual_instruction->start % setup->PAGE_SIZE;
-    addr->tamanio = setup->PAGE_SIZE - addr->offset;
-
+    if(actual_instruction->offset > setup->PAGE_SIZE - addr->offset ) {
+        addr->tamanio = setup->PAGE_SIZE - addr->offset;
+    } else {
+        addr->tamanio = actual_instruction->offset;
+    }
     list_add(address_list, addr);
     actual_instruction->offset = actual_instruction->offset - addr->tamanio;
 
@@ -361,8 +410,8 @@ t_list* armarDireccionLogica(t_intructions *actual_instruction) {
         addr->page_number = ++actual_page;
         addr->offset = 0;
         //addr->tamanio = setup->PAGE_SIZE - addr->offset;
-        if(actual_instruction->offset > setup->PAGE_SIZE) {
-            addr->tamanio = setup->PAGE_SIZE;
+        if(actual_instruction->offset > setup->PAGE_SIZE - addr->offset ) {
+            addr->tamanio = setup->PAGE_SIZE - addr->offset;
         } else {
             addr->tamanio = actual_instruction->offset;
         }
