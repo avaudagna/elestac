@@ -164,6 +164,7 @@ int execute_state_machine() {
             if (execute_line(instruction_line) == SUCCESS) { execution_state = S3_POSTPROCESS; } else { execution_state = ERROR; };
             break;
         case S3_POSTPROCESS:
+            usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
             actual_kernel_data->Q--;
             actual_pcb->program_counter++;
             execution_state = S0_CHECK_EXECUTION_STATE;

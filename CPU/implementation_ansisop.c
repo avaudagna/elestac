@@ -9,8 +9,6 @@ static const int POSICION_MEMORIA = 0x10;
 
 t_posicion definirVariable(t_nombre_variable variable) {
 
-    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
-
     //1) Obtener el stack index actual
     t_stack* actual_stack_index = actual_pcb->stack_index;
 
@@ -110,7 +108,6 @@ void armar_pedidos_escritura(t_list ** pedidos, t_list *direcciones, int valor) 
 
 
 t_posicion obtenerPosicionVariable(t_nombre_variable variable) {
-    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 
     logical_addr * direccion_logica = NULL;
 	int i = 0;
@@ -130,8 +127,6 @@ t_posicion obtenerPosicionVariable(t_nombre_variable variable) {
 }
 
 t_valor_variable dereferenciar(t_posicion direccion_variable) {
-    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
-
     //Hacemos el request a la UMC con el codigo 2
     t_list *pedidos = NULL;
     construir_operaciones_lectura(&pedidos, direccion_variable);
@@ -163,8 +158,6 @@ void construir_operaciones_lectura(t_list **pedidos, t_posicion posicion_variabl
 }
 
 void asignar(t_posicion direccion_variable, t_valor_variable valor) {
-    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
-
     t_list * pedidos = NULL;
     obtener_lista_operaciones_escritura(&pedidos, direccion_variable, ANSISOP_VAR_SIZE, valor);
 
@@ -259,8 +252,6 @@ t_posicion  obtener_t_posicion(logical_addr *address) {
     return (t_posicion) address->page_number * setup->PAGE_SIZE + address->offset;
 }
 void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
-    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
-
     char* buffer = NULL;
     int buffer_size = sizeof(char) + sizeof(int) * 2;
     //1) Armo paquete de I/O operation
@@ -288,8 +279,6 @@ void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
 }
 
 int imprimir(t_valor_variable valor) {
-    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
-
     char* buffer = NULL;
     int buffer_size = sizeof(char) + sizeof(int);
     asprintf(&buffer, "6%04d", valor);
@@ -302,7 +291,6 @@ int imprimir(t_valor_variable valor) {
 }
 
 int imprimirTexto(char* texto) {
-    usleep((u_int32_t ) actual_kernel_data->QSleep*1000);
 
     char* buffer = NULL;
     int texto_len = (int) strlen(texto);
