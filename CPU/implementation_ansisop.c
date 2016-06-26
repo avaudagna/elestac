@@ -13,7 +13,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
     t_stack* actual_stack_index = actual_pcb->stack_index;
 
     //2) Obtengo la primera posicion libre del stack
-    int actual_stack_pointer = actual_pcb->stack_pointer;
+    t_posicion actual_stack_pointer = (t_posicion) actual_pcb->stack_pointer;
 
     //3) Armamos la logical address requerida
     logical_addr* direccion_espectante = armar_direccion_logica_variable(actual_stack_pointer, setup->PAGE_SIZE);
@@ -26,8 +26,14 @@ t_posicion definirVariable(t_nombre_variable variable) {
     int index = 0;
     t_nodo_send * nodo = NULL;
     char * umc_response_buffer = calloc(1, sizeof(char));
+    if(umc_response_buffer == NULL) {
+        log_error(cpu_log, "definirVariable umc_response_buffer mem alloc failed");
+        return ERROR;
+    }
+
     while (list_size(pedidos) > 0) {
         nodo = list_remove(pedidos, index);
+        log_info(cpu_log, "sending request : %s for variable %c with value %d", nodo->data, variable, valor);
         if( send(umcSocketClient, nodo->data , (size_t ) nodo->data_length, 0) < 0) {
             log_error(cpu_log, "UMC expected addr send failed");
             return ERROR;
@@ -40,6 +46,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
             log_error(cpu_log, "PAGE FAULT");
             return ERROR;
         }
+
     }
 
     list_destroy(pedidos); //Liberamos la estructura de lista reservada
@@ -96,10 +103,10 @@ void armar_pedidos_escritura(t_list ** pedidos, t_list *direcciones, int valor) 
         address = list_remove(direcciones, index);
         nodo = calloc(1, sizeof(t_nodo_send));
         buff_len = sizeof(char) + sizeof(int) *3;
-        buffer = malloc(sizeof(char) + sizeof(int) *3 + address->tamanio);
+        buffer = calloc(1, sizeof(char) + sizeof(int) *3 + address->tamanio);
         nodo->data = buffer;
         sprintf(buffer, "4%04d%04d%04d", address->page_number, address->offset, address->tamanio);
-        serialize_data((&valor) + indice_copiado, (size_t) address->tamanio, &buffer, &buff_len);
+        serialize_data( ((char*) (&valor)) + indice_copiado, (size_t) address->tamanio, &buffer, &buff_len);
         indice_copiado += address->tamanio;
         nodo->data_length = buff_len;
         list_add(*pedidos,nodo);
@@ -120,7 +127,6 @@ t_posicion obtenerPosicionVariable(t_nombre_variable variable) {
         if( (indice_variable + i)->var_id == variable ) {
             return get_t_posicion(indice_variable + i); // (t_posicion) (indice_variable->page_number * setup->PAGE_SIZE) + indice_variable->offset;
         }
-        indice_variable++;
     }
 
     return ERROR;
@@ -139,11 +145,17 @@ t_valor_variable dereferenciar(t_posicion direccion_variable) {
     while(list_size(pedidos) > 0) {
         current_address  = list_remove(pedidos, 0);
         umc_response_buffer = calloc(1, sizeof(t_valor_variable));
-        asprintf(&umc_request_buffer, "2%04d%04d%04d", current_address->page_number, current_address->offset, current_address->tamanio);
+        asprintf(&umc_request_buffer, "3%04d%04d%04d", current_address->page_number, current_address->offset, current_address->tamanio);
+        log_info(cpu_log, "sending request : %s for direccion variable %d", umc_request_buffer, direccion_variable);
         if( send(umcSocketClient, umc_request_buffer, 13, 0) < 0) {
             log_error(cpu_log, "UMC expected addr send failed");
             return ERROR;
         }
+        if( recv(umcSocketClient , ((char*) variable_buffer) + variable_buffer_index , (size_t) current_address->tamanio , 0) < 0) {
+            log_error(cpu_log, "UMC response recv failed");
+            break;
+        }
+        variable_buffer_index += current_address->tamanio;
     }
 
 	free(umc_request_buffer);
@@ -162,37 +174,45 @@ void asignar(t_posicion direccion_variable, t_valor_variable valor) {
     obtener_lista_operaciones_escritura(&pedidos, direccion_variable, ANSISOP_VAR_SIZE, valor);
 
     char * umc_response_buffer = calloc(1, sizeof(char));
+    if(umc_response_buffer == NULL) {
+        log_error(cpu_log, "asignar umc_response_buffer mem alloc failed");
+        return;
+    }
+
     int index = 0;
     t_nodo_send * nodo = NULL;
     while (list_size(pedidos) > 0) {
         nodo = list_remove(pedidos, index);
-        if( send(umcSocketClient, nodo->data , (size_t ) nodo->data_length, 0) < 0) {
-            log_error(cpu_log, "UMC expected addr send failed");
-            return;
-        }
+        if(nodo != NULL) {
+            log_info(cpu_log, "sending request : %s for direccion variable %d with value %d",  nodo->data , direccion_variable, valor);
+            if( send(umcSocketClient, nodo->data , (size_t ) nodo->data_length, 0) < 0) {
+                log_error(cpu_log, "UMC expected addr send failed");
+                break;
+            }
 
-        //Obtenemos la respuesta de la UMC de un byte
-        if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
-            free(umc_response_buffer);
-            log_error(cpu_log, "UMC response recv failed");
-            return ;
-        }
+            //Obtenemos la respuesta de la UMC de un byte
+            if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
+                log_error(cpu_log, "UMC response recv failed");
+                break;
+            }
 
-        //StackOverflow: 3
-        if(strcmp(umc_response_buffer, STACK_OVERFLOW_ID) == 0){
-            free(umc_response_buffer);
-            log_error(cpu_log, "UMC raised Exception: STACKOVERFLOW");
-            return ;
-        }
+            //StackOverflow: 3
+            if(strcmp(umc_response_buffer, STACK_OVERFLOW_ID) == 0){
+                log_error(cpu_log, "UMC raised Exception: STACKOVERFLOW");
+                break;
+            }
 
-        //EXITO (Se podria loggear de que la operacion fue exitosa)
-        if(strcmp(umc_response_buffer, OPERACION_EXITOSA_ID) == 0){
-            log_info(cpu_log, "Asignar variable operation to UMC with value was successful");
+            //EXITO (Se podria loggear de que la operacion fue exitosa)
+            if(strcmp(umc_response_buffer, OPERACION_EXITOSA_ID) == 0){
+                log_info(cpu_log, "Asignar variable operation to UMC with value %d was successful", valor);
+            } else {
+                log_error(cpu_log, "Asignar variable operation to UMC with value %d failed", valor);
+                break;
+            }
+            free(nodo);
         }
-        free(nodo);
     }
     list_destroy(pedidos); //Liberamos la estructura de lista reservada
-    free(nodo);
 	free(umc_response_buffer);
 	log_info(cpu_log, "Finished asignar variable operations");
 }
