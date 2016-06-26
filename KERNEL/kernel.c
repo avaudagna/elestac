@@ -32,8 +32,8 @@ int main (int argc, char **argv){
 	cpus_executing = list_create();
 	consolas_conectadas = list_create();
 	if (start_kernel(argc, argv[1])<0) return 0; //load settings
-	//clientUMC=connect2UMC();
-	clientUMC=100;setup.PAGE_SIZE=1024; //TODO Delete -> lo hace connect2UMC()
+	clientUMC=connect2UMC();
+	//clientUMC=100;setup.PAGE_SIZE=1024; //TODO Delete -> lo hace connect2UMC()
 	if (clientUMC<0){
 		log_error(kernel_log, "Could not connect to the UMC. Please, try again.");
 		return 0;
@@ -76,8 +76,8 @@ int start_kernel(int argc, char* configFile){
 			strcpy(configFilePath, cwd);
 		}
 		configFileFD = inotify_init();
-		char * coso = "/home/pablo/tp-2016-1c-Vamo-a-calmarno/KERNEL";
-		configFileWatcher = inotify_add_watch(configFileFD, coso, IN_MODIFY | IN_CREATE); // configFile
+		configFilePath = "/home/pablo/tp-2016-1c-Vamo-a-calmarno/KERNEL"; // TODO borrar fuera de testing
+		configFileWatcher = inotify_add_watch(configFileFD, configFilePath, IN_MODIFY | IN_CREATE);
 	} else {
 		int i = 0;
 		for (i = 0; i < 10001; i++){
@@ -172,7 +172,7 @@ int loadConfig(char* configFile){
 
 int connect2UMC(){
 	int clientUMC;
-	char* buffer=malloc(5);
+	char* buffer;
 	char* buffer_4=malloc(4);
 	log_info(kernel_log, "Connecting to UMC on %s:%d.", setup.IP_UMC, setup.PUERTO_UMC);
 	if (getClientSocket(&clientUMC, setup.IP_UMC, setup.PUERTO_UMC)) return (-1);
@@ -183,7 +183,6 @@ int connect2UMC(){
 	if (recv(clientUMC, buffer_4, 4, 0) < 0) return (-1);
 	setup.PAGE_SIZE=atoi(buffer_4);
 	log_info(kernel_log, "Page size: (received from UMC): %d.",setup.PAGE_SIZE);
-	free(buffer);
 	free(buffer_4);
 	return clientUMC;
 }
@@ -563,14 +562,14 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen) { /* Search 
 	if (pcb_found == true) {
 		sprintf(buffer, "%d%04d", 2, pid);
 		send(clientUMC, buffer, 5, 0);
-		if (consoleStillOpen) send(pid, "0", 1, 0); // send exit code to console
-		close(pid); // close console socket
-		bool getConsoleIndex(void *nbr) {
-			t_Client *unCliente = nbr;
-			return (pid == unCliente->clientID);
-		}
-		list_remove_by_condition(consolas_conectadas, getConsoleIndex);
 	}
+	if (consoleStillOpen) send(pid, "0", 1, 0); // send exit code to console
+	close(pid); // close console socket
+	bool getConsoleIndex(void *nbr) {
+		t_Client *unCliente = nbr;
+		return (pid == unCliente->clientID);
+	}
+	list_remove_by_condition(consolas_conectadas, getConsoleIndex);
 	free(buffer);
 }
 
