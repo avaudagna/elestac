@@ -87,18 +87,18 @@ typedef struct {
     t_posicion obtener_t_posicion(logical_addr *address);
 
     //#10
-    int imprimir(t_valor_variable valor);
+    void imprimir(t_valor_variable valor);
 
     //#11
-    int imprimirTexto(char* texto);
+    void imprimirTexto(char* texto);
 
     //#12
     void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo);
 
     //#13
-    void wait(t_nombre_semaforo identificador_semaforo);
+    void la_wait(t_nombre_semaforo identificador_semaforo);
 
     //#14
-    void signal(t_nombre_semaforo identificador_semaforo);
+    void la_signal(t_nombre_semaforo identificador_semaforo);
 
 #endif

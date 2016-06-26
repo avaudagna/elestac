@@ -245,7 +245,7 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
     char *kernel_reply = malloc(1);
 
     int buffer_size = sizeof(char) * 2 + 8 + strlen(variable);
-    asprintf(&buffer, "%d%d%04d%s%04d", SHARED_VAR_ID, SET_VAR, strlen(variable), variable, value);
+    asprintf(&buffer, "%d%d%04d%s%04d", SHARED_VAR_ID, SET_VAR, strlen(variable), variable, valor);
     if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
         log_error(cpu_log, "set value of %s failed", variable);
         return ERROR;
@@ -255,10 +255,10 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
         log_error(cpu_log, "Kernel response recv failed");
         return ERROR;
     }
-    if(!strncmp(kernel_reply, "1")) {
+    if(!strcmp(kernel_reply, "1")) {
         log_error(cpu_log, "No se pudo asignar el valor %d a la variable %s", valor, variable);
         return ERROR;
-    }else if(!strncmp(kernel_reply, "0")){
+    }else if(!strcmp(kernel_reply, "0")){
         return valor;
     }
     free(buffer);
@@ -330,7 +330,7 @@ void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
     char* mensaje = NULL;
     char* buffer = NULL;
 
-    int sizeMsj = sizeof(char) + sizeof(ioName) + 8;
+    int sizeMsj = sizeof(char) + sizeof(dispositivo) + 8;
     //Armo paquete de I/O operation
     asprintf(&buffer, "%d%04d", atoi(ENTRADA_SALIDA_ID), strlen(dispositivo));
     strcpy(mensaje, buffer);
@@ -349,19 +349,18 @@ void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
 
 }
 
-int imprimir(t_valor_variable valor) {
+void imprimir(t_valor_variable valor) {
     char* buffer = NULL;
     int buffer_size = sizeof(char) + sizeof(int);
     asprintf(&buffer, "%d%04d", IMPRIMIR_ID, valor);
     if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
         log_error(cpu_log, "imprimir value %d send to KERNEL failed", valor);
-        return ERROR;
+        return ;
     }
     free(buffer);
-    return (int) strlen(string_itoa(valor));
 }
 
-int imprimirTexto(char* texto) {
+void imprimirTexto(char* texto) {
 
     char* buffer = NULL;
     int texto_len = (int) strlen(texto);
@@ -370,19 +369,18 @@ int imprimirTexto(char* texto) {
 
     if(send(kernelSocketClient, buffer, (t_size) buffer_size, 0) < 0) {
         log_error(cpu_log, "imprimirTexto send failed");
-        return ERROR;
+        return;
     }
     free(buffer);
-    return texto_len;
 }
-void wait(t_nombre_semaforo identificador_semaforo){
+void la_wait (t_nombre_semaforo identificador_semaforo){
     char* buffer = NULL;
     int buffer_size = sizeof(char) * 2 + 4 + strlen(identificador_semaforo);
     asprintf(&buffer, "%d%d%04d%s", SEMAPHORE_ID, WAIT_ID, strlen(identificador_semaforo), identificador_semaforo);
 
     if(send(kernelSocketClient, buffer, (t_size) buffer_size, 0) < 0) {
         log_error(cpu_log, "wait(%s) failed", identificador_semaforo);
-        return ERROR;
+        return;
     }
     //me quedo esperando activamente a que kernel me responda
     recv(kernelSocketClient, buffer, sizeof(char), 0);
@@ -392,14 +390,14 @@ void wait(t_nombre_semaforo identificador_semaforo){
 
 }
 
-void signal(t_nombre_semaforo identificador_semaforo){
+void la_signal (t_nombre_semaforo identificador_semaforo){
     char* buffer = NULL;
     int buffer_size = sizeof(char) * 2 + 4 + strlen(identificador_semaforo);
     asprintf(&buffer, "%d%d%04d%s", SEMAPHORE_ID, SIGNAL_ID, strlen(identificador_semaforo), identificador_semaforo);
 
     if(send(kernelSocketClient, buffer, (t_size) buffer_size, 0) < 0) {
         log_error(cpu_log, "signal(%s) failed", identificador_semaforo);
-        return ERROR;
+        return;
     }
 }
 
