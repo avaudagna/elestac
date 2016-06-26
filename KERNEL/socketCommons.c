@@ -11,7 +11,7 @@ int getClientSocket(int* clientSocket, const char* address, const int port) {
 		perror("Connect failed");
 		return (-1);
 	}
-	printf("\n .:: Connected to server in %s:%d ::.\n",address,port);
+	printf("\n .:: Connected to server in %s:%d ::.\n", address, port);
 	return 0;
 }
 
@@ -38,6 +38,5 @@ int acceptConnection(int serverSocket) {
 		perror("Accept failed");
 		return (-1);
 	}
-	printf(" .:: New connection accepted ::.\n");
 	return newClient;
 }
