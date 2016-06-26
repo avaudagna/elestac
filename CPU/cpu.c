@@ -44,8 +44,6 @@ AnSISOP_kernel funciones_kernel_ansisop = {
 
 enum_queue status_update();
 
-void check_quantum();
-
 int main(int argc, char **argv) {
 
 	int i;
@@ -145,17 +143,14 @@ int cpu_state_machine() {
 
 int return_pcb() {
     //Serializo el PCB y lo envio a KERNEL
-    actual_pcb = (t_pcb *) calloc(1,sizeof(t_pcb));
     void * serialized_pcb = NULL;
     int serialized_buffer_index = 0;
-    if(actual_pcb->status == EXECUTING) {
-        actual_pcb->status = READY;
-    }
     serialize_pcb(actual_pcb, &serialized_pcb, &serialized_buffer_index);
     if( send(umcSocketClient , serialized_pcb, (size_t) serialized_buffer_index, 0) < 0) {
         log_error(cpu_log, "Send serialized_pcb to KERNEL failed");
         return ERROR;
     }
+    log_info(cpu_log, "Send serialized_pcb to KERNEL was successful");
     return SUCCESS;
 }
 
@@ -188,6 +183,7 @@ int execute_state_machine() {
                 return ERROR;
         }
     }
+    check_execution_state();
     return SUCCESS;
 }
 
@@ -205,15 +201,8 @@ int check_execution_state() {
     return SUCCESS;
 }
 
-void check_quantum() {
-    if(actual_kernel_data->Q == 0) {
-        actual_pcb->status = EXIT;
-    }
-}
 
 enum_queue status_update() {
-
-    check_quantum();
 
     switch (actual_pcb->status) {
         case READY:
