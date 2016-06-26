@@ -197,6 +197,54 @@ void asignar(t_posicion direccion_variable, t_valor_variable valor) {
 	log_info(cpu_log, "Finished asignar variable operations");
 }
 
+t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
+    //5 + 0 + nameSize + name (1+1+4+nameSize bytes)
+    char* buffer = NULL;
+    char *value = malloc(4);
+
+    int buffer_size = sizeof(char) * 2 + 4 + strlen(variable);
+    asprintf(&buffer, "%d%d%04d%s", SHARED_VAR_ID, GET_VAR, strlen(variable), variable);
+    if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
+        log_error(cpu_log, "get value of %s failed", variable);
+        return ERROR;
+    }
+
+    recv(kernelSocketClient, value, 4,  0);
+
+    free(buffer);
+    free(value);
+
+    return (int) atoi(value);
+
+}
+
+t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor){
+    //5 + 1 + nameSize + name + value (1+1+4+nameSize+4 bytes)
+
+    char* buffer = NULL;
+    char *kernel_reply = malloc(1);
+
+    int buffer_size = sizeof(char) * 2 + 8 + strlen(variable);
+    asprintf(&buffer, "%d%d%04d%s%04d", SHARED_VAR_ID, SET_VAR, strlen(variable), variable, value);
+    if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
+        log_error(cpu_log, "set value of %s failed", variable);
+        return ERROR;
+    }
+
+    if( recv(kernelSocketClient , kernel_reply , sizeof(char) , 0) < 0) {
+        log_error(cpu_log, "Kernel response recv failed");
+        return ERROR;
+    }
+    if(!strncmp(kernel_reply, "1")) {
+        log_error(cpu_log, "No se pudo asignar el valor %d a la variable %s", valor, variable);
+        return ERROR;
+    }else if(!strncmp(kernel_reply, "0")){
+        return valor;
+    }
+    free(buffer);
+    free(kernel_reply);
+
+}
 
 void irAlLabel(t_nombre_etiqueta etiqueta) {
     actual_pcb->program_counter = metadata_buscar_etiqueta(etiqueta, actual_pcb->etiquetas, (const t_size) actual_pcb->etiquetas_size);
@@ -252,36 +300,39 @@ t_posicion  obtener_t_posicion(logical_addr *address) {
     return (t_posicion) address->page_number * setup->PAGE_SIZE + address->offset;
 }
 void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
+
+    //cambio el estado del pcb
+    actual_pcb->status = BLOCKED;
+
+    //NO VA MÁS serialize_pcb(actual_pcb, &buffer, &buffer_len);
+    //3+ ioNameSize + ioName + io_units (1+4+ioNameSize+4 bytes)
+
+    char* mensaje = NULL;
     char* buffer = NULL;
-    int buffer_size = sizeof(char) + sizeof(int) * 2;
-    //1) Armo paquete de I/O operation
-    asprintf(&buffer, "d%04d%04d", atoi(ENTRADA_SALIDA_ID), strlen(dispositivo), tiempo);
-    //2) Envio el paquete a KERNEL
-    if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
+
+    int sizeMsj = sizeof(char) + sizeof(ioName) + 8;
+    //Armo paquete de I/O operation
+    asprintf(&buffer, "%d%04d", atoi(ENTRADA_SALIDA_ID), strlen(dispositivo));
+    strcpy(mensaje, buffer);
+    strcat(mensaje, dispositivo);
+    asprintf(&buffer, "%04d", tiempo);
+    strcat(mensaje, buffer);
+
+    free(buffer);
+
+    //Envio el paquete a KERNEL
+    if(send(kernelSocketClient, mensaje, (size_t) sizeMsj, 0) < 0) {
         log_error(cpu_log, "entrada salida of dispositivo %s %d time send to KERNEL failed", dispositivo, tiempo);
     }
-    free(buffer);
-    buffer = calloc(1, sizeof(char));
-    //3) Espero por la respuesta, BLOQUEANTE
-    if( recv(umcSocketClient , buffer, sizeof(char) , 0) < 0) {
-        free(buffer);
-        log_error(cpu_log, "KERNEL I/O response recv failed");
-        return;
-    }
-    //SUCCESS
-    if(strcmp(buffer, string_itoa(SUCCESS)) == 0) {
-        log_info(cpu_log, "KERNEL I/O operation was successful");
-        return;
-    } else {
-        //ERROR
-        log_error(cpu_log, "KERNEL I/O operation was unsuccessful");
-    }
+
+    free(mensaje);
+
 }
 
 int imprimir(t_valor_variable valor) {
     char* buffer = NULL;
     int buffer_size = sizeof(char) + sizeof(int);
-    asprintf(&buffer, "6%04d", valor);
+    asprintf(&buffer, "%d%04d", IMPRIMIR_ID, valor);
     if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
         log_error(cpu_log, "imprimir value %d send to KERNEL failed", valor);
         return ERROR;
@@ -294,7 +345,7 @@ int imprimirTexto(char* texto) {
 
     char* buffer = NULL;
     int texto_len = (int) strlen(texto);
-    asprintf(&buffer, "7%04d%s", texto_len, texto);
+    asprintf(&buffer, "%d%04d%s", IMPRIMIR_TEXTO_ID, texto_len, texto);
     int buffer_size = (int) strlen(buffer);
 
     if(send(kernelSocketClient, buffer, (t_size) buffer_size, 0) < 0) {
@@ -303,6 +354,33 @@ int imprimirTexto(char* texto) {
     }
     free(buffer);
     return texto_len;
+}
+void wait(t_nombre_semaforo identificador_semaforo){
+    char* buffer = NULL;
+    int buffer_size = sizeof(char) * 2 + 4 + strlen(identificador_semaforo);
+    asprintf(&buffer, "%d%d%04d%s", SEMAPHORE_ID, WAIT_ID, strlen(identificador_semaforo), identificador_semaforo);
+
+    if(send(kernelSocketClient, buffer, (t_size) buffer_size, 0) < 0) {
+        log_error(cpu_log, "wait(%s) failed", identificador_semaforo);
+        return ERROR;
+    }
+    //me quedo esperando activamente a que kernel me responda
+    recv(kernelSocketClient, buffer, sizeof(char), 0);
+    //kernel_response debería ser 0
+
+    free(buffer);
+
+}
+
+void signal(t_nombre_semaforo identificador_semaforo){
+    char* buffer = NULL;
+    int buffer_size = sizeof(char) * 2 + 4 + strlen(identificador_semaforo);
+    asprintf(&buffer, "%d%d%04d%s", SEMAPHORE_ID, SIGNAL_ID, strlen(identificador_semaforo), identificador_semaforo);
+
+    if(send(kernelSocketClient, buffer, (t_size) buffer_size, 0) < 0) {
+        log_error(cpu_log, "signal(%s) failed", identificador_semaforo);
+        return ERROR;
+    }
 }
 
 //En el wait me fijo si el kernel me dice de expropiarme o no, es medio choto porque no es responsabilidad del cpu de esperar estas cosas, sino del kernel.
