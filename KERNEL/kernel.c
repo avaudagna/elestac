@@ -263,7 +263,7 @@ void restoreCPU(t_Client *laCPU){
 }
 
 void check_CPU_FD_ISSET(void *cpu){
-	char *cpu_protocol = malloc(2);
+	char *cpu_protocol = malloc(1);
 	int setValue = 0;
 	t_Client *laCPU = cpu;
 	char *tmp_buff = malloc(4);
@@ -398,6 +398,7 @@ int control_clients(){
 	FD_SET(configFileFD, &allSockets);
 	list_iterate(consolas_conectadas,add2FD_SET);
 	list_iterate(cpus_conectadas,add2FD_SET);
+	list_iterate(cpus_executing,add2FD_SET);
 	int retval=select(maxSocket+1, &allSockets, NULL, NULL, &timeout); // (retval < 0) <=> signal
 	if (retval>0) {
 		if (FD_ISSET(configFileFD, &allSockets)) {
@@ -422,6 +423,7 @@ int control_clients(){
 		}
 		list_iterate(consolas_conectadas,check_CONSOLE_FD_ISSET);
 		list_iterate(cpus_conectadas,check_CPU_FD_ISSET);
+		list_iterate(cpus_executing,check_CPU_FD_ISSET);
 		if ((newConsole=accept_new_client("console", &consoleServer, &allSockets, consolas_conectadas)) > 1){
 			accept_new_PCB(newConsole);
 		}
