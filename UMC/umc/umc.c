@@ -36,7 +36,6 @@
 #define SOLICITUD_NUEVO_PROCESO 1
 #define FINALIZAR_PROCESO 2
 #define EXIT (-1)
-#define SIZE_OF_PAGE_SIZE 4
 
 /* COMUNICACION/OPERACIONES CON CPU */
 
@@ -263,6 +262,10 @@ int getPosicionCLockPid(t_list * headerFIFOxPID,int pPid);
 int getPosicionListaPids(t_list * headerListaDePids, int pPid);
 
 void retardo(void);
+void dump(void);
+
+void imprimirTablaDePaginas ( void *aux);
+void imprimirPagina ( void *var_aux);
 
 
 int main(int argc , char **argv){
@@ -396,6 +399,7 @@ void * funcion_menu (void * noseusa)
                     break;
                case DUMP:
                     printf("\nDUMP!!!!!");
+				  	dump();
                     break;
                case FLUSH:
                     printf("\nFLUSH!!!!!");
@@ -1032,7 +1036,6 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 					if  ( cantPagDisponiblesxPID(pid_actual) > 0){ // SI EL PROCESO TIENE MARGEN PARA ALMACENAR MAS PAGINAS EN MEMORIA
 						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, tamanioContenidoPagina);
 						actualizarTlb(pid_actual,aux);
-                        //TODO(Alan): llamado directo, fix temporal.
                         resolverEnMP(socketBuff, aux, _offset, _tamanio);
 					}
 					else{	// el proceso llego a la maxima cantidad de marcos proceso
@@ -1113,8 +1116,6 @@ void almacenarBytes(int *socketBuff, int *pid_actual) {
 
 		aux = obtenerPaginaDeTablaDePaginas(headerTablaDePaginas, _pagina);
 
-
-
 		if (aux == NULL) {	// valido pedido de pagina
 			pedidoDePaginaInvalida(socketBuff);
 		}
@@ -1126,7 +1127,7 @@ void almacenarBytes(int *socketBuff, int *pid_actual) {
 
 				if ( marcosDisponiblesEnMP() == 0){	// NO HAY MARCOS LIBRES EN MEMORIA
 					if( cantPagDisponiblesxPID(pid_actual) == umcGlobalParameters.marcosXProc ){// si el proceso no tiene asignado ningun marco
-						// SE ABORTA EL PROCESO
+						enviarMsgACPU(socketBuff,ABORTAR_PROCESO,1);
 					}
 					else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo , y una vez que ya se trajo la pagina a MP,  ahi si guardo los bytes
 						algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
@@ -1328,11 +1329,36 @@ void algoritmoClockModificado(int pPid, int numPagNueva, int tamanioContenidoPag
 				break;
 			}
 			else{
-				setBitDeUso(pPid,((CLOCK_PAGINA*) recorredor->data)->nroPagina,0);
+				setBitDeUso(pPid,((CLOCK_PAGINA*) recorredor->data)->nroPagina,0);		// voy actualizando el bit de uso
 			}
 		}
 
 	}
+
+
+	pagina_victima = obtenerPagina(pPid, ((CLOCK_PAGINA *) recorredor->data)->nroPagina);
+
+	if (pagina_victima->modificado == 1)    // pagina modificada, enviarla a swap antes de reemplazarla
+		PedidoPaginaASwap(pPid,pagina_victima->nroPagina,ESCRITURA);
+	// Actualizaciones sobre la tabla de paginas ( actualizo campo nro de marco y bit de presencia )
+	pagina_nueva = obtenerPagina(pPid,numPagNueva);
+	pagina_nueva->nroDeMarco = pagina_victima->nroDeMarco ;
+	setBitDePresencia(pPid,numPagNueva,PRESENTE_MP);
+	setBitDePresencia(pPid,pagina_victima->nroPagina,AUSENTE);
+
+
+	bufferContenidoPagina = calloc(umcGlobalParameters.marcosSize,1);	// hago un calloc cosa de inicializar todo en \0 , puede que el tamaño de la pagina que venga a reemplazar NO ocupe todo el espacio asignado
+	memcpy(bufferContenidoPagina,contenidoPagina,tamanioContenidoPagina);	// guardo el contenido de la nueva pagina
+	// Reemplazo en memoria principal
+	memcpy(vectorMarcos[pagina_nueva->nroDeMarco].comienzoMarco,bufferContenidoPagina,umcGlobalParameters.marcosSize);		// reemplace pagina
+	// Actualizo el nodo de la FIFO ( bit de uso + nro de pagina )
+	((CLOCK_PAGINA *)recorredor->data)->bitDeUso =1;
+	((CLOCK_PAGINA *)recorredor->data)->nroPagina=pagina_nueva->nroPagina;
+
+	punteroPIDClock->indice++;	// actualizo el nroDeMarco pa la proxima vez que se ejecute el CLOCK
+	if ( punteroPIDClock->indice > fifoPID->elements_count)		// si lo que reemplace, era el ultimo nodo de la fifo, entonces reinicio el indice :)
+		punteroPIDClock->indice=0;
+
 
 }
 
@@ -1932,4 +1958,37 @@ int getPosicionListaPids(t_list * headerListaDePids, int pPid){
 void retardo(void){
 
 	usleep(umcGlobalParameters.retardo * 1000);
+}
+
+
+void dump(void){
+	/*
+	 * dump: Este comando generará un reporte en pantalla y en un archivo en disco del estado actual de:
+			 Estructuras de memoria: Tablas de páginas de todos los procesos o de un proceso en particular.
+			 Contenido de memoria: Datos almacenados en la memoria de todos los procesos o de un proceso en particular.
+	 * */
+
+	printf("\nReporte , situacion actual Memoria \n");
+	list_iterate(headerListaDePids,imprimirTablaDePaginas);
+
+
+}
+
+
+
+void imprimirTablaDePaginas ( void *aux){
+
+	t_list *header_aux = NULL;
+
+	header_aux = ((PIDPAGINAS *)aux)->headListaDePaginas;
+	printf("\n__________________________________________________________");
+	printf("\nPID : %04d\n",((PIDPAGINAS *)aux)->pid);
+	printf("|Numero de Pagina  |  Presencia  | Modificado  | Marco  |");
+	list_iterate(header_aux,imprimirPagina);
+
+}
+
+void imprimirPagina ( void *var_aux){
+
+	printf("\n%9d%18d%13d%12d", ((PAGINA*)var_aux)->nroPagina, ((PAGINA*)var_aux)->presencia, ((PAGINA*)var_aux)->modificado,((PAGINA*)var_aux)->nroDeMarco);
 }
