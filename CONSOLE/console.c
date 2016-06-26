@@ -20,6 +20,22 @@ int loadConfig(char* configFile);
 int main(int argc, char *argv[]) {
 	signal(SIGINT, tratarSeniales);
 
+	if (loadConfig("/usr/share/ansisop/console.config")<0) return -1;
+
+	int kernelSocketClient;
+	char *kernel_reply = malloc(4);
+	//create kernel client
+	if (argc != 2) {
+		puts("usage: console file");
+		return -1;
+	}
+
+	getClientSocket(&kernelSocketClient, setup.IP_KERNEL, setup.PUERTO_KERNEL);
+
+	printf("se cargó el setup\n");
+	/*le voy a mandar al kernel un 0 para iniciar el handshake + sizeMsj en 4B + (el código como viene),
+	y me va a devolver el client_id (un número) que me represente con el cual él me conoce*/
+
 	FILE * fp;
 	fp = fopen(argv[1], "r");
 	if (!fp) {
@@ -35,60 +51,6 @@ int main(int argc, char *argv[]) {
 	char* hash_bang[100];
 	fgets(hash_bang, 100, fp);
 	sz = sz - strlen(hash_bang) - 1;
-
-	//*********************usar el hash_bang para sacar el directorio de la consola
-	char absolute_path[100];
-
-	strcpy(absolute_path,&hash_bang[2]);
-	/*
-
-
-
-    *domain = (char*) malloc(sizeof(dummy));
-    strcpy(*domain, dummy);
-    //free(dummy);
-}
-	 */
-	char* dummy = NULL;
-	dummy = (char*) malloc(sizeof(absolute_path));
-	strcpy(dummy,absolute_path);
-	dummy = strtok(dummy, "@");
-	*relative_path = (char*) malloc(sizeof(dummy));
-	strcpy(*relative_path, dummy);
-	while(strcmp(dummy, "ansisop")){
-		dummy = strtok(NULL, "/");
-		strcat(*relative_path, "/");
-		strcat(*relative_path, dummy);
-	}
-	free(dummy);
-
-	/*ESTO NO IRÍA MÁS
-	if (getcwd(path, sizeof(path)) != NULL) {
-		fprintf(stdout, "Current working dir: %s\n", path);
-	} else {
-		perror("getcwd() error");
-	}
-	 */
-
-	strcat(*relative_path, "/console.config");
-
-	if (loadConfig(path)<0) return -1;
-
-	int kernelSocketClient;
-	char *kernel_reply = malloc(4);
-	//create kernel client
-	if (argc != 2) {
-		puts("usage: console file");
-		return -1;
-	}
-
-	getClientSocket(&kernelSocketClient, setup.IP_KERNEL, setup.PUERTO_KERNEL);
-
-	printf("se cargó el setup\n");
-	/*le voy a mandar al kernel un 0 para iniciar el handshake + sizeMsj en 4B + (el código como viene),
-	 y me va a devolver el client_id (un número) que me represente con el cual él me conoce*/
-
-	//******************************
 
 	char* prog = (char*) malloc(sz);
 
@@ -106,6 +68,9 @@ int main(int argc, char *argv[]) {
 	strcat(mensaje, prog);
 	send(kernelSocketClient, mensaje, sizeMsj, 0);
 
+	free(prog);
+	free(mensaje);
+
 	do {
 		if (recv(kernelSocketClient, kernel_reply, 4, 0) < 0) {
 			puts("recv failed");
@@ -120,33 +85,37 @@ int main(int argc, char *argv[]) {
 
 		if ((kernelSocketClient, kernel_reply, 1, 0) > 0) {
 			//log_info(console_log, "CONSOLE dijo: %s - Ejecutar protocolo correspondiente", kernel_reply);
-			switch (atoi(cpu_protocol)) {
+			char *valor = malloc(4);
+			char textSize[4];
+			int textLen;
+
+			switch (atoi(kernel_reply)) {
 				case 0:// Program END
 					printf("Vamo a recontra calmarno. El programa finalizó correctamente\n");
 					break;
 				case 1:// Print value
 					//recibo 8 bytes -> 4 sizeof(variable) + variable + 4 valor_variable
-					char *valor = malloc(4);
-					char textSize[4];
 
 					recv(kernelSocketClient, textSize, 4, 0);
-					int textLen = atoi(textSize);
+					textLen = atoi(textSize);
 					char *var = malloc(textLen);
 
 					recv(kernelSocketClient, var, textLen, 0);
 					recv(kernelSocketClient, valor, 4, 0);
 					printf("El valor de la variable %s es: %s", var, valor);//controlar este printf
-					//free(var);
-					free(valor);
+					free(var);
+					break;
+
 				case 2:// Print text
 					//recibo 4 del tamaño + texto
-					char textSize[4];
+
 					recv(kernelSocketClient, textSize, 4, 0);
-					int textLen = atoi(textSize);
+					textLen = atoi(textSize);
 					recv(kernelSocketClient, kernel_reply, textLen, 0);
 					printf("%s\n", kernel_reply);//controlar este printf
 					break;
 			}
+			free(valor);
 
 		}
 	}
