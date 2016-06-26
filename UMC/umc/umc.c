@@ -1001,7 +1001,6 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 
 	if((umcGlobalParameters.entradasTLB > 0 ) && (consultarTLB(pid_actual,_pagina,&indice_buff))){	// ¿Se usa TLB ? y.. ¿Esta en TLB?
 		// si esta en la tabla,  ya tengo el nroDeMarco y de ahi me voy a vectorMarcos[nroDeMarco]
-		// TODO : ¿ falta actualizar la FIFO ? !!!!!!!!!!!!!!!!!!!!
 		temp = (PAGINA *) malloc (sizeof(PAGINA));
 		temp->nroDeMarco = indice_buff;
 		temp->nroPagina=_pagina;
@@ -1563,9 +1562,10 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 	nuevoPidFifoIndice->pid = *pPid;
 	nuevoPidFifoIndice->indice=0;
 
-	if ( headerPunterosClock == NULL)		// si todavia no hay ningun marco en memoria , creo la lista de donde me quedo el puntero en el ultimo reemplazo
+	if ( headerPunterosClock == NULL){		// si todavia no hay ningun marco en memoria , creo la lista de donde me quedo el puntero en el ultimo reemplazo
 		headerPunterosClock = list_create();
-	else if( pidEstaEnListaDeUltRemp(headerPunterosClock,*pPid) == false){		//  si el pid todavia no esta en la lista de ultimo puntero, entonces lo agrego
+		list_add(headerPunterosClock,nuevoPidFifoIndice);
+	}else if( pidEstaEnListaDeUltRemp(headerPunterosClock,*pPid) == false){		//  si el pid todavia no esta en la lista de ultimo puntero, entonces lo agrego
 		list_add(headerPunterosClock,nuevoPidFifoIndice);
 	}
 
@@ -1584,7 +1584,6 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
          if(entry->headerFifo == NULL) {  // si el PID todavia no tiene ningun marco asignado en memoria , creo la FIFO asociada a ese PID
             entry->headerFifo = list_create();
          }
-
 
 	list_add(entry->headerFifo, pagina);	// agrego la pagina a la fifo (  se agregan al final de la lista)
 
