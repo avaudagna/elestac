@@ -1234,8 +1234,8 @@ void algoritmoClock(int pPid, int numPagNueva, int tamanioContenidoPagina, void 
 		}
 		// recorro desde el comienzo de la fifo hasta la posicion original
 		if (!estado) {
-			recorredor = fifoPID->head;		// reseteo el puntero recorredor
-			for (i = 0; i < (punteroPIDClock->indice); i++, recorredor = recorredor->next) {
+			recorredor = fifoPID->head->data;		// reseteo el puntero recorredor
+			for (i = 0; i <= (punteroPIDClock->indice); i++, recorredor = recorredor->next) {
 
 				if (((CLOCK_PAGINA *) recorredor->data)->bitDeUso == 1) {
 					((CLOCK_PAGINA *) recorredor->data)->bitDeUso = 0;        // pongo en 0 y sigo recorriendo
