@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <sys/time.h>
+#include <sys/inotify.h>
 #include <commons/log.h>
 #include <commons/config.h>
 #include <commons/string.h>
@@ -19,6 +20,9 @@
 #include "libs/serialize.h"
 #include "libs/pcb.h"
 #include "libs/stack.h"
+
+#define EVENT_SIZE      (sizeof(struct inotify_event) + 24)
+#define EVENT_BUF_LEN   ( 256 * EVENT_SIZE )
 
 struct {
 		int 	PUERTO_PROG,
@@ -61,14 +65,16 @@ int 	accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista);
 int     getIOindex(char *io_name);
 int     getSharedIndex(char *shared_name);
 void    call_handlers();
-void	accept_new_PCB(int newConsole);
 void 	tratarSeniales(int);
 void 	round_robin();
 void	add2FD_SET(void *client);
 void 	check_CPU_FD_ISSET(void *client);
 void	check_CONSOLE_FD_ISSET(void *client);
 void    end_program(int pid, bool consoleStillOpen, bool cpuStillOpen);
+void	*accept_new_PCB(void *newConsole);
 void    *do_work(void *p);
+void    restoreCPU(t_Client *laCPU);
+t_pcb*  recvPCB(int cpuID);
 pthread_mutex_t mut_io_list;
 sem_t *semaforo_io;
 #endif /* KERNEL_H_ */
