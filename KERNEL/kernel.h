@@ -56,7 +56,6 @@ typedef struct {
 			*io_units;
 } t_io;
 
-int     requestPages2UMC(char* PID, int ansisopLen,char* code,int clientUMC);
 int		start_kernel(int argc, char* configFile);
 int 	loadConfig(char* configFile);
 int 	connect2UMC();
@@ -71,9 +70,11 @@ void	add2FD_SET(void *client);
 void 	check_CPU_FD_ISSET(void *client);
 void	check_CONSOLE_FD_ISSET(void *client);
 void    end_program(int pid, bool consoleStillOpen, bool cpuStillOpen);
-void	*accept_new_PCB(void *newConsole);
-void    *do_work(void *p);
+void    createNewPCB(int newConsole, int code_pages, char* code);
+void	accept_new_PCB(int newConsole);
 void    restoreCPU(t_Client *laCPU);
+void    *requestPages2UMC(void* request_buffer);
+void    *do_work(void *p);
 t_pcb*  recvPCB(int cpuID);
 pthread_mutex_t mut_io_list;
 sem_t *semaforo_io;

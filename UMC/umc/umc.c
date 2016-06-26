@@ -488,7 +488,7 @@ FunctionPointer QuienSos(int * socketBuff) {
 
 		if ( contConexionesNucleo == 1 ) {
 
-			aux = atenderKernel;
+ 			aux = atenderKernel;
 			return aux;
 
 			}
