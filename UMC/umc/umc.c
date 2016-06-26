@@ -596,7 +596,7 @@ void atenderKernel(int * socketBuff){
 		case FINALIZAR_PROCESO:	// 2
 				retardo();
 				finalizarProceso(socketBuff);
-			estado = REPOSO;
+			estado = IDENTIFICADOR_OPERACION;
 			break;
 		default:
 			printf("Identificador de operacion invalido");
@@ -644,7 +644,6 @@ void  handShakeKernel(int * socketBuff){
 	char buffer[sizeof(int)];
 
 	sprintf(buffer,"%04d", umcGlobalParameters.marcosSize);
-
 	if ( send(*socketBuff,(void *)buffer, sizeof(int),0) == -1 ) {
 			perror("send");
 			exit(1);
