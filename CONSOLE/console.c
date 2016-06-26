@@ -19,15 +19,58 @@ int loadConfig(char* configFile);
 
 int main(int argc, char *argv[]) {
 	signal(SIGINT, tratarSeniales);
-	char path[1024];
 
+	FILE * fp;
+	fp = fopen(argv[1], "r");
+	if (!fp) {
+		printf("Failed to open text file\n");
+		exit(1);
+	}
+
+	fseek(fp, SEEK_SET, 0);
+	fseek(fp, 0L, SEEK_END);
+	long int sz = ftell(fp);
+	fseek(fp, 0L, SEEK_SET);
+
+	char* hash_bang[100];
+	fgets(hash_bang, 100, fp);
+	sz = sz - strlen(hash_bang) - 1;
+
+	//*********************usar el hash_bang para sacar el directorio de la consola
+	char absolute_path[100];
+
+	strcpy(absolute_path,&hash_bang[2]);
+	/*
+
+
+
+    *domain = (char*) malloc(sizeof(dummy));
+    strcpy(*domain, dummy);
+    //free(dummy);
+}
+	 */
+	char* dummy = NULL;
+	dummy = (char*) malloc(sizeof(absolute_path));
+	strcpy(dummy,absolute_path);
+	dummy = strtok(dummy, "@");
+	*relative_path = (char*) malloc(sizeof(dummy));
+	strcpy(*relative_path, dummy);
+	while(strcmp(dummy, "ansisop")){
+		dummy = strtok(NULL, "/");
+		strcat(*relative_path, "/");
+		strcat(*relative_path, dummy);
+	}
+	free(dummy);
+
+	/*ESTO NO IRÍA MÁS
 	if (getcwd(path, sizeof(path)) != NULL) {
 		fprintf(stdout, "Current working dir: %s\n", path);
 	} else {
 		perror("getcwd() error");
 	}
+	 */
 
-	strcat(path, "/console.config");
+	strcat(*relative_path, "/console.config");
 
 	if (loadConfig(path)<0) return -1;
 
@@ -45,18 +88,7 @@ int main(int argc, char *argv[]) {
 	/*le voy a mandar al kernel un 0 para iniciar el handshake + sizeMsj en 4B + (el código como viene),
 	 y me va a devolver el client_id (un número) que me represente con el cual él me conoce*/
 
-	FILE * fp;
-	fp = fopen(argv[1], "r");
-	if (!fp) {
-		printf("Failed to open text file\n");
-		exit(1);
-	}
-
-	fseek(fp, SEEK_SET, 0);
-
-	fseek(fp, 0L, SEEK_END);
-	long int sz = ftell(fp);
-	fseek(fp, 0L, SEEK_SET);
+	//******************************
 
 	char* prog = (char*) malloc(sz);
 
