@@ -18,7 +18,18 @@
 #define STACK_OVERFLOW_ID "3"
 #define OPERACION_EXITOSA_ID "1"
 
+#define SHARED_VAR_ID "5"
+#define GET_VAR "0"
+#define SET_VAR "1"
+
 #define ENTRADA_SALIDA_ID "3"
+
+#define IMPRIMIR_ID "6"
+#define IMPRIMIR_TEXTO_ID "7"
+
+#define SEMAPHORE_ID "4"
+#define WAIT_ID "0"
+#define SIGNAL_ID "1"
 
 //UMC Interface
 #define ALMACENAMIENTO_BYTES 4
@@ -59,26 +70,35 @@ typedef struct {
     void obtener_lista_operaciones_escritura(t_list ** pedidos, t_posicion posicion_variable, int offset, int valor);
 
     //#5
-    int imprimir(t_valor_variable valor);
+    t_valor_variable obtenerValorCompartida(t_nombre_compartida variable);
 
     //#6
-    int imprimirTexto(char* texto);
+    t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor);
 
     //#7
     void irAlLabel(t_nombre_etiqueta etiqueta);
 
     //#8
     void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar);
-
-    //#9
     void llamarSinRetorno (t_nombre_etiqueta etiqueta);
 
-    //#10
+    //#9
     void retornar(t_valor_variable retorno);
-    t_posicion  obtener_t_posicion(logical_addr *address);
+    t_posicion obtener_t_posicion(logical_addr *address);
+
+    //#10
+    int imprimir(t_valor_variable valor);
+
+    //#11
+    int imprimirTexto(char* texto);
 
     //#12
     void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo);
 
+    //#13
+    void wait(t_nombre_semaforo identificador_semaforo);
+
+    //#14
+    void signal(t_nombre_semaforo identificador_semaforo);
 
 #endif
