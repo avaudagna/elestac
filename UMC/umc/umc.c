@@ -1050,7 +1050,7 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 			else { // La pagina se encuentra en memoria principal
 				resolverEnMP(socketBuff, aux, _offset, _tamanio); // pagina en memoria principal , se la mando de una al CPU :)
 				actualizarTlb(pid_actual,aux);
-				setBitDeUso(pid_actual,_pagina,1);
+				setBitDeUso(*pid_actual,_pagina,1);
 			}
 		}
 	}
