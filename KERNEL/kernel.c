@@ -187,19 +187,29 @@ int connect2UMC(){
 	return clientUMC;
 }
 
-int requestPages2UMC(char* PID, int ansisopLen,char* code,int clientUMC){
+void *requestPages2UMC(void* request_buffer){
+	int deserialize_index = 0;
+	char PID[4];
+	int ansisopLen=0;
+	char * code = NULL;
+	int clientUMC = 0;
+	deserialize_data(PID, sizeof(int), request_buffer, &deserialize_index);
+	deserialize_data(&ansisopLen, sizeof(int), request_buffer, &deserialize_index);
+	code = malloc((size_t) ansisopLen);
+	deserialize_data(code, ansisopLen, request_buffer, &deserialize_index);
+	deserialize_data(&clientUMC, sizeof(int), request_buffer, &deserialize_index);
 	char* buffer;
 	char buffer_4[4];
 	int bufferLen=1+4+4+4+ansisopLen; //1+PID+req_pages+size+code
 	sprintf(buffer_4, "%04d", (ansisopLen/setup.PAGE_SIZE)+1);
-	asprintf(&buffer, "%d%s%s%04d%s", 1,PID,buffer_4, ansisopLen,code);
-	log_info(kernel_log, "Requesting pages to UMC.");
+	log_info(kernel_log, "Requesting %s pages to UMC.", buffer_4);
+	asprintf(&buffer, "%d%04d%s%04d%s", 1,*(int*)PID,buffer_4, ansisopLen,code);
 	send(clientUMC, buffer, (size_t) bufferLen, 0);
 	recv(clientUMC, buffer_4, 4, 0);
 	log_info(kernel_log, "UMC replied.");
 	int code_pages = atoi(buffer_4);
 	free(buffer);
-	return code_pages;
+	createNewPCB(*(int*) (PID), code_pages, code);
 }
 void tratarSeniales(int senial){
 	printf("\n\t=============================================\n");
@@ -371,7 +381,7 @@ void check_CONSOLE_FD_ISSET(void *console){
 	char *buffer_4=malloc(4);
 	t_Client *cliente = console;
 	if (FD_ISSET(cliente->clientID, &allSockets)) {
-		if (recv(cliente->clientID, buffer_4, 2, 0) == 0){
+		if (recv(cliente->clientID, buffer_4, 1, 0) == 0){
 			log_info(kernel_log,"A console has closed the connection, the associated PID %04d will be terminated.", cliente->clientID);
 			end_program(cliente->clientID, false, true);
 		}
@@ -413,9 +423,7 @@ int control_clients(){
 		list_iterate(consolas_conectadas,check_CONSOLE_FD_ISSET);
 		list_iterate(cpus_conectadas,check_CPU_FD_ISSET);
 		if ((newConsole=accept_new_client("console", &consoleServer, &allSockets, consolas_conectadas)) > 1){
-			pthread_t newPCB_thread;
-			char *newPID = string_itoa(newConsole);
-			pthread_create(&newPCB_thread, NULL, accept_new_PCB, (void*) newPID);
+			accept_new_PCB(newConsole);
 		}
 		newCPU=accept_new_client("CPU", &cpuServer, &allSockets, cpus_conectadas);
 		if(newCPU>0) log_info(kernel_log,"New CPU accepted with ID %d",newCPU);
@@ -451,24 +459,34 @@ int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista){
 	return aceptado;
 }
 
-void *accept_new_PCB(void *newConsole){
-	char PID[4];
-	strncpy(PID, newConsole, 4);
-	int PIDint = atoi(PID);
+void accept_new_PCB(int newConsole){
 	char buffer_4[4];
-	log_info(kernel_log, "NEW (0) program with PID=%s arriving.", PID);
-	recv(PIDint, buffer_4, 4, 0);
+	log_info(kernel_log, "NEW (0) program with PID=%04d arriving.", newConsole);
+	recv(newConsole, buffer_4, 4, 0);
 	int ansisopLen = atoi(buffer_4);
 	char *code = malloc((size_t) ansisopLen);
-	recv(PIDint, code, (size_t) ansisopLen, 0);
-	//int code_pages=requestPages2UMC(PID,ansisopLen,code,clientUMC);
-	int code_pages=3;//TODO DELETE when using a real UMC
+	recv(newConsole, code, (size_t) ansisopLen, 0);
+	/* Recv ansisop from console */
+	void * request_buffer = NULL;
+	int request_buffer_index = 0;
+	serialize_data(&newConsole, sizeof(int), &request_buffer, &request_buffer_index);
+	serialize_data(&ansisopLen, sizeof(int), &request_buffer, &request_buffer_index);
+	serialize_data(code, (size_t) ansisopLen, &request_buffer, &request_buffer_index);
+	serialize_data(&clientUMC, sizeof(int), &request_buffer, &request_buffer_index);
+	pthread_t newPCB_thread;
+	pthread_create(&newPCB_thread, NULL, requestPages2UMC, request_buffer);
+	free(code); // let it free
+}
+
+void createNewPCB(int newConsole, int code_pages, char* code){
+	char PID[4];
+	sprintf(PID,"%04d",newConsole);
 	if (code_pages>0){
 		log_info(kernel_log, "Pages of code + stack = %d.", code_pages);
-		send(PIDint,PID,4,0);
+		send(newConsole,PID,4,0);
 		t_metadata_program* metadata = metadata_desde_literal(code);
 		t_pcb *newPCB=malloc(sizeof(t_pcb));
-		newPCB->pid=PIDint;
+		newPCB->pid=newConsole;
 		newPCB->program_counter=metadata->instruccion_inicio;
 		newPCB->stack_pointer=code_pages;
 		newPCB->stack_index=queue_create();
@@ -481,11 +499,10 @@ void *accept_new_PCB(void *newConsole){
 		log_info(kernel_log, "The program with PID=%04d is now READY (%d).", newPCB->pid, newPCB->status);
 		log_info(kernel_log, "Consoles after accepting: %d.", list_size(PCB_READY));
 	} else {
-		send(PIDint,"0000",4,0);
-		log_error(kernel_log, "The program with PID=%s could not be started. System run out of memory.", PID);
-		close(PIDint);
+		send(newConsole,"0000",4,0);
+		log_error(kernel_log, "The program with PID=%04d could not be started. System run out of memory.", newConsole);
+		close(newConsole);
 	}
-	free(code); // let it free
 }
 
 void round_robin(){
