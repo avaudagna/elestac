@@ -1982,7 +1982,22 @@ void dump(void){
 	printf("\nReporte , situacion actual Memoria \n");
 	list_iterate(headerListaDePids,imprimirTablaDePaginas);
 
-	// TODO : list_iterate(headerListaDePids,imprimirTablaDePaginasEnArchivo);
+
+	char buffer[20],
+		 *filename = NULL;
+	struct tm *sTm;
+	FILE *fp = NULL;
+
+	time_t now = time (0);
+	sTm = gmtime (&now);
+
+	strftime (buffer, sizeof(buffer), "%Y%m%d_%H%M%S", sTm);
+
+	asprintf(&filename,"memorySituation_%s.log",buffer);
+
+	fp = fopen(filename,"w");
+
+	fclose(fp);
 
 }
 
