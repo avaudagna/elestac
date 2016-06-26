@@ -163,29 +163,32 @@ int execute_state_machine() {
     int execution_state = 0;
     void * instruction_line = NULL;
 
-    switch (execution_state) {
-        case S0_CHECK_EXECUTION_STATE:
-            if (check_execution_state() == SUCCESS) { execution_state = S1_GET_EXECUTION_LINE; }
-            else if (check_execution_state() == EXIT) { return S4_RETURN_PCB; }
-            break;
-        case S1_GET_EXECUTION_LINE:
-            if (get_execution_line(&instruction_line) ==
-                SUCCESS) { execution_state = S2_EXECUTE_LINE; } else { execution_state = ERROR; };
-            break;
-        case S2_EXECUTE_LINE:
-            if (execute_line(instruction_line) ==
-                SUCCESS) { execution_state = S3_POSTPROCESS; } else { execution_state = ERROR; };
-            break;
-        case S3_POSTPROCESS:
-            usleep((u_int32_t) actual_kernel_data->QSleep * 1000);
-            actual_kernel_data->Q--;
-            actual_pcb->program_counter++;
-            execution_state = S0_CHECK_EXECUTION_STATE;
-            break;
-        default:
-        case ERROR:
-            return ERROR;
+    while(actual_kernel_data->Q > 0) {
+        switch (execution_state) {
+            case S0_CHECK_EXECUTION_STATE:
+                if (check_execution_state() == SUCCESS) { execution_state = S1_GET_EXECUTION_LINE; }
+                else if (check_execution_state() == EXIT) { return SUCCESS; }
+                break;
+            case S1_GET_EXECUTION_LINE:
+                if (get_execution_line(&instruction_line) ==
+                    SUCCESS) { execution_state = S2_EXECUTE_LINE; } else { execution_state = ERROR; };
+                break;
+            case S2_EXECUTE_LINE:
+                if (execute_line(instruction_line) ==
+                    SUCCESS) { execution_state = S3_POSTPROCESS; } else { execution_state = ERROR; };
+                break;
+            case S3_POSTPROCESS:
+                usleep((u_int32_t) actual_kernel_data->QSleep * 1000);
+                actual_kernel_data->Q--;
+                actual_pcb->program_counter++;
+                execution_state = S0_CHECK_EXECUTION_STATE;
+                break;
+            default:
+            case ERROR:
+                return ERROR;
+        }
     }
+    return SUCCESS;
 }
 
 int execute_line(void *instruction_line) {
