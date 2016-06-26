@@ -1031,6 +1031,7 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 						//algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
 						punteroAlgoritmo(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina,&marcoVictima);
 						actualizarTlb(pid_actual,aux);
+						resolverEnMP(socketBuff, aux, _offset, _tamanio);
 					}
 				}else{		// hay marcos disponibles
 
@@ -1042,6 +1043,7 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 					else{	// el proceso llego a la maxima cantidad de marcos proceso
 						//algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
 						punteroAlgoritmo(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina,&marcoVictima);
+						resolverEnMP(socketBuff, aux, _offset, _tamanio);
 						actualizarTlb(pid_actual,aux);
 					}
 				}
