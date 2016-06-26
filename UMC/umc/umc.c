@@ -488,7 +488,7 @@ FunctionPointer QuienSos(int * socketBuff) {
 
 		if ( contConexionesNucleo == 1 ) {
 
-			aux = atenderKernel;
+ 			aux = atenderKernel;
 			return aux;
 
 			}
@@ -596,7 +596,7 @@ void atenderKernel(int * socketBuff){
 		case FINALIZAR_PROCESO:	// 2
 				retardo();
 				finalizarProceso(socketBuff);
-			estado = REPOSO;
+			estado = IDENTIFICADOR_OPERACION;
 			break;
 		default:
 			printf("Identificador de operacion invalido");
@@ -644,7 +644,6 @@ void  handShakeKernel(int * socketBuff){
 	char buffer[sizeof(int)];
 
 	sprintf(buffer,"%04d", umcGlobalParameters.marcosSize);
-
 	if ( send(*socketBuff,(void *)buffer, sizeof(int),0) == -1 ) {
 			perror("send");
 			exit(1);
@@ -1032,6 +1031,7 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 						//algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
 						punteroAlgoritmo(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina,&marcoVictima);
 						actualizarTlb(pid_actual,aux);
+						resolverEnMP(socketBuff, aux, _offset, _tamanio);
 					}
 				}else{		// hay marcos disponibles
 
@@ -1043,6 +1043,7 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 					else{	// el proceso llego a la maxima cantidad de marcos proceso
 						//algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
 						punteroAlgoritmo(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina,&marcoVictima);
+						resolverEnMP(socketBuff, aux, _offset, _tamanio);
 						actualizarTlb(pid_actual,aux);
 					}
 				}
@@ -1234,9 +1235,11 @@ void algoritmoClock(int pPid, int numPagNueva, int tamanioContenidoPagina, void 
 			}
 		}
 		// recorro desde el comienzo de la fifo hasta la posicion original
+
 		if (!estado) {
-			recorredor = fifoPID->head;		// reseteo el puntero recorredor
-			for (i = 0; i < (punteroPIDClock->indice); i++, recorredor = recorredor->next) {
+			//recorredor = fifoPID->head->data;		// reseteo el puntero recorredor
+			recorredor = list_get_nodo(fifoPID,0);
+			for (i = 0; ( i <= (punteroPIDClock->indice) ) && ( recorredor != NULL ) ; i++, recorredor = recorredor->next) {
 
 				if (((CLOCK_PAGINA *) recorredor->data)->bitDeUso == 1) {
 					((CLOCK_PAGINA *) recorredor->data)->bitDeUso = 0;        // pongo en 0 y sigo recorriendo
@@ -1270,7 +1273,7 @@ void algoritmoClock(int pPid, int numPagNueva, int tamanioContenidoPagina, void 
 	((CLOCK_PAGINA *)recorredor->data)->nroPagina=pagina_nueva->nroPagina;
 
 	punteroPIDClock->indice++;	// actualizo el nroDeMarco pa la proxima vez que se ejecute el CLOCK
-	if ( punteroPIDClock->indice > fifoPID->elements_count)		// si lo que reemplace, era el ultimo nodo de la fifo, entonces reinicio el indice :)
+	if ( punteroPIDClock->indice >= fifoPID->elements_count)		// si lo que reemplace, era el ultimo nodo de la fifo, entonces reinicio el indice :)
 		punteroPIDClock->indice=0;
 
 }
