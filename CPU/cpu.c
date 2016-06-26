@@ -146,7 +146,7 @@ int return_pcb() {
     void * serialized_pcb = NULL;
     int serialized_buffer_index = 0;
     serialize_pcb(actual_pcb, &serialized_pcb, &serialized_buffer_index);
-    if( send(umcSocketClient , serialized_pcb, (size_t) serialized_buffer_index, 0) < 0) {
+    if( send(kernelSocketClient , serialized_pcb, (size_t) serialized_buffer_index, 0) < 0) {
         log_error(cpu_log, "Send serialized_pcb to KERNEL failed");
         return ERROR;
     }
