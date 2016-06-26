@@ -1233,9 +1233,11 @@ void algoritmoClock(int pPid, int numPagNueva, int tamanioContenidoPagina, void 
 			}
 		}
 		// recorro desde el comienzo de la fifo hasta la posicion original
+
 		if (!estado) {
-			recorredor = fifoPID->head->data;		// reseteo el puntero recorredor
-			for (i = 0; i <= (punteroPIDClock->indice); i++, recorredor = recorredor->next) {
+			//recorredor = fifoPID->head->data;		// reseteo el puntero recorredor
+			recorredor = list_get_nodo(fifoPID,0);
+			for (i = 0; ( i <= (punteroPIDClock->indice) ) && ( recorredor != NULL ) ; i++, recorredor = recorredor->next) {
 
 				if (((CLOCK_PAGINA *) recorredor->data)->bitDeUso == 1) {
 					((CLOCK_PAGINA *) recorredor->data)->bitDeUso = 0;        // pongo en 0 y sigo recorriendo
@@ -1269,7 +1271,7 @@ void algoritmoClock(int pPid, int numPagNueva, int tamanioContenidoPagina, void 
 	((CLOCK_PAGINA *)recorredor->data)->nroPagina=pagina_nueva->nroPagina;
 
 	punteroPIDClock->indice++;	// actualizo el nroDeMarco pa la proxima vez que se ejecute el CLOCK
-	if ( punteroPIDClock->indice > fifoPID->elements_count)		// si lo que reemplace, era el ultimo nodo de la fifo, entonces reinicio el indice :)
+	if ( punteroPIDClock->indice >= fifoPID->elements_count)		// si lo que reemplace, era el ultimo nodo de la fifo, entonces reinicio el indice :)
 		punteroPIDClock->indice=0;
 
 }
