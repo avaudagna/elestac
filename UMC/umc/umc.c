@@ -1679,6 +1679,10 @@ bool pidEstaEnListaFIFOxPID(t_list *headerFifos, int pPid) {
 
 t_list *obtenerHeaderFifoxPid(t_list *headerFifos, int pPid) {
 	t_link_element * aux  = NULL;
+
+	if(headerFifos == NULL)
+		return NULL;
+
 	aux = headerFifos->head ;
 	while ( aux != NULL){
 		if (((CLOCK_PID *) aux->data)->pid == pPid )
