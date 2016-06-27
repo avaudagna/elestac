@@ -17,7 +17,7 @@
 #define LECTURA 2
 #define FINALIZARPROG 3
 
-#define PATH_CONF "/home/hernanszel/Desarrollo/tp-2016-1c-Vamo-a-calmarno/SWAP/swapConf"
+#define PATH_CONF "/home/alan/repos/tp-2016-1c-Vamo-a-calmarno/SWAP/swapConf"
 //#define PACKAGE_SIZE 1024
 //#define IPSWAP "127.0.0.1"
 //#define IPSWAP "192.168.0.28"
@@ -82,7 +82,7 @@ int request_FinalizacionPrograma(int pid);
 void umc_finalizarPrograma();
 
 //Inicializacion y finalizacion
-int init_Config();
+int init_Config(char * config_file_path);
 void init_Server();
 int init_SwapFile();
 int init_BitMap();
@@ -122,11 +122,15 @@ char obtenerPrimerChar(void* buffer);
 int mod (int a, int b);
 void excepcionAlHablarConUMC();
 
-int main() {
+int main(int argc , char **argv) {
+	if(argc != 2){
+		printf("Cantidad de argumentos invalidos \nusage : ./SWAP swap-config-file");
+		exit(1);
+	}
 	LOG_SWAP = log_create("swap.log", "Elestac-SWAP", true, LOG_LEVEL_TRACE);
 
 	log_info(LOG_SWAP, ".:: INITIALIZING SWAP ::.");
-	if(!init_Config()){
+	if(!init_Config(argv[1])){
 		log_error(LOG_SWAP, "Config file can not be loaded");
     	return -1;
     }
@@ -282,16 +286,16 @@ int request_FinalizacionPrograma(int pid){
  *	INICIALIZACION
  *
  **********************/
-int init_Config(){
+int init_Config(char * config_file_path){
 	//ARCHIVO DE CONFIGURACION
     char* keys[6] = {"IP_SWAP", "PUERTO_ESCUCHA", "NOMBRE_SWAP", "PATH_SWAP", "CANTIDAD_PAGINAS", "RETARDO_COMPACTACION"};
 
 	log_info(LOG_SWAP, "Reading configuration File");
 
-	t_config * punteroAStruct = config_create(PATH_CONF);
+	t_config * punteroAStruct = config_create(config_file_path);
 
 	if(punteroAStruct != NULL) {
-		log_info(LOG_SWAP, "Config file loaded: %s", PATH_CONF);
+		log_info(LOG_SWAP, "Config file loaded: %s", config_file_path);
 
 		int cantKeys = config_keys_amount(punteroAStruct);
 		log_info(LOG_SWAP, "Number of keys found: %d", cantKeys);
