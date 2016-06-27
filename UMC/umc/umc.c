@@ -2087,7 +2087,8 @@ void imprimirTablaDePaginasEnArchivo(void) {
 	if(headerListaDePids->head == NULL)
 		return;
 
-	recorredor = headerListaDePids->head->data;
+	recorredor = headerListaDePids->head;
+
 
 	while ( i < headerListaDePids->elements_count && recorredor != NULL){
 
@@ -2096,8 +2097,8 @@ void imprimirTablaDePaginasEnArchivo(void) {
 		fprintf(fp,"|Numero de Pagina  |  Presencia  | Modificado  | Marco  |");
 		pags = ((PIDPAGINAS *)recorredor->data)->headListaDePaginas->head ;
 		while ( pags != NULL) {		// imprimo todas las paginas de ese PID
-			printf("\n%9d%18d%13d%12d", ((PAGINA *) pags)->nroPagina, ((PAGINA *) pags)->presencia,
-				   ((PAGINA *) pags)->modificado, ((PAGINA *) pags)->nroDeMarco);
+			fprintf(fp, "\n%9d%18d%13d%12d", ((PAGINA *) pags->data)->nroPagina, ((PAGINA *) pags->data)->presencia,
+				   ((PAGINA *) pags->data)->modificado, ((PAGINA *) pags->data)->nroDeMarco);
 			pags = pags->next;
 		}
 		i++;
