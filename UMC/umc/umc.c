@@ -318,10 +318,7 @@ void init_UMC(char * configFile)
 void mensajesInit() {
 
 	printf("\n..:: UMC ::..\n");
-	usleep(2000000);
 	printf("\n Inicializando . . .\n");
-
-
 }
 
 void init_TLB(void) {
@@ -2050,7 +2047,7 @@ int getPosicionListaPids(t_list * headerListaDePids, int pPid){
 
 void retardo(void){
 
-	usleep(umcGlobalParameters.retardo * 1000);
+	usleep(umcGlobalParameters.retardo * 1000000);
 }
 
 
@@ -2086,6 +2083,9 @@ void imprimirTablaDePaginasEnArchivo(void) {
 
 	t_link_element 	*recorredor = NULL,
 			 		*pags = NULL;
+
+	if(headerListaDePids->head == NULL)
+		return;
 
 	recorredor = headerListaDePids->head->data;
 
