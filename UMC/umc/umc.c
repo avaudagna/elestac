@@ -24,6 +24,7 @@
 #define RETARDO 123
 #define DUMP    2
 #define FLUSH   3
+#define PAGINAS_MODIFICADAS 4
 #define SALIR   (-1)
 #define LIBRE 	0
 #define OCUPADO 1
@@ -95,7 +96,6 @@ typedef struct _tlb {
 	int pid,
 		nroPagina,
 		nroDeMarco,
-		estado,
 		contadorLRU;	// numero de marco en memoria principal
 }TLB;
 
@@ -243,7 +243,7 @@ void guardarBytesEnPagina(int *pid_actual, int pagina, int offset, int tamanio, 
 
 void setBitModificado(int pPid, int pagina, int valorBitModificado);
 
-void agregarPaginaATLB(int pPid, PAGINA *pPagina, int indice);
+void reemplazarPaginaTLB(int pPid, PAGINA *pPagina, int indice);
 
 bool hayEspacioEnTlb(int *indice);
 
@@ -263,6 +263,7 @@ int getPosicionListaPids(t_list * headerListaDePids, int pPid);
 void retardo(void);
 void dump(void);
 
+void imprimirTablaDePaginasEnArchivo(void);
 void imprimirTablaDePaginas ( void *aux);
 void imprimirPagina ( void *var_aux);
 
@@ -270,6 +271,10 @@ void imprimirPagina ( void *var_aux);
 void actualizarFifoxPID(PAGINA *paginaNueva, PAGINA *paginaVieja,t_list *headerFifos);
 
 bool buscarMarcoTlb(int marco, int *indice);
+
+void vaciarTLB();
+
+void agregarPaginaTLB(int pPid, PAGINA *pPagina, int ind_aux);
 
 int main(int argc , char **argv){
 
@@ -300,21 +305,8 @@ void init_UMC(char * configFile)
 
 void init_TLB(void) {
 
-	if ( umcGlobalParameters.entradasTLB > 0){
+	if ( umcGlobalParameters.entradasTLB > 0)
 		headerTLB = list_create();
-		int i = 0;
-		TLB * aux = NULL;
-		for ( i=0 ; i < umcGlobalParameters.entradasTLB ; i++){		// le pongo a la lista TLB tantos nodos como entradas tenga
-			aux = (TLB *) malloc(sizeof(TLB));
-			aux->pid=0;
-			aux->nroPagina=0;
-			aux->nroDeMarco=0;
-			aux->estado=LIBRE;
-			aux->contadorLRU=0;
-			list_add(headerTLB,aux);
-		}
-	}
-
 }
 
 
@@ -397,16 +389,17 @@ void * funcion_menu (void * noseusa)
           switch(opcion)
           {
                case RETARDO:
-                    printf("\nIngrese nuevo retardo:");
+                    printf("\nIngrese nuevo retardo: ");
 				  	scanf("%d",&umcGlobalParameters.retardo);
                     break;
                case DUMP:
-                    printf("\nDUMP!!!!!");
 				  	dump();
                     break;
                case FLUSH:
-                    printf("\nFLUSH!!!!!");
+                    vaciarTLB();
                     break;
+			  case PAGINAS_MODIFICADAS:
+				  	//marcarPaginasModificadas();
                case SALIR:
                     flag = 1;
                     break;
@@ -416,6 +409,11 @@ void * funcion_menu (void * noseusa)
      }
 printf("\n FINALIZA EL THREAD DEL MENU \n!!!!");
 pthread_exit(0);
+}
+
+void vaciarTLB() {
+
+	list_clean_and_destroy_elements(headerTLB,free);
 }
 
 void imprimir_Menu(void)
@@ -1782,24 +1780,25 @@ void pedidoDePaginaInvalida(int *socketBuff) {
 void limpiarPidDeTLB(int pPid) {
 
 	t_link_element *aux = NULL;
+	int index = 0;
 
 	aux = headerTLB->head;
 
+// recorro toda la lista , cuando encuentro uno correspondiente a ese pid , lo saco
 	while(aux != NULL){
 		if ( ((TLB *)aux->data)->pid == pPid ) {
-
-			((TLB *) aux->data)->estado = LIBRE;
-			((TLB *) aux->data)->contadorLRU = 0;
+			list_remove_and_destroy_element(headerTLB,index,free);
 		}
 
 		aux =  aux->next;
+		index++;
 
 	}
 
 }
 
 
-void agregarPaginaATLB(int pPid, PAGINA *pPagina, int indice) {
+void reemplazarPaginaTLB(int pPid, PAGINA *pPagina, int indice) {
 
 	TLB * aux = NULL;
 
@@ -1807,30 +1806,19 @@ void agregarPaginaATLB(int pPid, PAGINA *pPagina, int indice) {
 	aux->pid=pPid;
 	aux->nroPagina=pPagina->nroPagina;
 	aux->nroDeMarco = pPagina->nroDeMarco;
-	aux->estado = OCUPADO;
 	aux->contadorLRU=0;	// va en 0 porque acaba de ser referenciado
 
 	list_replace_and_destroy_element(headerTLB,indice,aux,free);	// hago el reemplazo
 
 }
 
-// te dice si hay espacio o no en la TLB, y , ademas , en caso de haber disponibilidad, te devuelve indice que indica donde podes hacer el reemplazo
+// te dice si hay espacio o no en la TLB
 bool hayEspacioEnTlb(int *indice) {
-	int i = 0;
-	t_link_element * aux = NULL;
 
-	aux = headerTLB->head ;
-
-	while (aux != NULL){
-		if( ((TLB*)aux->data)->estado == LIBRE) {
-			*indice = i;
-			return true;
-		}
-		aux = aux->next;
-		i++;
-	}
-	*indice = -1;
-	return false;
+	if ( headerTLB->elements_count < umcGlobalParameters.entradasTLB )
+		return true;
+	else
+		return false;
 
 }
 
@@ -1846,18 +1834,31 @@ void actualizarTlb(int *pPid,PAGINA * pPagina){
 	 *
 	 * */
 	if(buscarMarcoTlb(pPagina->nroDeMarco,&ind_aux))	// ¿ Hay alguna entrada con ese marco ya ?
-		agregarPaginaATLB(*pPid,pPagina,ind_aux);		// Si, entonces hago el reemplazo ahi
+		reemplazarPaginaTLB(*pPid,pPagina,ind_aux);		// Si, entonces hago el reemplazo ahi
 	else{
 
 		if (!hayEspacioEnTlb(&ind_aux)) {    // si no hay espacio en TLB, entonces aplico LRU
 			algoritmoLRU(&ind_aux);
-		}
-
-		agregarPaginaATLB(*pPid,pPagina,ind_aux);
-
+			reemplazarPaginaTLB(*pPid,pPagina,ind_aux);
+		}else
+			agregarPaginaTLB(*pPid, pPagina, ind_aux);
 	}
 
 	actualizarContadoresLRU(*pPid,pPagina->nroPagina);
+
+}
+
+void agregarPaginaTLB(int pPid, PAGINA *pPagina, int ind_aux) {
+
+	TLB * aux = NULL;
+
+	aux = (TLB *) malloc(sizeof(TLB));
+	aux->pid=pPid;
+	aux->nroPagina=pPagina->nroPagina;
+	aux->nroDeMarco = pPagina->nroDeMarco;
+	aux->contadorLRU=0;	// va en 0 porque acaba de ser referenciado
+
+	list_add(headerTLB,aux);	// hago el reemplazo
 
 }
 
@@ -1908,11 +1909,10 @@ void actualizarContadoresLRU(int pid , int pagina){
 
 	while ( aux != NULL){
 
-		if (((TLB*)aux->data)->estado == OCUPADO)
-			((TLB*)aux->data)->contadorLRU++;
-
 		if ( ( ((TLB*)aux->data)->pid == pid ) && ( ((TLB*)aux->data)->nroPagina == pagina ) )
 			((TLB*)aux->data)->contadorLRU=0;
+		else
+		((TLB*)aux->data)->contadorLRU++;
 
 		aux =  aux->next;
 
@@ -2027,7 +2027,7 @@ void dump(void){
 
 void imprimirTablaDePaginasEnArchivo(void) {
 
-	/*int i = 0;
+	int i = 0;
 	char buffer[20],
 			*filename = NULL;
 	struct tm *sTm;
@@ -2041,20 +2041,26 @@ void imprimirTablaDePaginasEnArchivo(void) {
 
 	fp = fopen(filename,"w");
 
-	t_link_element 	*header_pids = NULL,
-			 		*header_pags = NULL;
+	t_link_element 	*recorredor = NULL,
+			 		*pags = NULL;
 
-	header_pids = headerListaDePids->head->data;
+	recorredor = headerListaDePids->head->data;
 
-	while ( i < headerListaDePids->elements_count){
+	while ( i < headerListaDePids->elements_count && recorredor != NULL){
 
 		fprintf(fp,"\n__________________________________________________________");
-		fprintf(fp,"\nPID : %04d\n",((PIDPAGINAS *)aux)->pid);
+		fprintf(fp,"\nPID : %04d\n",((PIDPAGINAS *)recorredor->data)->pid);
 		fprintf(fp,"|Numero de Pagina  |  Presencia  | Modificado  | Marco  |");
-
-
+		pags = ((PIDPAGINAS *)recorredor->data)->headListaDePaginas->head ;
+		while ( pags != NULL) {		// imprimo todas las paginas de ese PID
+			printf("\n%9d%18d%13d%12d", ((PAGINA *) pags)->nroPagina, ((PAGINA *) pags)->presencia,
+				   ((PAGINA *) pags)->modificado, ((PAGINA *) pags)->nroDeMarco);
+			pags = pags->next;
+		}
+		i++;
+		recorredor = recorredor->next;
 	}
-	fclose(fp); */
+	fclose(fp);
 
 }
 
