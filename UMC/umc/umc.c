@@ -6,7 +6,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -269,6 +268,8 @@ void imprimirPagina ( void *var_aux);
 
 
 void actualizarFifoxPID(PAGINA *paginaNueva, PAGINA *paginaVieja,t_list *headerFifos);
+
+bool buscarMarcoTlb(int marco, int *indice);
 
 int main(int argc , char **argv){
 
@@ -1100,7 +1101,7 @@ void almacenarBytes(int *socketBuff, int *pid_actual) {
 
 	// levanto bytes a almacenar
 
-	bytesAlmacenar = (void * ) malloc (_tamanio);
+	bytesAlmacenar = malloc (_tamanio);
 	temp = (PAGINA *) malloc(sizeof(PAGINA));
 	temp->nroPagina = _pagina;
 
@@ -1305,6 +1306,9 @@ void algoritmoClockModificado(int pPid, int numPagNueva, int tamanioContenidoPag
 	while(estado == BUSCANDO_VICTIMA){
 		// ******************************* Primera Vuelta ***********************************************
 		// Primero recorro desde donde quedo el puntero (la ultima vez que se utilizo) hasta el final de la lista
+
+		recorredor = list_get_nodo(fifoPID,punteroPIDClock->indice);
+
 		for (i=punteroPIDClock->indice;i<(fifoPID->elements_count) && recorredor != NULL;i++,recorredor=recorredor->next){
 			if(((CLOCK_PAGINA*) recorredor->data)->bitDeUso == 0 && ((CLOCK_PAGINA*) recorredor->data)->bitDeModificado == 0 ) {    // Encontre Pagina Victima
 				estado = true;
@@ -1313,7 +1317,7 @@ void algoritmoClockModificado(int pPid, int numPagNueva, int tamanioContenidoPag
 		}
 		// recorro desde el comienzo de la lista hasta de donde comence a recorrer anteriormente
 		if(!estado){
-			recorredor = fifoPID->head;
+			recorredor = list_get_nodo(fifoPID,0);	// vuelvo a recorrer desde el comienzo
 			for (i=0;i<(punteroPIDClock->indice);i++,recorredor=recorredor->next){
 				if(((CLOCK_PAGINA*) recorredor->data)->bitDeUso == 0 && ((CLOCK_PAGINA*) recorredor->data)->bitDeModificado == 0 ) {    // Encontre Pagina Victima
 					estado = true;
@@ -1835,13 +1839,45 @@ bool hayEspacioEnTlb(int *indice) {
 void actualizarTlb(int *pPid,PAGINA * pPagina){
 
 	int ind_aux = 0;
+	t_link_element *aux  = NULL;
 
-	if (hayEspacioEnTlb(&ind_aux) == false) {    // si no hay espacio en TLB, entonces aplico LRU
-		algoritmoLRU(&ind_aux);
+	/* 1- Valido que no haya ninguna entrada con ese marco asignado. En caso de haberla , hago el reemplazo ahi.
+	 * 2- En caso de no haber , si hay espacio disponible : agrego la entrada , caso contrario aplico algoritmo LRU
+	 *
+	 * */
+	if(buscarMarcoTlb(pPagina->nroDeMarco,&ind_aux))	// ¿ Hay alguna entrada con ese marco ya ?
+		agregarPaginaATLB(*pPid,pPagina,ind_aux);		// Si, entonces hago el reemplazo ahi
+	else{
+
+		if (!hayEspacioEnTlb(&ind_aux)) {    // si no hay espacio en TLB, entonces aplico LRU
+			algoritmoLRU(&ind_aux);
+		}
+
+		agregarPaginaATLB(*pPid,pPagina,ind_aux);
+
 	}
 
-	agregarPaginaATLB(*pPid,pPagina,ind_aux);
 	actualizarContadoresLRU(*pPid,pPagina->nroPagina);
+
+}
+
+bool buscarMarcoTlb(int marco, int *indice) {
+
+	int i = 0;
+	t_link_element * aux = NULL;
+
+	aux = headerTLB->head ;
+
+	while (aux != NULL){
+		if( ((TLB*)aux->data)->nroDeMarco == marco) {
+			*indice = i;
+			return true;
+		}
+		aux = aux->next;
+		i++;
+	}
+	*indice = -1;
+	return false;
 
 }
 
@@ -1985,12 +2021,17 @@ void dump(void){
 	printf("\nReporte , situacion actual Memoria \n");
 	list_iterate(headerListaDePids,imprimirTablaDePaginas);
 
+	imprimirTablaDePaginasEnArchivo();
+}
 
+
+void imprimirTablaDePaginasEnArchivo(void) {
+
+	/*int i = 0;
 	char buffer[20],
-		 *filename = NULL;
+			*filename = NULL;
 	struct tm *sTm;
 	FILE *fp = NULL;
-
 	time_t now = time (0);
 	sTm = gmtime (&now);
 
@@ -2000,20 +2041,20 @@ void dump(void){
 
 	fp = fopen(filename,"w");
 
-	fclose(fp);
+	t_link_element 	*header_pids = NULL,
+			 		*header_pags = NULL;
 
-}
+	header_pids = headerListaDePids->head->data;
+
+	while ( i < headerListaDePids->elements_count){
+
+		fprintf(fp,"\n__________________________________________________________");
+		fprintf(fp,"\nPID : %04d\n",((PIDPAGINAS *)aux)->pid);
+		fprintf(fp,"|Numero de Pagina  |  Presencia  | Modificado  | Marco  |");
 
 
-void imprimirTablaDePaginasEnArchivo (void *aux){
-
-	t_list *header_aux = NULL;
-
-	header_aux = ((PIDPAGINAS *)aux)->headListaDePaginas;
-	printf("\n__________________________________________________________");
-	printf("\nPID : %04d\n",((PIDPAGINAS *)aux)->pid);
-	printf("|Numero de Pagina  |  Presencia  | Modificado  | Marco  |");
-	list_iterate(header_aux,imprimirPagina);
+	}
+	fclose(fp); */
 
 }
 
