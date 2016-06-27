@@ -21,7 +21,7 @@
 
 /*MACROS */
 #define BACKLOG 10			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
-#define RETARDO 123
+#define RETARDO 1
 #define DUMP    2
 #define FLUSH   3
 #define PAGINAS_MODIFICADAS 4
@@ -165,7 +165,6 @@ void init_Parameters(char *configFile);
 void loadConfig(char* configFile);
 void init_MemoriaPrincipal(void);
 void *  funcion_menu(void * noseusa);
-void imprimir_Menu(void);
 void Menu_UMC(void);
 void procesarConexiones(void);
 FunctionPointer QuienSos(int * socketBuff);
@@ -276,6 +275,18 @@ void vaciarTLB();
 
 void agregarPaginaTLB(int pPid, PAGINA *pPagina, int ind_aux);
 
+void marcarPaginasModificadas();
+
+void modificarTablaPaginasDePid(void *pidpagina);
+
+void setPagModif(void *pagina);
+
+void modificarFifoPaginasDePid(void *clockpid);
+
+void setFifoPagsModif(void *clockpagina);
+
+void mensajesInit();
+
 int main(int argc , char **argv){
 
 	if(argc != 2){
@@ -295,12 +306,22 @@ int main(int argc , char **argv){
 
 void init_UMC(char * configFile)
 {
+	mensajesInit();
 	init_Parameters(configFile);
 	init_MemoriaPrincipal();
 	init_TLB();
 	init_Swap(); // socket con swap
 	handShake_Swap();
 	init_Socket(); // socket de escucha
+}
+
+void mensajesInit() {
+
+	printf("\n..:: UMC ::..\n");
+	usleep(2000000);
+	printf("\n Inicializando . . .\n");
+
+
 }
 
 void init_TLB(void) {
@@ -383,8 +404,8 @@ void * funcion_menu (void * noseusa)
      int opcion = 0,flag=0;
      while(!flag)
      {
-		 imprimir_Menu();
-          printf("\nIngresar opcion deseada");
+
+          printf("\n*****\nIngresar opcion deseada\n1) Setear Retardo\n2)Dump\n3)Limpiar TLB\n4)Marcar Todas las Paginas como modificadas\n-1)Salir\n*********");
           scanf("%d",&opcion);
           switch(opcion)
           {
@@ -399,7 +420,7 @@ void * funcion_menu (void * noseusa)
                     vaciarTLB();
                     break;
 			  case PAGINAS_MODIFICADAS:
-				  	//marcarPaginasModificadas();
+				  	marcarPaginasModificadas();
                case SALIR:
                     flag = 1;
                     break;
@@ -411,15 +432,33 @@ printf("\n FINALIZA EL THREAD DEL MENU \n!!!!");
 pthread_exit(0);
 }
 
+void marcarPaginasModificadas() {
+
+	list_iterate(headerListaDePids,modificarTablaPaginasDePid);
+	list_iterate(headerFIFOxPID,modificarFifoPaginasDePid);
+}
+
+void modificarFifoPaginasDePid(void *clockpid) {
+	list_iterate(((CLOCK_PID*)clockpid)->headerFifo,setFifoPagsModif);
+}
+
+void setFifoPagsModif(void *clockpagina) {
+	((CLOCK_PAGINA*)clockpagina)->bitDeModificado = 1;
+}
+
+void modificarTablaPaginasDePid(void *pidpagina) {
+	list_iterate(((PIDPAGINAS*)pidpagina)->headListaDePaginas,setPagModif);
+}
+
+void setPagModif(void *pagina) {
+	((PAGINA*)pagina)->modificado=1;
+}
+
 void vaciarTLB() {
 
 	list_clean_and_destroy_elements(headerTLB,free);
 }
 
-void imprimir_Menu(void)
-{
-     printf("\nBienvenido al menu de UMC\n");
-}
 
 
 void procesarConexiones(void)
