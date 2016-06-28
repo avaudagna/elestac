@@ -196,6 +196,7 @@ int check_execution_state() {
     //TODO: Also check for IO and blocked state
 
     if(status_update() == EXIT){
+        log_info(cpu_log, "Finishid executing PCB with PID %d", actual_pcb->pid);
         return EXIT;
     }
     return SUCCESS;
@@ -317,7 +318,7 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
 
     void * recv_bytes_buffer = NULL;
     int buffer_index = 0;
-    char aux_buffer[13];
+    char * aux_buffer = calloc(1, sizeof(char) + sizeof(int) *3);
     while(list_size(instruction_addresses_list) > 0) {
 
         logical_addr * element = list_get(instruction_addresses_list, 0);
