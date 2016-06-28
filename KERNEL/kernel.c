@@ -33,6 +33,7 @@ int main (int argc, char **argv){
 	consolas_conectadas = list_create();
 	if (start_kernel(argc, argv[1])<0) return 0; //load settings
 	clientUMC=connect2UMC();
+	//clientUMC=100;setup.PAGE_SIZE=1024; //TODO Delete -> lo hace connect2UMC()
 	if (clientUMC<0){
 		log_error(kernel_log, "Could not connect to the UMC. Please, try again.");
 		return 0;
@@ -53,7 +54,7 @@ int main (int argc, char **argv){
 	close(configFileFD);
 	close(consoleServer);
 	close(cpuServer);
-	close(clientUMC);
+	close(clientUMC); // TODO un-comment when real UMC is present
 	log_destroy(kernel_log);
 	return 0;
 }
@@ -66,19 +67,18 @@ int start_kernel(int argc, char* configFile){
 		if (loadConfig(configFile)<0) {
 			log_error(kernel_log, "Config file can not be loaded. Please, try again.");
     		return -1;
-    	}else{
-			configFileName = realloc(configFileName, sizeof(configFile));
-			strcpy(configFileName, configFile);
-			char cwd[1024];
-			getcwd(cwd, sizeof(cwd));
-			configFilePath = realloc(configFilePath, sizeof(cwd));
-			strcpy(configFilePath, cwd);
-			log_debug(kernel_log, "Config file path: %s", configFilePath);
-		}
-		configFileFD = inotify_init();
-
-		configFilePath = "/home/pablo/tp-2016-1c-Vamo-a-calmarno/KERNEL"; // TODO borrar fuera de testing
-		configFileWatcher = inotify_add_watch(configFileFD, configFilePath, IN_MODIFY | IN_CREATE);
+    	}
+//		else{
+//			configFileName = realloc(configFileName, sizeof(configFile));
+//			strcpy(configFileName, configFile);
+//			char cwd[1024];
+//			getcwd(cwd, sizeof(cwd));
+//			configFilePath = realloc(configFilePath, sizeof(cwd));
+//			strcpy(configFilePath, cwd);
+//		}
+//		configFileFD = inotify_init();
+//		configFilePath = "/home/alan/repos/tp-2016-1c-Vamo-a-calmarno/KERNEL"; // TODO borrar fuera de testing
+//		configFileWatcher = inotify_add_watch(configFileFD, configFilePath, IN_MODIFY | IN_CREATE);
 	} else {
 		int i = 0;
 		for (i = 0; i < 10001; i++){
@@ -107,6 +107,8 @@ void* do_work(void *p) {
 		if (io_op != NULL){
 			log_info(kernel_log,"%s will perform %s operations.", setup.IO_ID[miID], io_op->io_units);
 			int processing_io = atoi(setup.IO_SLEEP[miID]) * atoi(io_op->io_units) * 1000;
+			// TODO Carefull here !! usleep() may fail when processing_io is > 1 sec.
+			// TODO Example provided in setup.data has delays bigger than 1 sec.
 			usleep((useconds_t) processing_io);
 			bool match_PCB(void *pcb){
 				t_pcb *unPCB = pcb;
@@ -231,19 +233,21 @@ void tratarSeniales(int senial){
 }
 
 void add2FD_SET(void *client){
-	t_Client *cliente = client;
+	t_Client *cliente=client;
 	FD_SET(cliente->clientID, &allSockets);
 }
 
 t_pcb * recvPCB(int cpuID){
-	t_pcb *incomingPCB;
+	t_pcb *incomingPCB = NULL;
 	int pcb_size;
-	char *tmp_buff = malloc(4);
-	recv(cpuID, tmp_buff, 4, 0);
-	pcb_size=atoi(tmp_buff);
+	char *tmp_buff = malloc(sizeof(int));
+	recv(cpuID, tmp_buff, sizeof(int), 0);
+	pcb_size = *(int*) tmp_buff;
 	void *pcb_serializado = malloc((size_t) pcb_size);
 	recv(cpuID, pcb_serializado, (size_t) pcb_size, 0);
-	deserialize_pcb(&incomingPCB,&pcb_serializado,&pcb_size);
+	incomingPCB = (t_pcb *)calloc(1,sizeof(t_pcb));
+	int pcb_serializado_cursor = 0;
+	deserialize_pcb(&incomingPCB, pcb_serializado, &pcb_serializado_cursor);
 	free(tmp_buff);
 	free(pcb_serializado);
 	return incomingPCB;
@@ -261,10 +265,10 @@ void restoreCPU(t_Client *laCPU){
 	list_add(cpus_conectadas, laCPU); /* return the CPU to the queue */
 }
 
-void check_CPU_FD_ISSET(t_Client *laCPU){
+void check_CPU_FD_ISSET(void *cpu){
 	char *cpu_protocol = malloc(1);
 	int setValue = 0;
-	//t_Client *laCPU = cpu;
+	t_Client *laCPU = (t_Client*) cpu;
 	char *tmp_buff = malloc(4);
 	log_debug(kernel_log,"CPU %d will be checked now.", laCPU->clientID);
 	if (FD_ISSET(laCPU->clientID, &allSockets)) {
@@ -485,7 +489,7 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 	char PID[4];
 	sprintf(PID,"%04d",newConsole);
 	if (code_pages>0){
-		log_info(kernel_log, "Pages of code + stack = %d pages.", (code_pages+setup.STACK_SIZE));
+		log_info(kernel_log, "Pages of code + stack = %d.", code_pages);
 		send(newConsole,PID,4,0);
 		t_metadata_program* metadata = metadata_desde_literal(code);
 		t_pcb *newPCB=malloc(sizeof(t_pcb));
