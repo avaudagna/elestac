@@ -67,7 +67,7 @@ void    call_handlers();
 void 	tratarSeniales(int);
 void 	round_robin();
 void	add2FD_SET(void *client);
-void 	check_CPU_FD_ISSET(t_Client *client);
+void 	check_CPU_FD_ISSET(void *client);
 void	check_CONSOLE_FD_ISSET(void *client);
 void    end_program(int pid, bool consoleStillOpen, bool cpuStillOpen);
 void    createNewPCB(int newConsole, int code_pages, char* code);

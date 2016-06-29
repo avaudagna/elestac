@@ -71,19 +71,19 @@ int main(int argc, char *argv[]) {
 	free(prog);
 	free(mensaje);
 
-	do {
-		if (recv(kernelSocketClient, kernel_reply, 4, 0) < 0) {
-			puts("recv failed");
-			break;
-		} else if (!strcmp(kernel_reply, "0000")) {
-			printf("No hay suficiente espacio en memoria para ejecutar el programa\n");
-		} else {
-			printf("Vamo a calmarno. Su programa se está ejecutando\n");
-			puts("Kernel reply :");
-			puts(kernel_reply);
-		}
+	if (recv(kernelSocketClient, kernel_reply, 4, 0) < 0) {
+		puts("recv failed");
+		return EXIT_FAILURE;
+	} else if (!strcmp(kernel_reply, "0000")) {
+		printf("No hay suficiente espacio en memoria para ejecutar el programa\n");
+	} else {
+		printf("Vamo a calmarno. Su programa se está ejecutando\n");
+		puts("Kernel reply :");
+		puts(kernel_reply);
+	}
 
-		if ((kernelSocketClient, kernel_reply, 1, 0) > 0) {
+	do {
+		if (recv(kernelSocketClient, kernel_reply, 1, 0) > 0) {
 			//log_info(console_log, "CONSOLE dijo: %s - Ejecutar protocolo correspondiente", kernel_reply);
 			char *valor = malloc(4);
 			char textSize[4];

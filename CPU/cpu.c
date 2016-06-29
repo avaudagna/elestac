@@ -1,8 +1,5 @@
 #include <parser/metadata_program.h>
 #include "cpu.h"
-#include "libs/pcb.h"
-#include "libs/stack.h"
-#include "cpu_structs.h"
 
 
 //Variables globales
@@ -41,8 +38,6 @@ AnSISOP_kernel funciones_kernel_ansisop = {
 // gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collections -o cpu libs/stack.c libs/pcb.c libs/serialize.c libs/socketCommons.c cpu.c implementation_ansisop.c -L/usr/lib -lcommons -lparser-ansisop -lm
 //
 
-
-enum_queue status_update();
 
 int main(int argc, char **argv) {
 
@@ -118,19 +113,19 @@ int cpu_state_machine() {
     while(state != ERROR) {
         switch(state) {
             case S0_FIRST_COMS:
-                if (kernel_first_com() == SUCCESS && umc_first_com() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; };
+                if (kernel_first_com() == SUCCESS && umc_first_com() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; }
                 break;
             case S1_GET_PCB:
-                if (get_pcb() == SUCCESS) { state = S2_CHANGE_ACTIVE_PROCESS; } else { state = ERROR; };
+                if (get_pcb() == SUCCESS) { state = S2_CHANGE_ACTIVE_PROCESS; } else { state = ERROR; }
                 break;
             case S2_CHANGE_ACTIVE_PROCESS:
-                if (change_active_process() == SUCCESS) { state = S3_EXECUTE; } else { state = ERROR; };
+                if (change_active_process() == SUCCESS) { state = S3_EXECUTE; } else { state = ERROR; }
                 break;
             case S3_EXECUTE:
-                if (execute_state_machine() == SUCCESS) { state = S4_RETURN_PCB; } else { state = ERROR; };
+                if (execute_state_machine() == SUCCESS) { state = S4_RETURN_PCB; } else { state = ERROR; }
                 break;
             case S4_RETURN_PCB:
-                if (return_pcb() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; };
+                if (return_pcb() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; }
                 break;
             default:
             case ERROR:
@@ -146,6 +141,10 @@ int return_pcb() {
     void * serialized_pcb = NULL;
     int serialized_buffer_index = 0;
     serialize_pcb(actual_pcb, &serialized_pcb, &serialized_buffer_index);
+    if( send(kernelSocketClient , &serialized_buffer_index, (size_t) sizeof(int), 0) < 0) {
+        log_error(cpu_log, "Send serialized_buffer_length to KERNEL failed");
+        return ERROR;
+    }
     if( send(kernelSocketClient , serialized_pcb, (size_t) serialized_buffer_index, 0) < 0) {
         log_error(cpu_log, "Send serialized_pcb to KERNEL failed");
         return ERROR;
@@ -161,50 +160,110 @@ int execute_state_machine() {
     while(actual_kernel_data->Q > 0) {
         switch (execution_state) {
             case S0_CHECK_EXECUTION_STATE:
-                if (check_execution_state() == SUCCESS) { execution_state = S1_GET_EXECUTION_LINE; }
-                else if (check_execution_state() == EXIT) { return SUCCESS; }
-                break;
+                switch (check_execution_state()) {
+                    case SUCCESS:
+                        execution_state = S1_GET_EXECUTION_LINE;
+                        break;
+                    case EXIT:
+                        return SUCCESS;
+                    default:
+                        execution_state = ERROR;
+                        break;
+                } break;
             case S1_GET_EXECUTION_LINE:
-                if (get_execution_line(&instruction_line) ==
-                    SUCCESS) { execution_state = S2_EXECUTE_LINE; } else { execution_state = ERROR; };
-                break;
+                if (get_execution_line(&instruction_line) == SUCCESS) {
+                    execution_state = S2_EXECUTE_LINE;
+                } else {
+                    execution_state = ERROR;
+                } break;
             case S2_EXECUTE_LINE:
-                if (execute_line(instruction_line) ==
-                    SUCCESS) { execution_state = S3_POSTPROCESS; } else { execution_state = ERROR; };
-                break;
+                switch(execute_line(instruction_line)) {
+                    case SUCCESS:
+                        execution_state = S3_POSTPROCESS;
+                        break;
+                    case EXIT:
+                        execution_state =  S0_CHECK_EXECUTION_STATE;
+                        break;
+                    default:
+                        execution_state = ERROR;
+                } break;
             case S3_POSTPROCESS:
-                usleep((u_int32_t) actual_kernel_data->QSleep * 1000);
-                actual_kernel_data->Q--;
-                actual_pcb->program_counter++;
-                execution_state = S0_CHECK_EXECUTION_STATE;
-                break;
+                if(post_process_operations() == SUCCESS) {
+                    execution_state = S0_CHECK_EXECUTION_STATE;
+                } else {
+                    execution_state = ERROR;
+                } break;
             default:
             case ERROR:
                 return ERROR;
         }
     }
-    check_execution_state();
+    finished_quantum_post_process();
     return SUCCESS;
 }
 
-int execute_line(void *instruction_line) {
-    analizadorLinea((char*) instruction_line, &funciones_generales_ansisop, &funciones_kernel_ansisop);
+int post_process_operations() {
+    log_info(cpu_log, "Starting delay of : %d seconds", actual_kernel_data->QSleep/1000);
+    usleep((u_int32_t) actual_kernel_data->QSleep * 1000);
+    actual_kernel_data->Q--;
+    log_info(cpu_log, "Remaining Quantum : %d", actual_kernel_data->Q);
+    actual_pcb->program_counter++;
+    log_info(cpu_log, "Next execution line :%d", actual_pcb->program_counter);
     return SUCCESS;
+}
+
+void finished_quantum_post_process() {
+    log_info(cpu_log, "=== Finished Quantum ===");
+    send_quantum_end_notif();
+}
+
+void send_quantum_end_notif() {
+    if( send(kernelSocketClient , QUANTUM_END , sizeof(char), 0) < 0) {
+        log_error(cpu_log, "Send QUANTUM_END to KERNEL failed");
+        return;
+    }
+    log_info(cpu_log, "Quantum end notification sent to KERNEL");
+}
+
+int execute_line(void *instruction_line) {
+
+    if(strcmp(instruction_line, "end") == 0) {
+        //End of program reached
+        status_update(EXIT);
+        return EXIT;
+    }
+    analizadorLinea((char*) instruction_line, &funciones_generales_ansisop, &funciones_kernel_ansisop);
+    log_info(cpu_log, "Finished line %d execution successfuly", actual_pcb->program_counter);
+    return SUCCESS;
+}
+
+void status_update(int status) {
+    actual_pcb->status = status;
 }
 
 int check_execution_state() {
     //TODO: Also check for IO and blocked state
 
-    if(status_update() == EXIT){
-        log_info(cpu_log, "Finishid executing PCB with PID %d", actual_pcb->pid);
+    if(status_check() == EXIT){
+        program_end_notification();
         return EXIT;
     }
     return SUCCESS;
 }
 
+void program_end_notification() {
 
-enum_queue status_update() {
+    log_info(cpu_log, "=== Finished Program ===");
+    log_info(cpu_log, "Finishid executing PCB with PID %d", actual_pcb->pid);
+    if( send(kernelSocketClient , PROGRAM_END , sizeof(char), 0) < 0) {
+        log_error(cpu_log, "Send PROGRAM_END to KERNEL failed");
+        return;
+    }
+    log_info(cpu_log, "Program end notification sent to KERNEL");
+}
 
+
+enum_queue status_check() {
     switch (actual_pcb->status) {
         case READY:
             actual_pcb->status = EXECUTING;
@@ -226,6 +285,7 @@ int get_execution_line(void ** instruction_line) {
     t_list * instruction_addresses_list = armarDireccionesLogicasList(
             actual_pcb->instrucciones_serializado + actual_pcb->program_counter);
     get_instruction_line(instruction_addresses_list, instruction_line);
+    strip_string(*instruction_line);
     return SUCCESS;
 }
 
@@ -453,3 +513,14 @@ t_list* armarDireccionesLogicasList(t_intructions *actual_instruction) {
     return address_list;
 }
 
+void strip_string(char *s) {
+    char *s_reference = s;
+    while(*s != '\0') {
+        if(*s != '\t' && *s != '\n') {
+            *s_reference++ = *s++;
+        } else {
+            ++s;
+        }
+    }
+    *s_reference = '\0';
+}
