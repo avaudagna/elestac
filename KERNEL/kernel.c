@@ -8,6 +8,7 @@ gcc -I/usr/include/commons -I/usr/include/commons/collections -o umc umc.c -L/us
  * Y la consola asi:
 gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
 */
+#include <libs/pcb_tests.h>
 #include "kernel.h"
 
 /* BEGIN OF GLOBAL STUFF I NEED EVERYWHERE */
@@ -245,6 +246,7 @@ t_pcb * recvPCB(int cpuID){
 	pcb_size = *(int*) tmp_buff;
 	void *pcb_serializado = malloc((size_t) pcb_size);
 	recv(cpuID, pcb_serializado, (size_t) pcb_size, 0);
+    printSerializedPcb(pcb_serializado);
 	incomingPCB = (t_pcb *)calloc(1,sizeof(t_pcb));
 	int pcb_serializado_cursor = 0;
 	deserialize_pcb(&incomingPCB, pcb_serializado, &pcb_serializado_cursor);
