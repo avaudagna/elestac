@@ -272,7 +272,6 @@ void check_CPU_FD_ISSET(void *cpu){
 	int setValue = 0;
 	t_Client *laCPU = (t_Client*) cpu;
 	char *tmp_buff = malloc(4);
-	log_debug(kernel_log,"CPU %d will be checked now.", laCPU->clientID);
 	if (FD_ISSET(laCPU->clientID, &allSockets)) {
 		log_debug(kernel_log,"CPU %d has something to say.", laCPU->clientID);
 		if (recv(laCPU->clientID, cpu_protocol, 1, 0) > 0){
