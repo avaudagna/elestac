@@ -82,12 +82,13 @@ int main(int argc, char *argv[]) {
 		puts(kernel_reply);
 	}
 
-	do {
+	char *valor = malloc(4);
+	char textSize[4];
+	int textLen;
+
+	while(1){
 		if (recv(kernelSocketClient, kernel_reply, 1, 0) > 0) {
 			//log_info(console_log, "CONSOLE dijo: %s - Ejecutar protocolo correspondiente", kernel_reply);
-			char *valor = malloc(4);
-			char textSize[4];
-			int textLen;
 
 			switch (atoi(kernel_reply)) {
 				case 0:// Program END
@@ -115,14 +116,14 @@ int main(int argc, char *argv[]) {
 					printf("%s\n", kernel_reply);//controlar este printf
 					break;
 			}
-			free(valor);
 
+		}//corroborar si este if va acá o un nivel más adentro
+		if(atoi(kernel_reply)==0){
+			break;
 		}
 	}
 
-
-	while(1);
-
+	free(valor);
 	free(kernel_reply);
 	close(kernelSocketClient);
 	puts("Terminated console.");

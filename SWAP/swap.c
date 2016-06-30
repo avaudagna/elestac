@@ -17,12 +17,14 @@
 #define LECTURA 2
 #define FINALIZARPROG 3
 
-#define PATH_CONF "/home/alan/repos/tp-2016-1c-Vamo-a-calmarno/SWAP/swapConf"
 //#define PACKAGE_SIZE 1024
 //#define IPSWAP "127.0.0.1"
 //#define IPSWAP "192.168.0.28"
 //#define PUERTOSWAP 6800
 
+#define CONF_PROVISORIO "/home/hernanszel/Desarrollo/tp-2016-1c-Vamo-a-calmarno/SWAP/swapConf"
+#define SWAP_PROVISORIO "/home/hernanszel/Desarrollo/tp-2016-1c-Vamo-a-calmarno/SWAP/swap.data"
+#define LOG_PROVISIORIO "/home/hernanszel/Desarrollo/tp-2016-1c-Vamo-a-calmarno/SWAP/swap.log"
 
 /************************
  * VARIABLES GLOBALES
@@ -30,6 +32,10 @@
 
 //SWAP
 char* ABSOLUTE_PATH_SWAP;
+char* PATH_LOG;
+char* PATH_SWAP_FILE;
+char* PATH_CONF;
+
 char* bitMap;
 t_bitarray* bitArrayStruct;
 int SWAP_BLOCKSIZE;
@@ -57,8 +63,6 @@ char* package;
 //CONFIG
 char* IP_SWAP;
 char* PUERTO_SWAP;
-char* NOMBRE_SWAP;
-char* PATH_SWAP;
 int CANTIDAD_PAGINAS;
 int TAMANIO_PAGINA;
 int RETARDO_COMPACTACION;
@@ -82,7 +86,8 @@ int request_FinalizacionPrograma(int pid);
 void umc_finalizarPrograma();
 
 //Inicializacion y finalizacion
-int init_Config(char * config_file_path);
+int init_args(int argc, char **argv);
+int init_Config();
 void init_Server();
 int init_SwapFile();
 int init_BitMap();
@@ -122,15 +127,16 @@ char obtenerPrimerChar(void* buffer);
 int mod (int a, int b);
 void excepcionAlHablarConUMC();
 
-int main(int argc , char **argv) {
-	if(argc != 2){
-		printf("Cantidad de argumentos invalidos \nusage : ./SWAP swap-config-file");
-		exit(1);
+int main (int argc, char **argv){
+	if(init_args(argc, argv)){
+		return -1;
 	}
-	LOG_SWAP = log_create("swap.log", "Elestac-SWAP", true, LOG_LEVEL_TRACE);
+
+	LOG_SWAP = log_create(PATH_LOG, "Elestac-SWAP", true, LOG_LEVEL_TRACE);
+	printf("[INFO] Log created in: %s \n", PATH_LOG);
 
 	log_info(LOG_SWAP, ".:: INITIALIZING SWAP ::.");
-	if(!init_Config(argv[1])){
+	if(init_Config()){
 		log_error(LOG_SWAP, "Config file can not be loaded");
     	return -1;
     }
@@ -286,16 +292,51 @@ int request_FinalizacionPrograma(int pid){
  *	INICIALIZACION
  *
  **********************/
-int init_Config(char * config_file_path){
+
+//TODO
+int init_args(int argc, char **argv){
+	if(argc != 2){
+		puts("[FATAL ERROR] Wrong number of parameters. Expected parameters: SWAP_PATH");
+
+		return -1;
+	}
+
+	ABSOLUTE_PATH_SWAP = malloc(sizeof(char)*100);
+	strcpy(ABSOLUTE_PATH_SWAP, argv[0]);
+
+	PATH_LOG = malloc(sizeof(char)*150);
+	strcat(PATH_LOG,ABSOLUTE_PATH_SWAP);
+	strcat(PATH_LOG, "/swap.log");
+	printf("[INFO] PATH LOG: %s \n", PATH_LOG);
+
+	PATH_SWAP_FILE = malloc(sizeof(char)*150);
+	strcat(PATH_SWAP_FILE, ABSOLUTE_PATH_SWAP);
+	strcat(PATH_SWAP_FILE, "/swap.data");
+	printf("[INFO] PATH SWAP data: %s \n", PATH_SWAP_FILE);
+
+	PATH_CONF = malloc(sizeof(char)*150);
+	strcat(PATH_CONF, ABSOLUTE_PATH_SWAP);
+	strcat(PATH_CONF, "/swapConf");
+	printf("[INFO] PATH SWAP config: %s \n", PATH_CONF);
+
+	//DESPUES SACAR!
+	strcpy(PATH_LOG, LOG_PROVISIORIO);
+	strcpy(PATH_SWAP_FILE, SWAP_PROVISORIO);
+	strcpy(PATH_CONF, CONF_PROVISORIO);
+
+	return 0;
+}
+
+int init_Config(){
 	//ARCHIVO DE CONFIGURACION
-    char* keys[6] = {"IP_SWAP", "PUERTO_ESCUCHA", "NOMBRE_SWAP", "PATH_SWAP", "CANTIDAD_PAGINAS", "RETARDO_COMPACTACION"};
+    char* keys[4] = {"IP_SWAP", "PUERTO_ESCUCHA", "CANTIDAD_PAGINAS", "RETARDO_COMPACTACION"};
 
 	log_info(LOG_SWAP, "Reading configuration File");
 
-	t_config * punteroAStruct = config_create(config_file_path);
+	t_config * punteroAStruct = config_create(PATH_CONF);
 
 	if(punteroAStruct != NULL) {
-		log_info(LOG_SWAP, "Config file loaded: %s", config_file_path);
+		log_info(LOG_SWAP, "Config file loaded: %s", PATH_CONF);
 
 		int cantKeys = config_keys_amount(punteroAStruct);
 		log_info(LOG_SWAP, "Number of keys found: %d", cantKeys);
@@ -315,21 +356,11 @@ int init_Config(char * config_file_path){
 						break;
 
 					case 2:
-						NOMBRE_SWAP = config_get_string_value(punteroAStruct,keys[i]);
-						log_info(LOG_SWAP, "%s --> %s", keys[i], NOMBRE_SWAP);
-						break;
-
-					case 3:
-						PATH_SWAP = config_get_string_value(punteroAStruct,keys[i]);
-						log_info(LOG_SWAP, "%s --> %s", keys[i], PATH_SWAP);
-						break;
-
-					case 4:
 						CANTIDAD_PAGINAS = config_get_int_value(punteroAStruct,keys[i]);
 						log_info(LOG_SWAP, "%s --> %d", keys[i], CANTIDAD_PAGINAS);
 						break;
 
-					case 5:
+					case 3:
 						RETARDO_COMPACTACION = config_get_int_value(punteroAStruct,keys[i]);
 						log_info(LOG_SWAP, "%s --> %d", keys[i], RETARDO_COMPACTACION);
 						break;
@@ -340,11 +371,11 @@ int init_Config(char * config_file_path){
 
 		free(punteroAStruct);
 
-		return 1;
+		return 0;
 	} else {
 		free(punteroAStruct);
 
-		return 0;
+		return 1;
 	}
 }
 
@@ -572,15 +603,10 @@ int init_SwapFile(){
 
 	//El archivo de destino es mi swap a crear
 	string_append(&comandoCrearSwap, " of=");
-	if(PATH_SWAP != NULL)
-		string_append(&comandoCrearSwap, PATH_SWAP);
+	if(PATH_SWAP_FILE != NULL)
+		string_append(&comandoCrearSwap, PATH_SWAP_FILE);
 	else
 		string_append(&comandoCrearSwap, "/home/utnso/");
-
-	if(NOMBRE_SWAP != NULL)
-		string_append(&comandoCrearSwap, NOMBRE_SWAP);
-	else
-		string_append(&comandoCrearSwap, "pruebaSWAP");
 
 	//Especifico el BLOCKSIZE, que seria el total de mi swap
 	SWAP_BLOCKSIZE = TAMANIO_PAGINA*CANTIDAD_PAGINAS;
@@ -603,13 +629,8 @@ int init_SwapFile(){
 		free(comandoCrearSwap);
 	}
 
-	//Obtengo el path absoluto del archivo .swap
-	ABSOLUTE_PATH_SWAP = string_new();
-	string_append(&ABSOLUTE_PATH_SWAP,PATH_SWAP);
-	string_append(&ABSOLUTE_PATH_SWAP,NOMBRE_SWAP);
-
 	//Creamos puntero al archivo swap
-	FILE* swapFile = fopen(ABSOLUTE_PATH_SWAP,"rb");
+	FILE* swapFile = fopen(PATH_SWAP_FILE,"rb");
 
 	if (!swapFile){
 		log_error(LOG_SWAP, "Unable to open swap file");
@@ -654,8 +675,7 @@ void close_SwapProcess(){
 	//CONFIG
 	free(IP_SWAP);
 	free(PUERTO_SWAP);
-	free(NOMBRE_SWAP);
-	free(PATH_SWAP);
+	free(PATH_SWAP_FILE);
 
 	//Eliminamos la lista con todos sus modulos
 	listaControl_EliminarLista();
