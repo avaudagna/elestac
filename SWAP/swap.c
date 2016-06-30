@@ -17,6 +17,10 @@
 #define LECTURA 2
 #define FINALIZARPROG 3
 
+//#define PACKAGE_SIZE 1024
+//#define IPSWAP "127.0.0.1"
+//#define IPSWAP "192.168.0.28"
+//#define PUERTOSWAP 6800
 
 #define CONF_PROVISORIO "/home/hernanszel/Desarrollo/tp-2016-1c-Vamo-a-calmarno/SWAP/swapConf"
 #define SWAP_PROVISORIO "/home/hernanszel/Desarrollo/tp-2016-1c-Vamo-a-calmarno/SWAP/swap.data"
@@ -124,7 +128,7 @@ int mod (int a, int b);
 void excepcionAlHablarConUMC();
 
 int main (int argc, char **argv){
-	if(init_args(argc, argv) != 0){
+	if(init_args(argc, argv)){
 		return -1;
 	}
 
@@ -132,7 +136,7 @@ int main (int argc, char **argv){
 	printf("[INFO] Log created in: %s \n", PATH_LOG);
 
 	log_info(LOG_SWAP, ".:: INITIALIZING SWAP ::.");
-	if(!init_Config()){
+	if(init_Config()){
 		log_error(LOG_SWAP, "Config file can not be loaded");
     	return -1;
     }
@@ -312,8 +316,8 @@ int init_args(int argc, char **argv){
 
 	PATH_CONF = malloc(sizeof(char)*150);
 	strcat(PATH_CONF, ABSOLUTE_PATH_SWAP);
-	strcat(PATH_CONF, "/swap.data");
-	printf("[INFO] PATH SWAP data: %s \n", PATH_CONF);
+	strcat(PATH_CONF, "/swapConf");
+	printf("[INFO] PATH SWAP config: %s \n", PATH_CONF);
 
 	//DESPUES SACAR!
 	strcpy(PATH_LOG, LOG_PROVISIORIO);
@@ -367,11 +371,11 @@ int init_Config(){
 
 		free(punteroAStruct);
 
-		return 1;
+		return 0;
 	} else {
 		free(punteroAStruct);
 
-		return 0;
+		return 1;
 	}
 }
 
