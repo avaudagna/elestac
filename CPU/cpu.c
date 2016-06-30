@@ -1,8 +1,6 @@
 #include <parser/metadata_program.h>
 #include "cpu.h"
-#include "libs/pcb.h"
-#include "libs/stack.h"
-#include "cpu_structs.h"
+#include "libs/pcb_tests.h"
 
 
 //Variables globales
@@ -23,10 +21,17 @@ AnSISOP_funciones funciones_generales_ansisop = {
         .AnSISOP_entradaSalida          = entradaSalida,
         .AnSISOP_llamarConRetorno       = llamarConRetorno,
         .AnSISOP_retornar               = retornar,
-        .AnSISOP_llamarSinRetorno       = llamarSinRetorno
-
+        .AnSISOP_llamarSinRetorno       = llamarSinRetorno,
+        .AnSISOP_obtenerValorCompartida = obtenerValorCompartida,
+        .AnSISOP_asignarValorCompartida = asignarValorCompartida,
+        .AnSISOP_imprimir               = imprimir,
+        .AnSISOP_imprimirTexto          = imprimirTexto,
 };
-AnSISOP_kernel funciones_kernel_ansisop = { };
+
+AnSISOP_kernel funciones_kernel_ansisop = {
+        .AnSISOP_signal = la_signal,
+        .AnSISOP_wait = la_wait
+};
 
 
 //
@@ -45,6 +50,7 @@ int main(int argc, char **argv) {
 
     cpu_state_machine();
 
+    log_info(cpu_log, "=== Exiting CPU ===");
     return 0;
 }
 
@@ -108,19 +114,19 @@ int cpu_state_machine() {
     while(state != ERROR) {
         switch(state) {
             case S0_FIRST_COMS:
-                if (kernel_first_com() == SUCCESS && umc_first_com() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; };
+                if (kernel_first_com() == SUCCESS && umc_first_com() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; }
                 break;
             case S1_GET_PCB:
-                if (get_pcb() == SUCCESS) { state = S2_CHANGE_ACTIVE_PROCESS; } else { state = ERROR; };
+                if (get_pcb() == SUCCESS) { state = S2_CHANGE_ACTIVE_PROCESS; } else { state = ERROR; }
                 break;
             case S2_CHANGE_ACTIVE_PROCESS:
-                if (change_active_process() == SUCCESS) { state = S3_EXECUTE; } else { state = ERROR; };
+                if (change_active_process() == SUCCESS) { state = S3_EXECUTE; } else { state = ERROR; }
                 break;
             case S3_EXECUTE:
-                if (execute_state_machine() == SUCCESS) { state = S4_RETURN_PCB; } else { state = ERROR; };
+                if (execute_state_machine() == SUCCESS) { state = S4_RETURN_PCB; } else { state = ERROR; }
                 break;
             case S4_RETURN_PCB:
-                if (return_pcb() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; };
+                if (return_pcb() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; }
                 break;
             default:
             case ERROR:
@@ -133,17 +139,19 @@ int cpu_state_machine() {
 
 int return_pcb() {
     //Serializo el PCB y lo envio a KERNEL
-    actual_pcb = (t_pcb *) calloc(1,sizeof(t_pcb));
     void * serialized_pcb = NULL;
     int serialized_buffer_index = 0;
-    if(actual_pcb->status == EXECUTING) {
-        actual_pcb->status = READY;
-    }
     serialize_pcb(actual_pcb, &serialized_pcb, &serialized_buffer_index);
-    if( send(umcSocketClient , serialized_pcb, (size_t) serialized_buffer_index, 0) < 0) {
+    testSerializedPCB(actual_pcb, serialized_pcb);
+    if( send(kernelSocketClient , &serialized_buffer_index, (size_t) sizeof(int), 0) < 0) {
+        log_error(cpu_log, "Send serialized_buffer_length to KERNEL failed");
+        return ERROR;
+    }
+    if( send(kernelSocketClient , serialized_pcb, (size_t) serialized_buffer_index, 0) < 0) {
         log_error(cpu_log, "Send serialized_pcb to KERNEL failed");
         return ERROR;
     }
+    log_info(cpu_log, "Send serialized_pcb to KERNEL was successful");
     return SUCCESS;
 }
 
@@ -151,39 +159,113 @@ int execute_state_machine() {
     int execution_state = 0;
     void * instruction_line = NULL;
 
-    while(actual_kernel_data->Q > 0)
-    switch(execution_state) {
-        case S0_CHECK_EXECUTION_STATE:
-            if (check_execution_state() == SUCCESS) { execution_state = S1_GET_EXECUTION_LINE; }
-            else if (check_execution_state() == EXIT) { return SUCCESS; }
-            break;
-        case S1_GET_EXECUTION_LINE:
-            if (get_execution_line(&instruction_line) == SUCCESS) { execution_state = S2_EXECUTE_LINE; } else { execution_state = ERROR; };
-            break;
-        case S2_EXECUTE_LINE:
-            if (execute_line(instruction_line) == SUCCESS) { execution_state = S3_POSTPROCESS; } else { execution_state = ERROR; };
-            break;
-        case S3_POSTPROCESS:
-            actual_kernel_data->Q--;
-            actual_pcb->program_counter++;
-            execution_state = S0_CHECK_EXECUTION_STATE;
-            break;
-        default:
-        case ERROR:
-            return ERROR;
+    while(actual_kernel_data->Q > 0) {
+        switch (execution_state) {
+            case S0_CHECK_EXECUTION_STATE:
+                switch (check_execution_state()) {
+                    case SUCCESS:
+                        execution_state = S1_GET_EXECUTION_LINE;
+                        break;
+                    case EXIT:
+                        return SUCCESS;
+                    default:
+                        execution_state = ERROR;
+                        break;
+                } break;
+            case S1_GET_EXECUTION_LINE:
+                if (get_execution_line(&instruction_line) == SUCCESS) {
+                    execution_state = S2_EXECUTE_LINE;
+                } else {
+                    execution_state = ERROR;
+                } break;
+            case S2_EXECUTE_LINE:
+                switch(execute_line(instruction_line)) {
+                    case SUCCESS:
+                        execution_state = S3_POSTPROCESS;
+                        break;
+                    case EXIT:
+                        execution_state =  S0_CHECK_EXECUTION_STATE;
+                        break;
+                    default:
+                        execution_state = ERROR;
+                } break;
+            case S3_POSTPROCESS:
+                if(post_process_operations() == SUCCESS) {
+                    execution_state = S0_CHECK_EXECUTION_STATE;
+                } else {
+                    execution_state = ERROR;
+                } break;
+            default:
+            case ERROR:
+                return ERROR;
+        }
     }
+    finished_quantum_post_process();
+    return SUCCESS;
+}
+
+int post_process_operations() {
+    log_info(cpu_log, "Starting delay of : %d seconds", actual_kernel_data->QSleep/1000);
+    usleep((u_int32_t) actual_kernel_data->QSleep * 1000);
+    actual_kernel_data->Q--;
+    log_info(cpu_log, "Remaining Quantum : %d", actual_kernel_data->Q);
+    actual_pcb->program_counter++;
+    log_info(cpu_log, "Next execution line :%d", actual_pcb->program_counter);
+    return SUCCESS;
+}
+
+void finished_quantum_post_process() {
+    log_info(cpu_log, "=== Finished Quantum ===");
+    send_quantum_end_notif();
+}
+
+void send_quantum_end_notif() {
+    if( send(kernelSocketClient , QUANTUM_END , sizeof(char), 0) < 0) {
+        log_error(cpu_log, "Send QUANTUM_END to KERNEL failed");
+        return;
+    }
+    log_info(cpu_log, "Quantum end notification sent to KERNEL");
 }
 
 int execute_line(void *instruction_line) {
+
+    if(strcmp(instruction_line, "end") == 0) {
+        //End of program reached
+        status_update(EXIT);
+        return EXIT;
+    }
     analizadorLinea((char*) instruction_line, &funciones_generales_ansisop, &funciones_kernel_ansisop);
+    log_info(cpu_log, "Finished line %d execution successfuly", actual_pcb->program_counter);
     return SUCCESS;
+}
+
+void status_update(int status) {
+    actual_pcb->status = status;
 }
 
 int check_execution_state() {
     //TODO: Also check for IO and blocked state
-//    if(condicion de corte) {
-//        status FIN_DE_EJECUCION
-//    }
+
+    if(status_check() == EXIT){
+        program_end_notification();
+        return EXIT;
+    }
+    return SUCCESS;
+}
+
+void program_end_notification() {
+
+    log_info(cpu_log, "=== Finished Program ===");
+    log_info(cpu_log, "Finishid executing PCB with PID %d", actual_pcb->pid);
+    if( send(kernelSocketClient , PROGRAM_END , sizeof(char), 0) < 0) {
+        log_error(cpu_log, "Send PROGRAM_END to KERNEL failed");
+        return;
+    }
+    log_info(cpu_log, "Program end notification sent to KERNEL");
+}
+
+
+enum_queue status_check() {
     switch (actual_pcb->status) {
         case READY:
             actual_pcb->status = EXECUTING;
@@ -198,7 +280,6 @@ int check_execution_state() {
         case EXIT:
             return EXIT;
     }
-    return SUCCESS;
 }
 
 int get_execution_line(void ** instruction_line) {
@@ -206,6 +287,7 @@ int get_execution_line(void ** instruction_line) {
     t_list * instruction_addresses_list = armarDireccionesLogicasList(
             actual_pcb->instrucciones_serializado + actual_pcb->program_counter);
     get_instruction_line(instruction_addresses_list, instruction_line);
+    strip_string(*instruction_line);
     return SUCCESS;
 }
 
@@ -298,7 +380,7 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
 
     void * recv_bytes_buffer = NULL;
     int buffer_index = 0;
-    char aux_buffer[13];
+    char * aux_buffer = calloc(1, sizeof(char) + sizeof(int) *3);
     while(list_size(instruction_addresses_list) > 0) {
 
         logical_addr * element = list_get(instruction_addresses_list, 0);
@@ -312,6 +394,10 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
         }
         //Recv response
         recv_bytes_buffer = calloc(1, (size_t) element->tamanio);
+        if(recv_bytes_buffer == NULL) {
+            log_error(cpu_log, "get_instruction_line recv_bytes_buffer mem alloc failed");
+            return ERROR;
+        }
         if( recv(umcSocketClient , recv_bytes_buffer , (size_t ) element->tamanio , 0) < 0) {
             log_error(cpu_log, "UMC bytes recv failed");
             return ERROR;
@@ -354,6 +440,10 @@ int request_address_data(void ** buffer, logical_addr *address) {
 
 int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
     void * buffer = calloc(1,sizeof(int));
+    if(buffer == NULL) {
+        log_error(cpu_log, "recibir pcb buffer mem alloc failed");
+        return ERROR;
+    }
     if( recv(kernelSocketClient , buffer , sizeof(int) , 0) < 0) {
         log_error(cpu_log, "Q recv failed");
         return ERROR;
@@ -377,6 +467,10 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
     log_info(cpu_log, "pcb_size: %d", kernel_data_buffer->pcb_size);
 
     kernel_data_buffer->serialized_pcb = calloc(1, (size_t ) kernel_data_buffer->pcb_size);
+    if(kernel_data_buffer->serialized_pcb  == NULL) {
+        log_error(cpu_log, "serialized_pcb mem alloc failed");
+        return ERROR;
+    }
     if( recv(kernelSocketClient , kernel_data_buffer->serialized_pcb , (size_t )  kernel_data_buffer->pcb_size , 0) < 0) {
         log_error(cpu_log, "serialized_pcb recv failed");
         return ERROR;
@@ -421,3 +515,14 @@ t_list* armarDireccionesLogicasList(t_intructions *actual_instruction) {
     return address_list;
 }
 
+void strip_string(char *s) {
+    char *s_reference = s;
+    while(*s != '\0') {
+        if(*s != '\t' && *s != '\n') {
+            *s_reference++ = *s++;
+        } else {
+            ++s;
+        }
+    }
+    *s_reference = '\0';
+}
