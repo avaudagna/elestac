@@ -320,10 +320,11 @@ int init_args(int argc, char **argv){
 	printf("[INFO] PATH SWAP config: %s \n", PATH_CONF);
 
 	//DESPUES SACAR!
+	/*
 	strcpy(PATH_LOG, LOG_PROVISIORIO);
 	strcpy(PATH_SWAP_FILE, SWAP_PROVISORIO);
 	strcpy(PATH_CONF, CONF_PROVISORIO);
-
+	*/
 	return 0;
 }
 
