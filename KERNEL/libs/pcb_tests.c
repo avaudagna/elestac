@@ -279,6 +279,7 @@ void printBufferStackEntry(void *buffer, int *buffer_index) {
 }
 
 void printStackEntryVsBuffer(t_stack_entry *entry, void *buffer, int *buffer_index) {
+    int i = 0;
     printf("pos: %d=%d\n", entry->pos, *(int*)(buffer+ *buffer_index));
     assert(entry->pos == *(int*)(buffer+ *buffer_index));
     *buffer_index += sizeof(entry->pos);
@@ -287,61 +288,71 @@ void printStackEntryVsBuffer(t_stack_entry *entry, void *buffer, int *buffer_ind
     assert( entry->cant_args == *(int*)(buffer+ *buffer_index));
     *buffer_index += sizeof(entry->cant_args);
 
-    printf("args\n");
-    printf("page_number: %d=%d\n", entry->args->page_number, *(int*)(buffer+ *buffer_index));
-    assert(entry->args->page_number == *(int*)(buffer+ *buffer_index));
-    *buffer_index += sizeof(entry->args->page_number);
+    if(entry->cant_args > 0) {
+        printf("args\n");
+        for(i=0; i < entry->cant_args; i++) {
+            printf("page_number: %d=%d\n", (entry->args+i)->page_number, *(int*)(buffer+ *buffer_index));
+            assert(entry->args->page_number == *(int*)(buffer+ *buffer_index));
+            *buffer_index += sizeof(entry->args->page_number);
 
-    printf("offset: %d=%d\n", entry->args->offset, *(int*)(buffer+ *buffer_index));
-    assert( entry->args->offset == *(int*)(buffer+ *buffer_index));
-    *buffer_index += sizeof(entry->args->offset);
+            printf("offset: %d=%d\n", (entry->args+i)->offset, *(int*)(buffer+ *buffer_index));
+            assert( entry->args->offset == *(int*)(buffer+ *buffer_index));
+            *buffer_index += sizeof(entry->args->offset);
 
-    printf("tamanio: %d=%d\n", entry->args->tamanio, *(int*)(buffer+ *buffer_index));
-    assert( entry->args->tamanio == *(int*)(buffer+ *buffer_index));
-    *buffer_index += sizeof(entry->args->tamanio);
-
+            printf("tamanio: %d=%d\n", (entry->args+i)->tamanio, *(int*)(buffer+ *buffer_index));
+            assert( entry->args->tamanio == *(int*)(buffer+ *buffer_index));
+            *buffer_index += sizeof(entry->args->tamanio);
+        }
+    }
     printf("cant_vars: %d=%d\n", entry->cant_vars, *(int*)(buffer+ *buffer_index));
     assert(entry->cant_vars == *(int*)(buffer+ *buffer_index));
     *buffer_index += sizeof(entry->cant_vars);
 
-    printf("vars\n");
-    printf("var_id: %d=%d\n", entry->vars->var_id, *(char*)(buffer+ *buffer_index));
-    assert(entry->vars->var_id == *(char*)(buffer+ *buffer_index));
-    *buffer_index += sizeof(entry->vars->var_id);
+    if(entry->cant_vars > 0) {
+        printf("vars\n");
+        for(i = 0; i<entry->cant_vars; i++) {
+            printf("var_id: %d=%d\n", (entry->vars+i)->var_id, *(char *) (buffer + *buffer_index));
+            assert(entry->vars->var_id == *(char *) (buffer + *buffer_index));
+            *buffer_index += sizeof(entry->vars->var_id);
 
-    printf("page_number: %d=%d\n", entry->vars->page_number, *(int*)(buffer+ *buffer_index));
-    assert(entry->vars->page_number ==*(int*)(buffer+ *buffer_index));
-    *buffer_index += sizeof(entry->vars->page_number);
+            printf("page_number: %d=%d\n", (entry->vars+i)->page_number, *(int *) (buffer + *buffer_index));
+            assert(entry->vars->page_number == *(int *) (buffer + *buffer_index));
+            *buffer_index += sizeof(entry->vars->page_number);
 
-    printf("offset: %d=%d\n", entry->vars->offset, *(int*)(buffer+ *buffer_index));
-    assert(entry->vars->offset == *(int*)(buffer+ *buffer_index));
-    *buffer_index += sizeof(entry->vars->offset);
+            printf("offset: %d=%d\n", (entry->vars+i)->offset, *(int *) (buffer + *buffer_index));
+            assert(entry->vars->offset == *(int *) (buffer + *buffer_index));
+            *buffer_index += sizeof(entry->vars->offset);
 
-    printf("tamanio: %d=%d\n", entry->vars->tamanio, *(int*)(buffer+ *buffer_index));
-    assert(entry->vars->tamanio == *(int*)(buffer+ *buffer_index));
-    *buffer_index += sizeof(entry->vars->tamanio);
-
+            printf("tamanio: %d=%d\n", (entry->vars+i)->tamanio, *(int *) (buffer + *buffer_index));
+            assert(entry->vars->tamanio == *(int *) (buffer + *buffer_index));
+            *buffer_index += sizeof(entry->vars->tamanio);
+        }
+    }
     printf("cant_ret_vars: %d=%d\n", entry->cant_ret_vars, *(int*)(buffer+ *buffer_index));
     assert(entry->cant_ret_vars == *(int*)(buffer+ *buffer_index));
     *buffer_index += sizeof(entry->cant_ret_vars);
 
-    printf("ret_vars\n");
-    printf("page_number: %d=%d\n", entry->ret_vars->page_number, *(int*)(buffer+ *buffer_index));
-    assert(entry->ret_vars->page_number == *(int*)(buffer+ *buffer_index));
-    *buffer_index += sizeof(entry->ret_vars->page_number);
+    if(entry->cant_ret_vars > 0) {
+        printf("ret_vars\n");
+        for(i = 0; i < entry->cant_ret_vars; i++) {
+            printf("page_number: %d=%d\n", (entry->ret_vars+i)->page_number, *(int *) (buffer + *buffer_index));
+            assert(entry->ret_vars->page_number == *(int *) (buffer + *buffer_index));
+            *buffer_index += sizeof(entry->ret_vars->page_number);
 
-    printf("offset: %d=%d\n", entry->ret_vars->offset, *(int*)(buffer+ *buffer_index));
-    assert(entry->ret_vars->offset == *(int*)(buffer+ *buffer_index));
-    *buffer_index += sizeof(entry->ret_vars->offset);
+            printf("offset: %d=%d\n", (entry->ret_vars+i)->offset, *(int *) (buffer + *buffer_index));
+            assert(entry->ret_vars->offset == *(int *) (buffer + *buffer_index));
+            *buffer_index += sizeof(entry->ret_vars->offset);
 
-    printf("tamanio: %d=%d\n", entry->ret_vars->tamanio, *(int*)(buffer+ *buffer_index));
-    assert(entry->ret_vars->tamanio == *(int*)(buffer+ *buffer_index));
-    *buffer_index += sizeof(entry->ret_vars->tamanio);
-
+            printf("tamanio: %d=%d\n", (entry->ret_vars+i)->tamanio, *(int *) (buffer + *buffer_index));
+            assert(entry->ret_vars->tamanio == *(int *) (buffer + *buffer_index));
+            *buffer_index += sizeof(entry->ret_vars->tamanio);
+        }
+    }
     printf("ret_pos: %d=%d\n", entry->ret_pos, *(int*)(buffer+ *buffer_index));
     assert(entry->ret_pos == *(int*)(buffer+ *buffer_index));
     *buffer_index += sizeof(entry->ret_pos);
 }
+
 
 t_stack *getStackExample() {
     t_stack * stack_mock = queue_create();
@@ -368,6 +379,28 @@ t_stack *getStackExample() {
     return stack_mock;
 }
 
+t_pcb * getPcbExample() {
+
+    //1) Get metadata structure from ansisop whole program
+    t_metadata_program* newMetadata = getMetadataExample();
+    //printf("Cantidad de etiquetas: %i \n\n", newMetadata->cantidad_de_etiquetas); // print something
+    //newMetadata->instrucciones_serializado += 1;
+
+    //2) Create the PCB with the metadata information obtained, and extra information of the Kernel
+    t_pcb * newPCB = malloc(sizeof(t_pcb));
+    newPCB->pid=7777;
+    newPCB->program_counter=newMetadata->instruccion_inicio;
+    newPCB->stack_pointer=10;
+    newPCB->stack_index= getStackExample();
+    newPCB->status=READY; //1 = READY
+    newPCB->instrucciones_size= newMetadata->instrucciones_size;
+    newMetadata->instrucciones_serializado;
+    newPCB->instrucciones_serializado = newMetadata->instrucciones_serializado;
+    newPCB->etiquetas_size = newMetadata->etiquetas_size;
+    newPCB->etiquetas = newMetadata->etiquetas;
+
+    return newPCB;
+}
 t_metadata_program *getMetadataExample() {
     puts("\nThis is a fake ansisop program (hardcoded)\n");
     char *programa = "begin\nvariables f, A, g \n A = 	0  \n!Global = 1+A\n  print !Global \n jnz !Global Siguiente \n:Proximo\n	 \n f = 8	   \ng <- doble !Global	\n  io impresora 20\n	:Siguiente	 \n imprimir A  \ntextPrint  Hola Mundo!  \n\n  sumar1 &g	 \n print g  \n\n  sinParam \n \nend\n\nfunction sinParam\n	textPrint Bye\nend\n\n#Devolver el doble del\n#primer parametro\nfunction doble\nvariables f  \n f = $0 + $0 \n  return fvend\n\nfunction sumar1\n	*$0 = 1 + *$0\nend\n\nfunction imprimir\n  wait mutexA\n    print $0+1\n  signal mutexB\nend\n\n";

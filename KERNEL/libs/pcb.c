@@ -39,14 +39,14 @@ void serialize_instrucciones(t_intructions *instrucciones, int instrucciones_siz
 //void deserialize_data(void *object, size_t nBytes, void **serialized_data, size_t *lastIndex)
 void deserialize_pcb(t_pcb **pcb, void *serialized_data, int *serialized_data_index) {
     deserialize_data(&(*pcb)->pid, sizeof(int), serialized_data, serialized_data_index);
-    deserialize_data(&(*pcb)->program_counter, sizeof(uint32_t), serialized_data, serialized_data_index);
-    deserialize_data(&(*pcb)->stack_pointer, sizeof(uint32_t), serialized_data, serialized_data_index);
+    deserialize_data(&(*pcb)->program_counter, sizeof(int), serialized_data, serialized_data_index);
+    deserialize_data(&(*pcb)->stack_pointer, sizeof(int), serialized_data, serialized_data_index);
     (*pcb)->stack_index = queue_create(); //TODO: Por que se necesita esto aca y en deserialize_stack TAMBIEN?
     deserialize_stack(&(*pcb)->stack_index, serialized_data, serialized_data_index);
     deserialize_data(&(*pcb)->status, sizeof(int), serialized_data, serialized_data_index);
-    deserialize_data(&(*pcb)->instrucciones_size, sizeof(t_size), serialized_data, serialized_data_index);
+    deserialize_data(&(*pcb)->instrucciones_size, sizeof(int), serialized_data, serialized_data_index);
     deserialize_instrucciones(&(*pcb)->instrucciones_serializado, (*pcb)->instrucciones_size, serialized_data, serialized_data_index);
-    deserialize_data(&(*pcb)->etiquetas_size, sizeof(t_size), serialized_data, serialized_data_index);
+    deserialize_data(&(*pcb)->etiquetas_size, sizeof(int), serialized_data, serialized_data_index);
     deserialize_data(&(*pcb)->etiquetas, (size_t) (*pcb)->etiquetas_size, serialized_data, serialized_data_index);
 }
 

@@ -44,9 +44,14 @@ t_stack_entry *create_new_stack_entry();
 void deserialize_stack(t_stack **stack, void **serialized_data, int *serialized_data_size);
 void deserialize_stack_entry(t_stack_entry **entry, void **serialized_data, int *serialized_data_size);
 
+void deserialize_args(t_stack_entry **entry, void **serialized_data, int *serialized_data_size, int cant_args);
+void deserialize_vars(t_stack_entry **entry, void **serialized_data, int *serialized_data_size, int cant_vars);
+void deserialize_ret_vars(t_stack_entry **entry, void **serialized_data, int *serialized_data_size, int cant_ret_vars);
+
 int add_ret_var(t_stack_entry ** stack_entry, t_ret_var *var);
 int add_var(t_stack_entry ** stack_entry, t_var *var);
 int add_arg(t_stack_entry ** stack_entry, t_arg *arg);
+
 
 t_stack_entry * stack_entry_create(void);
 

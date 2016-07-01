@@ -34,5 +34,6 @@ int printBufferStackValues( void *buffer) ;
 void printBufferStackEntry(void *buffer, int *buffer_index) ;
 int printBufferInstructions(int cant_instrucciones, void *buffer) ;
 int printBufferEtiquetas(char *buffer, int cant_etiquetas) ;
+t_pcb * getPcbExample();
 
 #endif
