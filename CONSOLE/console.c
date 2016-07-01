@@ -2,7 +2,7 @@
 #include<string.h>    //strlen
 #include<sys/socket.h>    //socket
 #include<arpa/inet.h> //inet_addr
-#include <socket-commons/socketCommons.h>
+#include "socketCommons/socketCommons.h"
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>
@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	getClientSocket(&kernelSocketClient, setup.IP_KERNEL, setup.PUERTO_KERNEL);
+	int retorno = getClientSocket(&kernelSocketClient, setup.IP_KERNEL, setup.PUERTO_KERNEL);
 
 	printf("se cargó el setup\n");
 	/*le voy a mandar al kernel un 0 para iniciar el handshake + sizeMsj en 4B + (el código como viene),
