@@ -66,6 +66,7 @@ char* PUERTO_SWAP;
 int CANTIDAD_PAGINAS;
 int TAMANIO_PAGINA;
 int RETARDO_COMPACTACION;
+char* SWAP_DATA_NAME;
 
 /**********************
  *
@@ -128,9 +129,11 @@ int mod (int a, int b);
 void excepcionAlHablarConUMC();
 
 int main (int argc, char **argv){
+
 	if(init_args(argc, argv)){
 		return -1;
 	}
+
 
 	LOG_SWAP = log_create(PATH_LOG, "Elestac-SWAP", true, LOG_LEVEL_TRACE);
 	printf("[INFO] Log created in: %s \n", PATH_LOG);
@@ -233,6 +236,8 @@ int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
 	char* paginaObtenida = NULL;
 	paginaObtenida = swap_ObtenerPagina(pid, numeroPagina);
 
+	imprimir_EstadoBitMap();
+
 	if(paginaObtenida != NULL){ //Si la pagina ya existe, la sobreescribo
 		log_info(LOG_SWAP, "Requested page already exists. Overwriting existing page");
 
@@ -247,6 +252,8 @@ int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
 
 		paginas_EscribirPaginaEnSWAP(codigo, posicionPaginaEnSWAP);
 		log_info(LOG_SWAP, "Requested page has been successfully overwritten");
+
+		imprimir_EstadoBitMap();
 
 		return 0;
 	}
@@ -272,6 +279,8 @@ int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
 int request_FinalizacionPrograma(int pid){
 	log_info(LOG_SWAP, "[REQUEST] Program finalization requested by UMC [PID: %d] \n", pid);
 
+	imprimir_EstadoBitMap();
+
 	int paginasLiberadas = 0;
 	paginasLiberadas = swap_LiberarPrograma(pid);
 
@@ -285,6 +294,8 @@ int request_FinalizacionPrograma(int pid){
 		return -1;
 	}
 
+	imprimir_EstadoBitMap();
+
 }
 
 /**********************
@@ -295,36 +306,47 @@ int request_FinalizacionPrograma(int pid){
 
 //TODO
 int init_args(int argc, char **argv){
-	if(argc != 2){
-		puts("[FATAL ERROR] Wrong number of parameters. Expected parameters: SWAP_PATH");
+	/*
+	if(argc != 1){
+		puts("[FATAL ERROR] Wrong number of parameters. Expected parameters: ConfigName");
 
 		return -1;
 	}
 
-	ABSOLUTE_PATH_SWAP = malloc(sizeof(char)*100);
-	strcpy(ABSOLUTE_PATH_SWAP, argv[0]);
+	//Por parametro recibo el nombre del archivo de configuracion
+	//Obtenemos el path donde se encuentra la aplicacion
+	char cwd[1024];
+	getcwd(cwd, sizeof(cwd));
+	ABSOLUTE_PATH_SWAP = malloc(sizeof(cwd));
+	strcpy(ABSOLUTE_PATH_SWAP, cwd);
 
+	//Especificamos el path del log
 	PATH_LOG = malloc(sizeof(char)*150);
-	strcat(PATH_LOG,ABSOLUTE_PATH_SWAP);
+	strcat(PATH_LOG, ABSOLUTE_PATH_SWAP);
 	strcat(PATH_LOG, "/swap.log");
 	printf("[INFO] PATH LOG: %s \n", PATH_LOG);
 
-	PATH_SWAP_FILE = malloc(sizeof(char)*150);
-	strcat(PATH_SWAP_FILE, ABSOLUTE_PATH_SWAP);
-	strcat(PATH_SWAP_FILE, "/swap.data");
-	printf("[INFO] PATH SWAP data: %s \n", PATH_SWAP_FILE);
-
+	//Especificamos el path del archivo de configuracion
 	PATH_CONF = malloc(sizeof(char)*150);
 	strcat(PATH_CONF, ABSOLUTE_PATH_SWAP);
-	strcat(PATH_CONF, "/swapConf");
+	strcat(PATH_CONF, "/");
+	strcat(PATH_CONF, argv[1]); //CAMBIAR POR argv[0]
 	printf("[INFO] PATH SWAP config: %s \n", PATH_CONF);
+
+	/*
+	printf("%s \n", ABSOLUTE_PATH_SWAP);
+	printf("%s \n", PATH_LOG);
+	printf("%s \n", PATH_SWAP_FILE);
+	printf("%s \n", PATH_CONF);
+	*/
+
 
 	//DESPUES SACAR!
 	/*
 	strcpy(PATH_LOG, LOG_PROVISIORIO);
 	strcpy(PATH_SWAP_FILE, SWAP_PROVISORIO);
 	strcpy(PATH_CONF, CONF_PROVISORIO);
-	*/
+*/
 	return 0;
 }
 
@@ -364,6 +386,11 @@ int init_Config(){
 					case 3:
 						RETARDO_COMPACTACION = config_get_int_value(punteroAStruct,keys[i]);
 						log_info(LOG_SWAP, "%s --> %d", keys[i], RETARDO_COMPACTACION);
+						break;
+
+					case 4:
+						SWAP_DATA_NAME = config_get_int_value(punteroAStruct,keys[i]);
+						log_info(LOG_SWAP, "%s --> %d", keys[i], SWAP_DATA_NAME);
 						break;
 				}
 
@@ -593,6 +620,12 @@ void umc_finalizarPrograma(){
 
 int init_SwapFile(){
 	log_info(LOG_SWAP, ".:: CREATING SWAP FILE ::.");
+
+	//Creamos el path del archivo data con el nombre especificado en el archivo de configuracion
+	PATH_SWAP_FILE = malloc(sizeof(char)*150);
+	strcat(PATH_SWAP_FILE, ABSOLUTE_PATH_SWAP);
+	strcat(PATH_SWAP_FILE, SWAP_DATA_NAME);
+	log_info(LOG_SWAP, "[INFO] PATH SWAP data: %s", PATH_SWAP_FILE);
 
 	char* comandoCrearSwap = string_new();
 
@@ -857,7 +890,7 @@ int paginas_CantidadPaginasNecesarias(char* codigo){
 }
 
 int paginas_EscribirPaginaEnSWAP(char* contenidoAEscribir, int posicion){
-	FILE* fp = fopen(ABSOLUTE_PATH_SWAP,"r+b");
+	FILE* fp = fopen(PATH_SWAP_FILE,"r+b");
 
 	char pagina[TAMANIO_PAGINA];
 	int i;
@@ -1154,7 +1187,7 @@ void imprimir_EstadoBitMap(){
 
 	}
 
-	printf("\n Total: %d \n", i);
+	printf("\n Total paginas: %d \n", i);
 }
 
 /*************************
