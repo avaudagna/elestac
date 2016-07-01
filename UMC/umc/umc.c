@@ -936,8 +936,13 @@ t_list * getHeadListaPaginas(PIDPAGINAS * data){
 
 PAGINA * obtenerPaginaDeTablaDePaginas(t_list *headerTablaPaginas, int nroPagina) {
 
-<<<<<<< HEAD
 	pthread_rwlock_rdlock(semListaPids);
+
+	if( headerTablaPaginas->head == NULL){
+		pthread_rwlock_unlock(semListaPids);
+		return NULL;
+	}
+
 
 	t_link_element *aux = headerTablaPaginas->head;
 
@@ -950,19 +955,6 @@ PAGINA * obtenerPaginaDeTablaDePaginas(t_list *headerTablaPaginas, int nroPagina
 		aux = aux->next;
 	}
 	pthread_rwlock_unlock(semListaPids);
-=======
-    if(headerTablaPaginas != NULL) {
-	    t_link_element *aux = headerTablaPaginas->head;
-
-        while (aux != NULL) {
-            if (comparaNroDePagina(aux->data, nroPagina))
-                return aux->data;
-
-            aux = aux->next;
-        }
-    }
-
->>>>>>> 62a63999472100ebab3bb925fee6cd039828f3be
 	return NULL;
 }
 
