@@ -388,7 +388,7 @@ void loadConfig(char* configFile){
 		t_config *config = config_create(configFile);
 		puts(" .:: Loading settings ::.");
 
-		umcGlobalParameters.listenningPort=config_get_int_value(config,"PUERTO");
+		umcGlobalParameters.listenningPort=config_get_int_value(config,"PUERTO_ESCUCHA");
 		umcGlobalParameters.listenningIp=config_get_string_value(config,"IP_ESCUCHA");
 		umcGlobalParameters.ipSwap=config_get_string_value(config,"IP_SWAP");
 		umcGlobalParameters.portSwap=config_get_string_value(config,"PUERTO_SWAP");
@@ -1307,15 +1307,14 @@ void algoritmoClock(int *pPid, int numPagNueva, int tamanioContenidoPagina, void
 
 	punteroPIDClock = obtenerPunteroClockxPID(headerPunterosClock, *pPid);        // levanto el nroDeMarco que me indica por donde iniciar la barrida de marcos para el algoritmo de reemplazo
 
-	pthread_rwlock_rdlock(semFifosxPid);
-	recorredor = list_get_nodo(fifoPID,punteroPIDClock->indice);		// posiciono el puntero donde quedo la ultima vez que tuve que utilizar el algoritmo
-	pthread_rwlock_unlock(semFifosxPid);
-
 	pthread_rwlock_wrlock(semFifosxPid);
 
 	while(!estado) {
 
+
+		pthread_rwlock_rdlock(semFifosxPid);
 		recorredor = list_get_nodo(fifoPID,punteroPIDClock->indice);		// posiciono el puntero donde quedo la ultima vez que tuve que utilizar el algoritmo
+		pthread_rwlock_unlock(semFifosxPid);
 
 		// recorro desde donde quedo el puntero por ultima vez hasta el final de la fifo
 		for (i = punteroPIDClock->indice;i < (fifoPID->elements_count) && recorredor != NULL; i++, recorredor = recorredor->next) {
@@ -1951,7 +1950,9 @@ void limpiarPidDeTLB(int pPid) {
 // recorro toda la lista , cuando encuentro uno correspondiente a ese pid , lo saco
 	while(aux != NULL){
 		if ( ((TLB *)aux->data)->pid == pPid ) {
+			pthread_rwlock_wrlock(semTLB);
 			list_remove_and_destroy_element(headerTLB,index,free);
+			pthread_rwlock_unlock(semTLB);
 			index--;
 		}
 
@@ -1961,7 +1962,6 @@ void limpiarPidDeTLB(int pPid) {
 	}
 
 }
-
 
 void reemplazarPaginaTLB(int pPid, PAGINA *pPagina, int indice) {
 
@@ -2124,13 +2124,8 @@ void finalizarProceso(int *socketBuff){
 	asprintf(&trama,"%d%04d",FINALIZAR_PROCESO,pPid);
 
 	enviarPaginaAlSwap(trama,strlen(trama));		// Elimnarlo en SWAP
-		pthread_rwlock_wrlock(semTLB);
-	limpiarPidDeTLB(pPid);							// Elimino PID de la TLB
-		pthread_rwlock_unlock(semTLB);
 
-		pthread_rwlock_wrlock(semMemPrin);
-		pthread_rwlock_wrlock(semListaPids);
-		pthread_rwlock_wrlock(semFifosxPid);
+		limpiarPidDeTLB(pPid);							// Elimino PID de la TLB
 
 	fifo = obtenerHeaderFifoxPid(pPid);
 
@@ -2139,26 +2134,31 @@ void finalizarProceso(int *socketBuff){
 	// Libero todos los marcos ocupados por el proceso
 		while (aux != NULL){
 			pag_aux = obtenerPagina(pPid,((CLOCK_PAGINA *)aux->data)->nroPagina);
+			pthread_rwlock_wrlock(semMemPrin);
 			vectorMarcos[pag_aux->nroDeMarco].estado = LIBRE;
+			pthread_rwlock_unlock(semMemPrin);
 			aux = aux->next;
 
 		}
 
+		pthread_rwlock_wrlock(semFifosxPid);
 		list_destroy_and_destroy_elements(fifo,free);	// Elimino la fifo y sus referencias
+		pthread_rwlock_unlock(semFifosxPid);
 
 		index = getPosicionCLockPid(pPid);
+		pthread_rwlock_wrlock(semFifosxPid);
 		list_remove_and_destroy_element(headerFIFOxPID,index,free);		// ELimino el nodo en al lista de Procesos en Memoria Principal
-
+		pthread_rwlock_unlock(semFifosxPid);
 		headerTablaPaginas = obtenerTablaDePaginasDePID(pPid);
 
+		pthread_rwlock_wrlock(semListaPids);
 		list_destroy_and_destroy_elements(headerTablaPaginas,free);		// Elimino tabla de Paginas asociada a ese PID
+		pthread_rwlock_unlock(semListaPids);
 
 		index = getPosicionListaPids(pPid);
+		pthread_rwlock_wrlock(semListaPids);
 		list_remove_and_destroy_element(headerListaDePids,index,free);	// ELimino el nodo en la lista de Pids ( lista de tablas de paginas asociadas a c/ PID )
-
-		pthread_rwlock_unlock(semFifosxPid);
 		pthread_rwlock_unlock(semListaPids);
-		pthread_rwlock_unlock(semMemPrin);
 
 	}
 
@@ -2171,14 +2171,18 @@ int getPosicionCLockPid(int pPid) {
 
 	t_link_element *aux  = NULL;
 	int i=0;
-
+	pthread_rwlock_rdlock(semFifosxPid);
 	aux = headerFIFOxPID->head;
 	while(aux!= NULL){
-		if ( ((CLOCK_PID *)aux->data)->pid == pPid )
-			return i;
+		if ( ((CLOCK_PID *)aux->data)->pid == pPid ) {
+				pthread_rwlock_unlock(semFifosxPid);
+				return i;
+		}
 		aux = aux->next;
 		i++;
 	}
+	pthread_rwlock_unlock(semFifosxPid);
+	return -1;
 
 }
 
