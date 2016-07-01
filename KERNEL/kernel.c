@@ -246,10 +246,11 @@ t_pcb * recvPCB(int cpuID){
 	pcb_size = *(int*) tmp_buff;
 	void *pcb_serializado = malloc((size_t) pcb_size);
 	recv(cpuID, pcb_serializado, (size_t) pcb_size, 0);
-    printSerializedPcb(pcb_serializado);
+//    printSerializedPcb(pcb_serializado);
 	incomingPCB = (t_pcb *)calloc(1,sizeof(t_pcb));
 	int pcb_serializado_cursor = 0;
 	deserialize_pcb(&incomingPCB, pcb_serializado, &pcb_serializado_cursor);
+	testSerializedPCB(incomingPCB, pcb_serializado);
 	free(tmp_buff);
 	free(pcb_serializado);
 	return incomingPCB;
@@ -514,7 +515,7 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 }
 
 void round_robin(){
-	int       tmp_buffer_size = 1+4+4+4; /* 1+QUANTUM+QUANTUM_SLEEP+PCB_SIZE */
+	int       tmp_buffer_size = 1+sizeof(int)*3; /* 1+QUANTUM+QUANTUM_SLEEP+PCB_SIZE */
 	int       pcb_buffer_size = 0;
 	void     *pcb_buffer = NULL;
 	void     *tmp_buffer = NULL;
@@ -526,10 +527,12 @@ void round_robin(){
 	serialize_pcb(tuPCB, &pcb_buffer, &pcb_buffer_size);
 	tmp_buffer = malloc((size_t) tmp_buffer_size+pcb_buffer_size);
 	asprintf(&tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
+    tmp_buffer = realloc(tmp_buffer , (size_t) tmp_buffer_size + pcb_buffer_size);
 	serialize_data(pcb_buffer, (size_t ) pcb_buffer_size, &tmp_buffer, &tmp_buffer_size );
 	log_info(kernel_log,"Submitting to CPU %d the PID %d.", laCPU->clientID, tuPCB->pid);
 	send(laCPU->clientID, tmp_buffer, tmp_buffer_size, 0);
 	free(tmp_buffer);
+    free(pcb_buffer);
 	list_add(cpus_executing,laCPU);
 }
 
