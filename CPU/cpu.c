@@ -1,7 +1,6 @@
 #include <parser/metadata_program.h>
 #include "cpu.h"
 
-
 //Variables globales
 t_setup * setup; // GLOBAL settings
 t_log* cpu_log;

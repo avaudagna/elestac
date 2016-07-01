@@ -66,6 +66,7 @@ int client_sockets_init() {
 void signalsInit() {
     signal (SIGINT, tratarSeniales);
     signal (SIGPIPE, tratarSeniales);
+    signal (SIGUSR1, tratarSeniales);
 }
 
 int loadConfig(char* configFile){
@@ -105,6 +106,10 @@ void tratarSeniales(int senial){
             // Trato de escribir en un socket que cerro la conexion.
             printf("The KERNEL or UMC connection droped down.\n\n");
             signal (SIGPIPE, tratarSeniales);
+            break;
+        case SIGUSR1:
+            printf("On next Quantum CPU will disconnect");
+
             break;
         default:
             printf("Other signal received\n");

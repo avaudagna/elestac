@@ -2,11 +2,12 @@
 #include<string.h>    //strlen
 #include<sys/socket.h>    //socket
 #include<arpa/inet.h> //inet_addr
-#include <socket-commons/socketCommons.h>
+#include "socketCommons/socketCommons.h"
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>
 #include <commons/config.h>
+#include <commons/log.h>
 
 struct {
 		int 	PUERTO_KERNEL;
@@ -16,11 +17,16 @@ struct {
 
 void tratarSeniales(int);
 int loadConfig(char* configFile);
+t_log *console_log;
 
 int main(int argc, char *argv[]) {
 	signal(SIGINT, tratarSeniales);
+	console_log = log_create("console.log", "Elestac-CONSOLE", true, LOG_LEVEL_TRACE);
 
-	if (loadConfig("/usr/share/ansisop/console.config")<0) return -1;
+	if (loadConfig("/usr/share/ansisop/console.config") < 0){
+		log_error(console_log, "No se encontró el archivo de configuración");
+		return -1;
+	}
 
 	int kernelSocketClient;
 	char *kernel_reply = malloc(4);
@@ -30,16 +36,16 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	getClientSocket(&kernelSocketClient, setup.IP_KERNEL, setup.PUERTO_KERNEL);
+	int retorno = getClientSocket(&kernelSocketClient, setup.IP_KERNEL, setup.PUERTO_KERNEL);
 
-	printf("se cargó el setup\n");
+	log_info(console_log, "Se cargó el setup con IP y puerto del kernel");
 	/*le voy a mandar al kernel un 0 para iniciar el handshake + sizeMsj en 4B + (el código como viene),
 	y me va a devolver el client_id (un número) que me represente con el cual él me conoce*/
 
-	FILE * fp;
+	FILE *fp;
 	fp = fopen(argv[1], "r");
 	if (!fp) {
-		printf("Failed to open text file\n");
+		log_error(console_log, "No se puedo abrir el ansisop.");
 		exit(1);
 	}
 
@@ -48,17 +54,17 @@ int main(int argc, char *argv[]) {
 	long int sz = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
 
-	char* hash_bang[100];
+	char hash_bang[100];
 	fgets(hash_bang, 100, fp);
 	sz = sz - strlen(hash_bang) - 1;
 
-	char* prog = (char*) malloc(sz);
+	char *prog = (char *) malloc(sz);
 
 	fread(prog, sz + 1, 1, fp);
 	fclose(fp);
 
 	int sizeMsj = strlen("0") + 5 + (int) sz;
-	char* mensaje = (char*) malloc(sizeMsj);
+	char *mensaje = (char *) malloc(sizeMsj);
 
 	char buffer[20];
 	sprintf(buffer, "%04d", (int) sz);
@@ -67,31 +73,32 @@ int main(int argc, char *argv[]) {
 	strcat(mensaje, buffer);
 	strcat(mensaje, prog);
 	send(kernelSocketClient, mensaje, sizeMsj, 0);
+	log_info(console_log, "El tamanio del programa es %s, y se envio al kernel: %s", buffer, mensaje);
 
 	free(prog);
 	free(mensaje);
 
-	do {
-		if (recv(kernelSocketClient, kernel_reply, 4, 0) < 0) {
-			puts("recv failed");
-			break;
-		} else if (!strcmp(kernel_reply, "0000")) {
-			printf("No hay suficiente espacio en memoria para ejecutar el programa\n");
-		} else {
-			printf("Vamo a calmarno. Su programa se está ejecutando\n");
-			puts("Kernel reply :");
-			puts(kernel_reply);
-		}
+	if (recv(kernelSocketClient, kernel_reply, 4, 0) < 0) {
+		log_error(console_log, "Kernel no responde");
+		return EXIT_FAILURE;
+	} else if (!strcmp(kernel_reply, "0000")) {
+		log_error(console_log, "Kernel contesto: %s.No hay espacio en memoria para ejecutar el programa", kernel_reply);
+	} else {
+		log_info(console_log, "El pid de la consola es %s. Se esta ejecutando el programa.", kernel_reply);
+	}
 
-		if ((kernelSocketClient, kernel_reply, 1, 0) > 0) {
-			//log_info(console_log, "CONSOLE dijo: %s - Ejecutar protocolo correspondiente", kernel_reply);
-			char *valor = malloc(4);
-			char textSize[4];
-			int textLen;
+	char *valor = malloc(4);
+	char textSize[4];
+	int textLen;
+	bool continua = true;
 
+	while (continua) {
+		if (recv(kernelSocketClient, kernel_reply, 1, 0) > 0) {
+			log_info(console_log, "Kernel dijo: %s . Ejecutar protocolo correspondiente", kernel_reply);
 			switch (atoi(kernel_reply)) {
 				case 0:// Program END
-					printf("Vamo a recontra calmarno. El programa finalizó correctamente\n");
+					continua = false;
+					log_info(console_log, "Vamo a recontra calmarno. El programa finalizó correctamente");
 					break;
 				case 1:// Print value
 					//recibo 8 bytes -> 4 sizeof(variable) + variable + 4 valor_variable
@@ -102,7 +109,7 @@ int main(int argc, char *argv[]) {
 
 					recv(kernelSocketClient, var, textLen, 0);
 					recv(kernelSocketClient, valor, 4, 0);
-					printf("El valor de la variable %s es: %s", var, valor);//controlar este printf
+					log_info(console_log, "El valor de la variable %s es: %s", var, valor);
 					free(var);
 					break;
 
@@ -112,20 +119,18 @@ int main(int argc, char *argv[]) {
 					recv(kernelSocketClient, textSize, 4, 0);
 					textLen = atoi(textSize);
 					recv(kernelSocketClient, kernel_reply, textLen, 0);
-					printf("%s\n", kernel_reply);//controlar este printf
+					log_info(console_log, "%s.", kernel_reply);
 					break;
 			}
-			free(valor);
-
 		}
 	}
 
-
-	while(1);
-
+	free(valor);
 	free(kernel_reply);
 	close(kernelSocketClient);
+	log_info(console_log, "Se cerro la conexion con el kernel");
 	puts("Terminated console.");
+	log_destroy(console_log);
 	return 0;
 
 }
@@ -135,7 +140,7 @@ int loadConfig(char* configFile){
 		return -1;
 	}
 	t_config *config = config_create(configFile);
-	puts(" .:: Loading settings ::.");
+	log_info(console_log, " .:: Loading settings ::.");
 
 	if(config != NULL){
 		setup.PUERTO_KERNEL=config_get_int_value(config,"PUERTO_KERNEL");
