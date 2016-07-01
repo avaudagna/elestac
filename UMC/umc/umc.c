@@ -898,14 +898,16 @@ t_list * getHeadListaPaginas(PIDPAGINAS * data){
 
 PAGINA * obtenerPaginaDeTablaDePaginas(t_list *headerTablaPaginas, int nroPagina) {
 
-	t_link_element *aux = headerTablaPaginas->head;
+    if(headerTablaPaginas != NULL) {
+	    t_link_element *aux = headerTablaPaginas->head;
 
-	while (aux != NULL) {
-		if (comparaNroDePagina(aux->data, nroPagina))
-			return aux->data;
+        while (aux != NULL) {
+            if (comparaNroDePagina(aux->data, nroPagina))
+                return aux->data;
 
-		aux = aux->next;
-	}
+            aux = aux->next;
+        }
+    }
 
 	return NULL;
 }
@@ -1828,6 +1830,7 @@ void limpiarPidDeTLB(int pPid) {
 	while(aux != NULL){
 		if ( ((TLB *)aux->data)->pid == pPid ) {
 			list_remove_and_destroy_element(headerTLB,index,free);
+			index--;
 		}
 
 		aux =  aux->next;
