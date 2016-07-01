@@ -12,7 +12,7 @@ set(SOURCE_FILES
     libs/stack.h
     kernel.c
     kernel.h
-        setup.data
+    setup.data
     socketCommons.c
     socketCommons.h)
 

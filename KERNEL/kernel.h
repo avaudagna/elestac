@@ -29,9 +29,9 @@ struct {
 				PUERTO_CPU,
 				QUANTUM,
 				QUANTUM_SLEEP;
-		char** 	SEM_ID;
+		char** 	SEM_IDS;
 		char** 	SEM_INIT;
-		char** 	IO_ID;
+		char** 	IO_IDS;
 		char** 	IO_SLEEP;
 		int     IO_COUNT;
 		char** 	SHARED_VARS;
