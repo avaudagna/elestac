@@ -221,9 +221,10 @@ void deserialize_stack_entry(t_stack_entry **entry, void **serialized_data, int 
 
 void deserialize_args(t_stack_entry **entry, void **serialized_data, int *serialized_data_size, int cant_args) {
     int indice = 0;
-    t_arg * aux_arg = calloc(1, sizeof(t_arg));
+    t_arg * aux_arg = NULL;
     if(cant_args > 0) {
         for(indice = 0; indice < cant_args; indice++ ) {
+            aux_arg = calloc(1, sizeof(t_arg));
             deserialize_data(&aux_arg->page_number, sizeof(int), serialized_data, serialized_data_size);
             deserialize_data(&aux_arg->offset, sizeof(int), serialized_data, serialized_data_size);
             deserialize_data(&aux_arg->tamanio, sizeof(int), serialized_data, serialized_data_size);
@@ -234,13 +235,14 @@ void deserialize_args(t_stack_entry **entry, void **serialized_data, int *serial
 
 void deserialize_vars(t_stack_entry **entry, void **serialized_data, int *serialized_data_size, int cant_vars) {
     int indice = 0;
-    t_var * aux_var = calloc(1, sizeof(t_var));
+    t_var * aux_var = NULL;
     if(cant_vars > 0) {
         for(indice = 0; indice < cant_vars; indice++ ) {
-            deserialize_data(&(aux_var+indice)->var_id, sizeof(char), serialized_data, serialized_data_size);
-            deserialize_data(&(aux_var+indice)->page_number, sizeof(int), serialized_data, serialized_data_size);
-            deserialize_data(&(aux_var+indice)->offset, sizeof(int), serialized_data, serialized_data_size);
-            deserialize_data(&(aux_var+indice)->tamanio, sizeof(int), serialized_data, serialized_data_size);
+            aux_var = calloc(1, sizeof(t_var));
+            deserialize_data(&aux_var->var_id, sizeof(char), serialized_data, serialized_data_size);
+            deserialize_data(&aux_var->page_number, sizeof(int), serialized_data, serialized_data_size);
+            deserialize_data(&aux_var->offset, sizeof(int), serialized_data, serialized_data_size);
+            deserialize_data(&aux_var->tamanio, sizeof(int), serialized_data, serialized_data_size);
             add_var(entry, aux_var);
         }
     }
@@ -248,9 +250,10 @@ void deserialize_vars(t_stack_entry **entry, void **serialized_data, int *serial
 
 void deserialize_ret_vars(t_stack_entry **entry, void **serialized_data, int *serialized_data_size, int cant_ret_vars) {
     int indice = 0;
-    t_ret_var * aux_ret_var = calloc(1, sizeof(t_ret_var));
+    t_ret_var * aux_ret_var = NULL;
     if(cant_ret_vars > 0) {
         for(indice = 0; indice < cant_ret_vars; indice++ ) {
+            aux_ret_var = calloc(1, sizeof(t_ret_var));
             deserialize_data(&aux_ret_var->page_number, sizeof(int), serialized_data, serialized_data_size);
             deserialize_data(&aux_ret_var->offset, sizeof(int), serialized_data, serialized_data_size);
             deserialize_data(&aux_ret_var->tamanio, sizeof(int), serialized_data, serialized_data_size);

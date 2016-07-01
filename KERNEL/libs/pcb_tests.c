@@ -309,8 +309,8 @@ void printStackEntryVsBuffer(t_stack_entry *entry, void *buffer, int *buffer_ind
     *buffer_index += sizeof(entry->cant_vars);
 
     if(entry->cant_vars > 0) {
+        printf("vars\n");
         for(i = 0; i<entry->cant_vars; i++) {
-            printf("vars\n");
             printf("var_id: %d=%d\n", (entry->vars+i)->var_id, *(char *) (buffer + *buffer_index));
             assert(entry->vars->var_id == *(char *) (buffer + *buffer_index));
             *buffer_index += sizeof(entry->vars->var_id);
