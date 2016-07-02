@@ -234,11 +234,11 @@ void handShakeCpu(int *socketBuff);
 
 
 t_list *obtenerHeaderFifoxPid(int pPid);
-CLOCK_PID * obtenerCurrentClockPidEntry(t_list * headerFifos, int pid);
+CLOCK_PID *obtenerCurrentClockPidEntry(int pid);
 
-bool pidEstaEnListaFIFOxPID(t_list *headerFifos, int pPid);
+bool pidEstaEnListaFIFOxPID(int pPid);
 
-bool pidEstaEnListaDeUltRemp(t_list *headerPunteros, int pPid);
+bool pidEstaEnListaDeUltRemp(int pPid);
 
 CLOCK_PAGINA * obtenerPaginaDeFifo(t_list *fifoDePid, int pagina);
 
@@ -1705,19 +1705,18 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 		pthread_rwlock_wrlock(semClockPtrs);
 		list_add(headerPunterosClock,nuevoPidFifoIndice);
 		pthread_rwlock_unlock(semClockPtrs);
-	}else if( pidEstaEnListaDeUltRemp(headerPunterosClock,*pPid) == false){		//  si el pid todavia no esta en la lista de ultimo puntero, entonces lo agrego
+	}else if(pidEstaEnListaDeUltRemp(*pPid) == false){		//  si el pid todavia no esta en la lista de ultimo puntero, entonces lo agrego
 		pthread_rwlock_wrlock(semClockPtrs);
 		list_add(headerPunterosClock,nuevoPidFifoIndice);
 		pthread_rwlock_unlock(semClockPtrs);
 	}
-
 
 	if ( headerFIFOxPID == NULL) {        // si es el primer marco que se va a cargar en memoria, entonces creo la lista de pids en memoria
 		headerFIFOxPID = list_create();
 		pthread_rwlock_wrlock(semFifosxPid);
 		list_add(headerFIFOxPID, pid_clock);
 		pthread_rwlock_unlock(semFifosxPid);
-	} else if ( pidEstaEnListaFIFOxPID(headerFIFOxPID,pid_clock->pid) == false){		// si el pid  todavia no fue cargado a la lista ( pq no tiene ningun marco en memoria)
+	} else if (pidEstaEnListaFIFOxPID(pid_clock->pid) == false){		// si el pid  todavia no fue cargado a la lista ( pq no tiene ningun marco en memoria)
 		pthread_rwlock_wrlock(semFifosxPid);
 		list_add(headerFIFOxPID,pid_clock);
 		pthread_rwlock_unlock(semFifosxPid);
@@ -1727,7 +1726,7 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 //	if ( (headerFifo = obtenerHeaderFifoxPid(headerFIFOxPID,*pPid)) == NULL) // si el PID todavia no tiene ningun marco asignado en memoria , creo la FIFO asociada a ese PID
 //		headerFifo = list_create();
     CLOCK_PID * entry = NULL;
-    entry = obtenerCurrentClockPidEntry(headerFIFOxPID,*pPid);
+    entry = obtenerCurrentClockPidEntry(*pPid);
          if(entry->headerFifo == NULL) {  // si el PID todavia no tiene ningun marco asignado en memoria , creo la FIFO asociada a ese PID
             entry->headerFifo = list_create();
          }
@@ -1762,25 +1761,28 @@ void setEstadoMarco(int indice, int nuevoEstado) {
 
 }
 
-bool pidEstaEnListaDeUltRemp(t_list *headerPunteros, int pPid) {
+bool pidEstaEnListaDeUltRemp(int pPid) {
 
 	t_link_element * aux = NULL;
-	aux = headerPunteros->head ;
+	aux = headerPunterosClock->head ;
+	pthread_rwlock_rdlock(semClockPtrs);
 	while ( aux != NULL){
-
-		if ((((FIFO_INDICE*)aux->data)->pid) == pPid )
+		if ((((FIFO_INDICE*)aux->data)->pid) == pPid ) {
+			pthread_rwlock_unlock(semClockPtrs);
 			return true;
+		}
 
 		aux = aux->next;
 	}
+	pthread_rwlock_unlock(semClockPtrs);
 	return false;
 }
 
-bool pidEstaEnListaFIFOxPID(t_list *headerFifos, int pPid) {
+bool pidEstaEnListaFIFOxPID(int pPid) {
 
 	pthread_rwlock_rdlock(semFifosxPid);
 	t_link_element * aux = NULL;
-	aux = headerFifos->head ;
+	aux = headerFIFOxPID->head ;
 	while ( aux != NULL){
 		if (((CLOCK_PID *)aux->data)->pid == pPid ) {
 			pthread_rwlock_unlock(semFifosxPid);
@@ -1810,10 +1812,11 @@ t_list *obtenerHeaderFifoxPid(int pPid) {
 	return NULL;
 }
 
-CLOCK_PID * obtenerCurrentClockPidEntry(t_list * headerFifos, int pid) {
-	pthread_rwlock_rdlock(semFifosxPid);
+CLOCK_PID *obtenerCurrentClockPidEntry(int pid) {
+
 	t_link_element * aux  = NULL;
-	aux = headerFifos->head ;
+	pthread_rwlock_rdlock(semFifosxPid);
+	aux = headerFIFOxPID->head ;
 	while ( aux != NULL){
 		if (((CLOCK_PID *) aux->data)->pid == pid ) {
 				pthread_rwlock_unlock(semFifosxPid);
@@ -1844,6 +1847,9 @@ void setBitDeUso(int *pPid, int pPagina, int valorBitDeUso) {
 
 CLOCK_PAGINA * obtenerPaginaDeFifo(t_list *fifoDePid, int pagina) {
 
+	if(fifoDePid == NULL)
+		return NULL;
+
 	t_link_element *aux = NULL;
 	pthread_rwlock_rdlock(semFifosxPid);
 	aux = fifoDePid->head;
@@ -1855,8 +1861,9 @@ CLOCK_PAGINA * obtenerPaginaDeFifo(t_list *fifoDePid, int pagina) {
 		}
 		aux = aux->next;
 	}
-	return NULL;
 	pthread_rwlock_unlock(semFifosxPid);
+	return NULL;
+
 
 }
 
