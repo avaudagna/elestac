@@ -635,9 +635,7 @@ void cambioProcesoActivo(int *socket, int *pid){
 
 	char buffer[4];
 	// fflush de TLB
-	pthread_rwlock_wrlock(semTLB);
 	limpiarPidDeTLB(*pid);
-	pthread_rwlock_unlock(semTLB);
 	// levanto el nuevo PID que esta ejecutando el CPU
 	if ( (recv(*socket, (void*) (buffer), 4, 0)) <= 0 )
 		perror("recv");
@@ -1685,10 +1683,9 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 
 	void *comienzoPaginaLibre = NULL;
 	int indice;
-	CLOCK_PAGINA *pagina;
+	CLOCK_PAGINA *pagina = NULL;
 	CLOCK_PID * pid_clock  = NULL;
-	FIFO_INDICE *nuevoPidFifoIndice;
-	t_list * headerFifo = NULL;
+	FIFO_INDICE *nuevoPidFifoIndice = NULL;
 
 	pagina = (CLOCK_PAGINA *) malloc(sizeof(CLOCK_PAGINA));
 	pagina->bitDeModificado = 0;
@@ -1961,14 +1958,17 @@ void limpiarPidDeTLB(int pPid) {
 	t_link_element *aux = NULL;
 	int index = 0;
 
+    pthread_rwlock_rdlock(semTLB);
 	aux = headerTLB->head;
 
 // recorro toda la lista , cuando encuentro uno correspondiente a ese pid , lo saco
 	while(aux != NULL){
 		if ( ((TLB *)aux->data)->pid == pPid ) {
+            pthread_rwlock_unlock(semTLB);
 			pthread_rwlock_wrlock(semTLB);
 			list_remove_and_destroy_element(headerTLB,index,free);
 			pthread_rwlock_unlock(semTLB);
+            pthread_rwlock_rdlock(semTLB);
 			index--;
 		}
 
@@ -1976,6 +1976,7 @@ void limpiarPidDeTLB(int pPid) {
 		index++;
 
 	}
+    pthread_rwlock_unlock(semTLB);
 
 }
 
