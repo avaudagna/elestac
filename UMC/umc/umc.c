@@ -362,6 +362,13 @@ void init_MemoriaPrincipal(void){
 
 void init_Semaforos(void){
 
+	semMemPrin = malloc(sizeof(pthread_rwlock_t));
+    semFifosxPid = malloc(sizeof(pthread_rwlock_t));
+    semListaPids = malloc(sizeof(pthread_rwlock_t));
+    semTLB = malloc(sizeof(pthread_rwlock_t));
+    semRetardo = malloc(sizeof(pthread_rwlock_t));
+    semClockPtrs = malloc(sizeof(pthread_rwlock_t));
+
 	if (( pthread_rwlock_init(semMemPrin,NULL))  ||
 		(pthread_rwlock_init(semFifosxPid,NULL)) ||
 		(pthread_rwlock_init(semListaPids,NULL)) ||
@@ -388,8 +395,8 @@ void loadConfig(char* configFile){
 		t_config *config = config_create(configFile);
 		puts(" .:: Loading settings ::.");
 
-		umcGlobalParameters.listenningPort=config_get_int_value(config,"PUERTO_ESCUCHA");
-		umcGlobalParameters.listenningIp=config_get_string_value(config,"IP_ESCUCHA");
+        umcGlobalParameters.listenningIp=config_get_string_value(config,"IP_ESCUCHA");
+        umcGlobalParameters.listenningPort=config_get_int_value(config,"PUERTO_ESCUCHA");
 		umcGlobalParameters.ipSwap=config_get_string_value(config,"IP_SWAP");
 		umcGlobalParameters.portSwap=config_get_string_value(config,"PUERTO_SWAP");
 		umcGlobalParameters.marcos=config_get_int_value(config,"MARCOS");
@@ -861,17 +868,22 @@ void enviarPaginasDeStackAlSwap(int _pid, int nroDePaginaInicial) {
 
 	int nroPaginaActual=0,
         i = 0;
-	char * trama = NULL;
+	char * trama = NULL,
+         * trama2 = NULL;
 
 	// trama de escritura a swap : 1+pid+nroDePagina+aux_code
 	for(i =0 ,nroPaginaActual=nroDePaginaInicial; i<stack_size; i++, nroPaginaActual++) {
         asprintf(&trama, "%d%04d%04d", 1, _pid, nroPaginaActual);
-        trama = realloc(trama, strlen(trama) + umcGlobalParameters.marcosSize);
+        trama2 = calloc(1,9+umcGlobalParameters.marcosSize);
+        memcpy(trama2,trama,9);
+        //trama = realloc(trama, strlen(trama) + umcGlobalParameters.marcosSize);
 //		enviarPaginaAlSwap(trama,umcGlobalParameters.marcosSize + ( sizeof(_pid) * 2 ) ) ;
         //mando una pagina con basura
-		enviarPaginaAlSwap(trama, sizeof(char) + sizeof(int) + sizeof(int) + umcGlobalParameters.marcosSize);
+		enviarPaginaAlSwap(trama2, sizeof(char) + sizeof(int) + sizeof(int) + umcGlobalParameters.marcosSize);
 		swapUpdate();
 		indexarPaginasDeStack(_pid,nroPaginaActual);
+        free(trama);
+        free(trama2);
 	}
 
 }
@@ -888,9 +900,7 @@ void enviarPaginaAlSwap(char *trama, int size_trama){
 void agregarPagina(int pid, PAGINA *pagina_aux) {
 
 	t_list * aux = NULL;
-	pthread_rwlock_rdlock(semListaPids);	// Primero pido para lectura
 	aux = obtenerTablaDePaginasDePID(pid);
-	pthread_rwlock_unlock(semListaPids);	// Libero
 	pthread_rwlock_wrlock(semListaPids);	// Pido para escritura
 	list_add(aux,pagina_aux);
 	pthread_rwlock_unlock(semListaPids);	// Libero
