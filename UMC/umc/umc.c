@@ -242,7 +242,7 @@ bool pidEstaEnListaDeUltRemp(t_list *headerPunteros, int pPid);
 
 CLOCK_PAGINA * obtenerPaginaDeFifo(t_list *fifoDePid, int pagina);
 
-FIFO_INDICE * obtenerPunteroClockxPID(t_list *clock, int pid);
+FIFO_INDICE *obtenerPunteroClockxPID(int pid);
 
 t_link_element * list_get_nodo(t_list *self, int index);
 
@@ -888,9 +888,7 @@ void enviarPaginaAlSwap(char *trama, int size_trama){
 void agregarPagina(int pid, PAGINA *pagina_aux) {
 
 	t_list * aux = NULL;
-	pthread_rwlock_rdlock(semListaPids);	// Primero pido para lectura
 	aux = obtenerTablaDePaginasDePID(pid);
-	pthread_rwlock_unlock(semListaPids);	// Libero
 	pthread_rwlock_wrlock(semListaPids);	// Pido para escritura
 	list_add(aux,pagina_aux);
 	pthread_rwlock_unlock(semListaPids);	// Libero
@@ -1305,23 +1303,24 @@ void algoritmoClock(int *pPid, int numPagNueva, int tamanioContenidoPagina, void
 
 	fifoPID = obtenerHeaderFifoxPid(*pPid);
 
-	punteroPIDClock = obtenerPunteroClockxPID(headerPunterosClock, *pPid);        // levanto el nroDeMarco que me indica por donde iniciar la barrida de marcos para el algoritmo de reemplazo
-
-	pthread_rwlock_wrlock(semFifosxPid);
+	punteroPIDClock = obtenerPunteroClockxPID(*pPid);        // levanto el nroDeMarco que me indica por donde iniciar la barrida de marcos para el algoritmo de reemplazo
 
 	while(!estado) {
 
 
 		pthread_rwlock_rdlock(semFifosxPid);
 		recorredor = list_get_nodo(fifoPID,punteroPIDClock->indice);		// posiciono el puntero donde quedo la ultima vez que tuve que utilizar el algoritmo
-		pthread_rwlock_unlock(semFifosxPid);
-
 		// recorro desde donde quedo el puntero por ultima vez hasta el final de la fifo
 		for (i = punteroPIDClock->indice;i < (fifoPID->elements_count) && recorredor != NULL; i++, recorredor = recorredor->next) {
 			if (((CLOCK_PAGINA *) recorredor->data)->bitDeUso == 1) {
+				pthread_rwlock_unlock(semFifosxPid);
+				pthread_rwlock_wrlock(semFifosxPid);
 				((CLOCK_PAGINA *) recorredor->data)->bitDeUso = 0;        // pongo en 0 y sigo recorriendo
+				pthread_rwlock_unlock(semFifosxPid);
+				pthread_rwlock_rdlock(semFifosxPid);
 			} else if (((CLOCK_PAGINA *) recorredor->data)->bitDeUso == 0) {    // encontre la pagina a reemplazar
 				estado = true;
+				pthread_rwlock_unlock(semFifosxPid);
 				break;
 			}
 		}
@@ -1329,22 +1328,25 @@ void algoritmoClock(int *pPid, int numPagNueva, int tamanioContenidoPagina, void
 
 		if (!estado) {
 			//recorredor = fifoPID->head->data;		// reseteo el puntero recorredor
+			pthread_rwlock_rdlock(semFifosxPid);
 			recorredor = list_get_nodo(fifoPID,0);
 			for (i = 0; ( i <= (punteroPIDClock->indice) ) && ( recorredor != NULL ) ; i++, recorredor = recorredor->next) {
 
 				if (((CLOCK_PAGINA *) recorredor->data)->bitDeUso == 1) {
+					pthread_rwlock_unlock(semFifosxPid);
+					pthread_rwlock_wrlock(semFifosxPid);
 					((CLOCK_PAGINA *) recorredor->data)->bitDeUso = 0;        // pongo en 0 y sigo recorriendo
+					pthread_rwlock_unlock(semFifosxPid);
+					pthread_rwlock_rdlock(semFifosxPid);
 				} else if (((CLOCK_PAGINA *) recorredor->data)->bitDeUso == 0) {    // encontre la pagina a reemplazar
 					estado = true;
+					pthread_rwlock_unlock(semFifosxPid);
 					break;
 				}
 			}
 		}
 		else break;	// encontre una pagina victima
 	}
-
-
-
 
 	pagina_victima = obtenerPagina(*pPid, ((CLOCK_PAGINA *) recorredor->data)->nroPagina);
 	*marcoVictima = pagina_victima->nroDeMarco;
@@ -1353,10 +1355,11 @@ void algoritmoClock(int *pPid, int numPagNueva, int tamanioContenidoPagina, void
 		PedidoPaginaASwap(*pPid,pagina_victima->nroPagina,ESCRITURA);
 	// Actualizaciones sobre la tabla de paginas ( actualizo campo nro de marco y bit de presencia )
 	pagina_nueva = obtenerPagina(*pPid,numPagNueva);
+	pthread_rwlock_wrlock(semListaPids);
 	pagina_nueva->nroDeMarco = pagina_victima->nroDeMarco ;
+	pthread_rwlock_unlock(semListaPids);
 	setBitDePresencia(*pPid,numPagNueva,PRESENTE_MP);
 	setBitDePresencia(*pPid,pagina_victima->nroPagina,AUSENTE);
-
 
 	bufferContenidoPagina = calloc(umcGlobalParameters.marcosSize,1);	// hago un calloc cosa de inicializar todo en \0 , puede que el tamaño de la pagina que venga a reemplazar NO ocupe todo el espacio asignado
 	memcpy(bufferContenidoPagina,contenidoPagina,tamanioContenidoPagina);	// guardo el contenido de la nueva pagina
@@ -1398,20 +1401,16 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, int tamanioContenidoPa
 
 	fifoPID = obtenerHeaderFifoxPid(*pPid);
 
-	punteroPIDClock = obtenerPunteroClockxPID(headerPunterosClock, *pPid);        // levanto el nroDeMarco que me indica por donde iniciar la barrida de marcos para el algoritmo de reemplazo
-
-	pthread_rwlock_rdlock(semFifosxPid);
-	recorredor = list_get_nodo(fifoPID,punteroPIDClock->indice);		// posiciono el puntero donde quedo la ultima vez que tuve que utilizar el algoritmo
-	pthread_rwlock_unlock(semFifosxPid);
+	punteroPIDClock = obtenerPunteroClockxPID(*pPid);        // levanto el nroDeMarco que me indica por donde iniciar la barrida de marcos para el algoritmo de reemplazo
 
 	while(estado == BUSCANDO_VICTIMA){
 		// ******************************* Primera Vuelta ***********************************************
 		// Primero recorro desde donde quedo el puntero (la ultima vez que se utilizo) hasta el final de la lista
 		pthread_rwlock_rdlock(semFifosxPid);
 		recorredor = list_get_nodo(fifoPID,punteroPIDClock->indice);
-		pthread_rwlock_unlock(semFifosxPid);
 		for (i=punteroPIDClock->indice;i<(fifoPID->elements_count) && recorredor != NULL;i++,recorredor=recorredor->next){
 			if(((CLOCK_PAGINA*) recorredor->data)->bitDeUso == 0 && ((CLOCK_PAGINA*) recorredor->data)->bitDeModificado == 0 ) {    // Encontre Pagina Victima
+				pthread_rwlock_unlock(semFifosxPid);
 				estado = true;
 				break;
 			}
@@ -1420,9 +1419,9 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, int tamanioContenidoPa
 		if(!estado){
 			pthread_rwlock_rdlock(semFifosxPid);
 			recorredor = list_get_nodo(fifoPID,0);	// vuelvo a recorrer desde el comienzo
-			pthread_rwlock_unlock(semFifosxPid);
 			for (i=0;i<(punteroPIDClock->indice);i++,recorredor=recorredor->next){
 				if(((CLOCK_PAGINA*) recorredor->data)->bitDeUso == 0 && ((CLOCK_PAGINA*) recorredor->data)->bitDeModificado == 0 ) {    // Encontre Pagina Victima
+					pthread_rwlock_unlock(semFifosxPid);
 					estado = true;
 					break;
 				}
@@ -1431,9 +1430,12 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, int tamanioContenidoPa
 
 		// ***************************** Segunda Vuelta ***************************************************
 		// recorro desde el indice hasta el final de la lista
+
 		recorredor = list_get_nodo(fifoPID,punteroPIDClock->indice);
+		pthread_rwlock_unlock(semFifosxPid);
 		for (i=punteroPIDClock->indice;i<(fifoPID->elements_count) && recorredor != NULL;i++,recorredor=recorredor->next){
 			if(((CLOCK_PAGINA*) recorredor->data)->bitDeUso == 0 && ((CLOCK_PAGINA*) recorredor->data)->bitDeModificado == 1 ) {    // Encontre Pagina Victima
+				pthread_rwlock_unlock(semFifosxPid);
 				estado = true;
 			}
 			else{
@@ -1507,7 +1509,9 @@ void PedidoPaginaASwap(int pid, int pagina, int operacion) {
 	}
 	 */
 	sprintf(trama,"%d%04d%04d",operacion,pid,pagina);
+	pthread_rwlock_wrlock(semMemPrin);
 	memcpy((void * )&trama[9],vectorMarcos[pag->nroDeMarco].comienzoMarco,umcGlobalParameters.marcosSize);
+	pthread_rwlock_unlock(semMemPrin);
 	enviarPaginaAlSwap(trama,trama_size);
 }
 
@@ -1533,13 +1537,13 @@ t_link_element * list_get_nodo(t_list *self, int index) {
 	return element_in_index != NULL ? element_in_index: NULL;
 }
 
-FIFO_INDICE * obtenerPunteroClockxPID(t_list *clock, int pid) {
+FIFO_INDICE *obtenerPunteroClockxPID(int pid) {
 
 	t_link_element * aux = NULL;
 
 	pthread_rwlock_rdlock(semClockPtrs);
 
-	aux  = clock->head;
+	aux  = headerPunterosClock->head;
 
 	while (aux != NULL){
 		if (((FIFO_INDICE*)aux->data)->pid == pid ) {
