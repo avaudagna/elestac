@@ -17,14 +17,6 @@
 #define LECTURA 2
 #define FINALIZARPROG 3
 
-//#define PACKAGE_SIZE 1024
-//#define IPSWAP "127.0.0.1"
-//#define IPSWAP "192.168.0.28"
-//#define PUERTOSWAP 6800
-
-#define CONF_PROVISORIO "/home/hernanszel/Desarrollo/tp-2016-1c-Vamo-a-calmarno/SWAP/swapConf"
-#define SWAP_PROVISORIO "/home/hernanszel/Desarrollo/tp-2016-1c-Vamo-a-calmarno/SWAP/swap.data"
-#define LOG_PROVISIORIO "/home/hernanszel/Desarrollo/tp-2016-1c-Vamo-a-calmarno/SWAP/swap.log"
 
 /************************
  * VARIABLES GLOBALES
@@ -40,6 +32,7 @@ char* bitMap;
 t_bitarray* bitArrayStruct;
 int SWAP_BLOCKSIZE;
 t_log* LOG_SWAP;
+int TAMANIO_PAGINA;
 
 struct InformacionPagina {
    int pid;
@@ -64,9 +57,9 @@ char* package;
 char* IP_SWAP;
 char* PUERTO_SWAP;
 int CANTIDAD_PAGINAS;
-int TAMANIO_PAGINA;
 int RETARDO_COMPACTACION;
 char* SWAP_DATA_NAME;
+int RETARDO_ACCESO;
 
 /**********************
  *
@@ -127,13 +120,13 @@ void imprimir_NodosEstructuraControl();
 char obtenerPrimerChar(void* buffer);
 int mod (int a, int b);
 void excepcionAlHablarConUMC();
+void dormirse(int segundos);
 
 int main (int argc, char **argv){
 
 	if(init_args(argc, argv)){
 		return -1;
 	}
-
 
 	LOG_SWAP = log_create(PATH_LOG, "Elestac-SWAP", true, LOG_LEVEL_TRACE);
 	printf("[INFO] Log created in: %s \n", PATH_LOG);
@@ -217,6 +210,9 @@ int umc_handshake(){
 
 char* request_Lectura(int pid, int numeroPagina){
 	log_info(LOG_SWAP, "[REQUEST] Page requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
+
+	dormirse(RETARDO_ACCESO); //Aplicamos el retraso de acceso
+
 	char* paginaObtenida = NULL;
 	paginaObtenida = swap_ObtenerPagina(pid, numeroPagina);
 
@@ -232,6 +228,8 @@ char* request_Lectura(int pid, int numeroPagina){
 
 int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
 	log_info(LOG_SWAP, "[REQUEST] Page writing requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
+
+	dormirse(RETARDO_ACCESO); //Aplicamos el retraso de acceso
 
 	char* paginaObtenida = NULL;
 	paginaObtenida = swap_ObtenerPagina(pid, numeroPagina);
@@ -253,8 +251,6 @@ int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
 		paginas_EscribirPaginaEnSWAP(codigo, posicionPaginaEnSWAP);
 		log_info(LOG_SWAP, "Requested page has been successfully overwritten");
 
-		imprimir_EstadoBitMap();
-
 		return 0;
 	}
 
@@ -273,6 +269,8 @@ int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
 
 	log_info(LOG_SWAP, "Requested page has been successfully written");
 
+	imprimir_EstadoBitMap(); //SOLO IMPRIMO EL BITMAP CUANDO ESCRIBO UNA NUEVA PAGINA
+
 	return 0;
 }
 
@@ -287,14 +285,14 @@ int request_FinalizacionPrograma(int pid){
 	if(paginasLiberadas > 0){
 		log_info(LOG_SWAP, "Program finalized. Pages released: %d", paginasLiberadas);
 
+		imprimir_EstadoBitMap();
+
 		return 1;
 	} else {
 		log_error(LOG_SWAP, "Error while releasing pages");
 
 		return -1;
 	}
-
-	imprimir_EstadoBitMap();
 
 }
 
@@ -306,8 +304,8 @@ int request_FinalizacionPrograma(int pid){
 
 //TODO
 int init_args(int argc, char **argv){
-	/*
-	if(argc != 1){
+
+	if(argc < 0){
 		puts("[FATAL ERROR] Wrong number of parameters. Expected parameters: ConfigName");
 
 		return -1;
@@ -333,26 +331,17 @@ int init_args(int argc, char **argv){
 	strcat(PATH_CONF, argv[1]); //CAMBIAR POR argv[0]
 	printf("[INFO] PATH SWAP config: %s \n", PATH_CONF);
 
-	/*
-	printf("%s \n", ABSOLUTE_PATH_SWAP);
-	printf("%s \n", PATH_LOG);
-	printf("%s \n", PATH_SWAP_FILE);
-	printf("%s \n", PATH_CONF);
-	*/
-
-
-	//DESPUES SACAR!
-	/*
-	strcpy(PATH_LOG, LOG_PROVISIORIO);
-	strcpy(PATH_SWAP_FILE, SWAP_PROVISORIO);
-	strcpy(PATH_CONF, CONF_PROVISORIO);
-*/
 	return 0;
 }
 
 int init_Config(){
 	//ARCHIVO DE CONFIGURACION
-    char* keys[4] = {"IP_SWAP", "PUERTO_ESCUCHA", "CANTIDAD_PAGINAS", "RETARDO_COMPACTACION"};
+    char* keys[6] = {"IP_SWAP",
+					 "PUERTO_ESCUCHA",
+					 "CANTIDAD_PAGINAS",
+					 "RETARDO_COMPACTACION",
+					 "SWAP_DATA",
+					 "RETARDO_ACCESO"};
 
 	log_info(LOG_SWAP, "Reading configuration File");
 
@@ -389,8 +378,13 @@ int init_Config(){
 						break;
 
 					case 4:
-						SWAP_DATA_NAME = config_get_int_value(punteroAStruct,keys[i]);
-						log_info(LOG_SWAP, "%s --> %d", keys[i], SWAP_DATA_NAME);
+						SWAP_DATA_NAME = config_get_string_value(punteroAStruct,keys[i]);
+						log_info(LOG_SWAP, "%s --> %s", keys[i], SWAP_DATA_NAME);
+						break;
+
+					case 5:
+						RETARDO_ACCESO = config_get_int_value(punteroAStruct,keys[i]);
+						log_info(LOG_SWAP, "%s --> %d", keys[i], RETARDO_ACCESO);
 						break;
 				}
 
@@ -622,8 +616,9 @@ int init_SwapFile(){
 	log_info(LOG_SWAP, ".:: CREATING SWAP FILE ::.");
 
 	//Creamos el path del archivo data con el nombre especificado en el archivo de configuracion
-	PATH_SWAP_FILE = malloc(sizeof(char)*150);
+	PATH_SWAP_FILE = calloc(sizeof(char), 150);
 	strcat(PATH_SWAP_FILE, ABSOLUTE_PATH_SWAP);
+	strcat(PATH_SWAP_FILE, "/");
 	strcat(PATH_SWAP_FILE, SWAP_DATA_NAME);
 	log_info(LOG_SWAP, "[INFO] PATH SWAP data: %s", PATH_SWAP_FILE);
 
@@ -1212,4 +1207,9 @@ void excepcionAlHablarConUMC(){
 	log_error(LOG_SWAP, "An error ocurred while trying to make a send to UMC");
 	close_SwapProcess();
 	exit(1);
+}
+
+void dormirse(int segundos){
+	log_warning(LOG_SWAP,"Sleeping for: %d seconds...", segundos);
+	sleep(segundos);
 }
