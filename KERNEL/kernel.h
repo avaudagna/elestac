@@ -63,6 +63,7 @@ int		control_clients();
 int 	accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista);
 int     getIOindex(char *io_name);
 int     getSharedIndex(char *shared_name);
+int     getSEMindex(char *sem_id);
 void    call_handlers();
 void 	tratarSeniales(int);
 void 	round_robin();
@@ -78,4 +79,5 @@ void    *do_work(void *p);
 t_pcb*  recvPCB(int cpuID);
 pthread_mutex_t mut_io_list;
 sem_t *semaforo_io;
+sem_t *semaforo_ansisop;
 #endif /* KERNEL_H_ */

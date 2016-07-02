@@ -59,9 +59,9 @@ int main (int argc, char **argv){
 }
 
 int start_kernel(int argc, char* configFile){
-	printf("\n\t===========================================\n");
+	printf("\n\t\e[31;1m===========================================\e[0m\n");
 	printf("\t.:: Vamo a calmarno que viene el Kernel ::.");
-	printf("\n\t===========================================\n\n");
+	printf("\n\t\e[31;1m===========================================\e[0m\n\n");
 	if (argc==2){
 		if (loadConfig(configFile)<0) {
 			log_error(kernel_log, "Config file can not be loaded. Please, try again.");
@@ -91,8 +91,30 @@ int start_kernel(int argc, char* configFile){
 	return 0;
 }
 
-void* do_work(void *p) {
+void* wait_coordination(void *p) {
 	int miID = *((int *) p);
+	char *tmp_buff = malloc(4);
+	recv(miID, tmp_buff, 1, 0);
+	bool semWait=false;
+	if (strncmp(tmp_buff, "0", 1) == 0) semWait=true;
+	recv(miID, tmp_buff, 4, 0);
+	size_t SEM_ID_Size = (size_t) atoi(tmp_buff);
+	char *SEM_ID = malloc(SEM_ID_Size);
+	recv(miID, SEM_ID, SEM_ID_Size, 0);
+	int semIndex = getSEMindex(SEM_ID);
+	if(semWait){
+		log_info(kernel_log, "wait_coordination: WAIT semaphore %s by CPU %s.", setup.SEM_IDS[semIndex], miID);
+		sem_wait(&semaforo_ansisop[semIndex]);
+		send(miID, "0", 1, 0);
+	}else {
+		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %s.", setup.SEM_IDS[semIndex], miID);
+		sem_post(&semaforo_ansisop[semIndex]);
+	}
+	free(tmp_buff);
+}
+void* do_work(void *p) {
+	int tmp = *((int *) p);
+	int miID = tmp;
 	t_io *io_op;
 	log_info(kernel_log, "do_work: Starting the device %s with a sleep of %s milliseconds.", setup.IO_IDS[miID], setup.IO_SLEEP[miID]);
 	while(1){
@@ -123,7 +145,8 @@ void* do_work(void *p) {
 }
 
 int loadConfig(char* configFile){
-	int counter = 0, i = 0;
+	int counter, i = 0;
+	unsigned int initValue;
 	pthread_t *io_device;
 	if (configFile == NULL)	return -1;
 	t_config *config = config_create(configFile);
@@ -135,28 +158,31 @@ int loadConfig(char* configFile){
 		setup.QUANTUM_SLEEP = config_get_int_value(config,"QUANTUM_SLEEP");
 		setup.IO_IDS = config_get_array_value(config,"IO_IDS");
 		setup.IO_SLEEP = config_get_array_value(config,"IO_SLEEP");
-		while(setup.IO_IDS[counter])
-			counter++;
+		counter=0; while(setup.IO_IDS[counter]) counter++;
 		setup.IO_COUNT = counter;
 		solicitudes_io = realloc(solicitudes_io, counter * sizeof(t_list));
 		semaforo_io = realloc(semaforo_io, counter * sizeof(sem_t));
 		io_device = malloc(sizeof(pthread_t) * counter);
+		int *thread_id = malloc(sizeof(int) * counter);
 		for (i = 0; i < counter; i++) {
 			solicitudes_io[i] = list_create();
 			sem_init(&semaforo_io[i], 0, 0);
-			int *thread_id = malloc(sizeof(int));
-			*thread_id=i;
-			pthread_create(&io_device[i],NULL,do_work, thread_id);
+			thread_id[i]=i;
+			pthread_create(&io_device[i],NULL,do_work, &thread_id[i]);
 		}
 		setup.SEM_IDS=config_get_array_value(config,"SEM_IDS");
 		setup.SEM_INIT=config_get_array_value(config,"SEM_INIT");
-		counter=0;
+		counter=0; while (setup.SEM_IDS[counter]) counter++;
+		semaforo_ansisop = realloc(semaforo_ansisop, counter * sizeof(sem_t));
+		for (i = 0; i < counter; i++) {
+			initValue = (uint) atoi(setup.SEM_INIT[i]);
+			sem_init(&semaforo_ansisop[i], 0, initValue);
+		}
 		setup.SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
-		while(setup.SHARED_VARS[counter])
-			counter++;
+		counter=0; while(setup.SHARED_VARS[counter]) counter++;
 		setup.SHARED_VALUES = realloc(setup.SHARED_VALUES, counter * sizeof(int));
 		for (i = 0; i < counter; i++) {
-			setup.SHARED_VALUES[counter]=0;
+			setup.SHARED_VALUES[i]=0;
 		}
 		setup.STACK_SIZE=config_get_int_value(config,"STACK_SIZE");
 		setup.PUERTO_UMC=config_get_int_value(config,"PUERTO_UMC");
@@ -192,7 +218,7 @@ void *requestPages2UMC(void* request_buffer){
 	deserialize_data(PID, sizeof(int), request_buffer, &deserialize_index);
 	deserialize_data(&ansisopLen, sizeof(int), request_buffer, &deserialize_index);
 	code = malloc((size_t) ansisopLen);
-	deserialize_data(code, ansisopLen, request_buffer, &deserialize_index);
+	deserialize_data(code, (size_t) ansisopLen, request_buffer, &deserialize_index);
 	deserialize_data(&clientUMC, sizeof(int), request_buffer, &deserialize_index);
 	char* buffer;
 	char buffer_4[4];
@@ -301,12 +327,13 @@ void check_CPU_FD_ISSET(void *cpu){
 				restoreCPU(laCPU);
 				break;
 			case 4:// semaforo
-				log_debug(kernel_log, "Receving a semaphore operation");
-				//wait   [identificador de semáforo]
-				//signal [identificador de semáforo]
+				log_debug(kernel_log, "Receving a semaphore operation from CPU %d", laCPU->clientID);
+				int theCPUID = laCPU->clientID;
+				pthread_t sem_thread;
+				pthread_create(&sem_thread, NULL, wait_coordination, &theCPUID);
 				break;
 			case 5:// var compartida
-				log_debug(kernel_log, "Receving a shared var operation");
+				log_debug(kernel_log, "Receving a shared var operation from CPU %d", laCPU->clientID);
 				recv(laCPU->clientID, tmp_buff, 1, 0);
 				if (strncmp(tmp_buff, "1",1) == 0) setValue = 1;
 				recv(laCPU->clientID, tmp_buff, 4, 0);
@@ -327,24 +354,26 @@ void check_CPU_FD_ISSET(void *cpu){
 				free(theShared);
 				break;
 			case 6:// imprimirValor
-				log_debug(kernel_log, "Receving a value to print on console");
+				log_debug(kernel_log, "Receving a value to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
 				recv(laCPU->clientID, tmp_buff, 4, 0);
 				size_t nameSize = (size_t) atoi(tmp_buff);
 				char *theName = malloc(nameSize);
 				recv(laCPU->clientID, theName, nameSize, 0);
 				recv(laCPU->clientID, tmp_buff, 4, 0);
 				char *value2console = malloc(1+4+nameSize+4);
+				log_debug(kernel_log, "Console %d will print the variable %s with value %d.", laCPU->pid, theName, tmp_buff);
 				asprintf(&value2console, "%d%04d%s%04d", 1, nameSize, theName, tmp_buff);//1+nameSize+name+value
 				send(laCPU->pid, value2console, (9+nameSize), 0); // send the value to the console
 				free(theName);
 				free(value2console);
 				break;
 			case 7:// imprimirTexto
-				log_debug(kernel_log, "Receving a text to print on console");
+				log_debug(kernel_log, "Receving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
 				recv(laCPU->clientID, tmp_buff, 4, 0);
 				size_t txtSize = (size_t) atoi(tmp_buff);
 				char *theTXT = malloc(txtSize);
 				recv(laCPU->clientID, theTXT, txtSize, 0);
+				log_debug(kernel_log, "Console %d will print the text %s.", laCPU->pid, theTXT);
 				char *txt2console = malloc(1+4+txtSize);
 				asprintf(&txt2console, "%d%04d%s", 2, txtSize, theTXT);
 				send(laCPU->pid, txt2console, (5+txtSize), 0); // send the text to the console
@@ -613,6 +642,17 @@ int getIOindex(char *io_name) {
 		if (strcmp(setup.IO_IDS[i],io_name) == 0) {
 			return i;
 		}
+	}
+	return -1;
+}
+
+int getSEMindex(char *sem_id) {
+	int i=0;
+	while(setup.SEM_IDS){
+		if (strcmp(setup.SEM_IDS[i],sem_id) == 0) {
+			return i;
+		}
+		i++;
 	}
 	return -1;
 }
