@@ -532,7 +532,6 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 		newPCB->etiquetas = metadata->etiquetas;
 		list_add(PCB_READY,newPCB);
 		log_info(kernel_log, "The program with PID=%04d is now READY (%d).", newPCB->pid, newPCB->status);
-		log_info(kernel_log, "Consoles after accepting: %d.", list_size(PCB_READY));
 	} else {
 		send(newConsole,"0000",4,0);
 		log_error(kernel_log, "The program with PID=%04d could not be started. System run out of memory.", newConsole);
@@ -556,10 +555,17 @@ void round_robin(){
     tmp_buffer = realloc(tmp_buffer , (size_t) tmp_buffer_size + pcb_buffer_size);
 	serialize_data(pcb_buffer, (size_t ) pcb_buffer_size, &tmp_buffer, &tmp_buffer_size );
 	log_info(kernel_log,"Submitting to CPU %d the PID %d.", laCPU->clientID, tuPCB->pid);
-	send(laCPU->clientID, tmp_buffer, tmp_buffer_size, 0);
+	send(laCPU->clientID, tmp_buffer, (size_t) tmp_buffer_size, 0);
 	free(tmp_buffer);
     free(pcb_buffer);
 	list_add(cpus_executing,laCPU);
+	int nBLOCKED = list_size(PCB_BLOCKED);
+	log_info(kernel_log, "Round Robin report:");
+	int nEXIT = list_size(PCB_EXIT);
+	int nEXEC = list_size(cpus_executing);
+	int nREADY = list_size(PCB_READY);
+	int nNEW = list_size(consolas_conectadas) - nREADY - nEXEC - nBLOCKED - nEXIT;
+	log_info(kernel_log, "NEW=%d, READY=%d, EXECUTING=%d, BLOCKED=%d, EXIT=%d: %d.", nNEW, nREADY, nEXEC, nBLOCKED, nEXIT);
 }
 
 void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen) { /* Search everywhere for the PID and kill it ! */
