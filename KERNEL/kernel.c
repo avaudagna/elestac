@@ -559,13 +559,6 @@ void round_robin(){
 	free(tmp_buffer);
     free(pcb_buffer);
 	list_add(cpus_executing,laCPU);
-	int nBLOCKED = list_size(PCB_BLOCKED);
-	log_info(kernel_log, "Round Robin report:");
-	int nEXIT = list_size(PCB_EXIT);
-	int nEXEC = list_size(cpus_executing);
-	int nREADY = list_size(PCB_READY);
-	int nNEW = list_size(consolas_conectadas) - nREADY - nEXEC - nBLOCKED - nEXIT;
-	log_info(kernel_log, "NEW=%d, READY=%d, EXECUTING=%d, BLOCKED=%d, EXIT=%d: %d.", nNEW, nREADY, nEXEC, nBLOCKED, nEXIT);
 }
 
 void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen) { /* Search everywhere for the PID and kill it ! */
@@ -682,5 +675,12 @@ void call_handlers() {
 	}
 	if (list_size(PCB_BLOCKED) > 0) process_io();
 	while (list_size(cpus_conectadas) > 0 && list_size(PCB_READY) > 0 ) round_robin();
+	log_info(kernel_log, "Round Robin report:");
+	int nBLOCKED = list_size(PCB_BLOCKED);
+	int nEXIT = list_size(PCB_EXIT);
+	int nEXEC = list_size(cpus_executing);
+	int nREADY = list_size(PCB_READY);
+	int nNEW = list_size(consolas_conectadas) - nREADY - nEXEC - nBLOCKED - nEXIT;
+	log_info(kernel_log, "NEW=%d, READY=%d, EXECUTING=%d, BLOCKED=%d, EXIT=%d: %d.", nNEW, nREADY, nEXEC, nBLOCKED, nEXIT);
 }
 // C'est tout
