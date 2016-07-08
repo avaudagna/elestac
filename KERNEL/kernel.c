@@ -494,7 +494,7 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 		t_pcb *newPCB=malloc(sizeof(t_pcb));
 		newPCB->pid=newConsole;
 		newPCB->program_counter=metadata->instruccion_inicio;
-		newPCB->stack_pointer=code_pages;
+		newPCB->stack_pointer=code_pages * setup.PAGE_SIZE;
 		newPCB->stack_index=queue_create();
 		newPCB->status=READY;
 		newPCB->instrucciones_size= metadata->instrucciones_size;
