@@ -1281,12 +1281,17 @@ void setBitModificado(int pPid, int pagina, int valorBitModificado) {
 
 	t_list * aux = NULL;
 	CLOCK_PAGINA * paginaClock = NULL;
+	PAGINA *pagAux = NULL;
 
 	aux = obtenerHeaderFifoxPid(pPid);
 
 	paginaClock = obtenerPaginaDeFifo(aux, pagina);
 
 	paginaClock->bitDeModificado = valorBitModificado;
+
+	pagAux = obtenerPagina(pPid,pagina);
+
+	pagAux->modificado = 1;
 
 
 }
