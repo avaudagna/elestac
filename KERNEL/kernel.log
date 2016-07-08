@@ -244,3 +244,412 @@
 [INFO] 15:30:28:596 Elestac-KERNEL/(15860:15868): do_work: Starting the device Coso with a sleep of 10 milliseconds
 
 [INFO] 15:30:28:596 Elestac-KERNEL/(15860:15860): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 22:36:36:953 Elestac-KERNEL/(22740:22740): Loading settings.
+[INFO] 22:36:36:954 Elestac-KERNEL/(22740:22744): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 22:36:36:954 Elestac-KERNEL/(22740:22745): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 22:36:36:956 Elestac-KERNEL/(22740:22740): Connecting to UMC on 127.0.0.1:6800.
+[INFO] 22:36:36:956 Elestac-KERNEL/(22740:22740): Stack size (sent to UMC): 0008.
+[INFO] 22:36:36:956 Elestac-KERNEL/(22740:22740): Page size: (received from UMC): 64.
+[INFO] 22:36:36:956 Elestac-KERNEL/(22740:22740): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 22:38:38:188 Elestac-KERNEL/(22740:22740): New console arriving (1).
+[INFO] 22:38:38:188 Elestac-KERNEL/(22740:22740): NEW (0) program with PID=0008 arriving.
+[INFO] 22:38:38:189 Elestac-KERNEL/(22740:22789): Requesting 0001 pages to UMC.
+[INFO] 22:39:48:290 Elestac-KERNEL/(22901:22901): Loading settings.
+[INFO] 22:39:48:290 Elestac-KERNEL/(22901:22905): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 22:39:48:290 Elestac-KERNEL/(22901:22906): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 22:39:48:290 Elestac-KERNEL/(22901:22901): Connecting to UMC on 127.0.0.1:6800.
+[INFO] 22:39:48:291 Elestac-KERNEL/(22901:22901): Stack size (sent to UMC): 0008.
+[INFO] 22:39:48:291 Elestac-KERNEL/(22901:22901): Page size: (received from UMC): 64.
+[ERROR] 22:39:48:291 Elestac-KERNEL/(22901:22901): Error while creating the CONSOLE server.
+[INFO] 22:43:48:50 Elestac-KERNEL/(23178:23178): Loading settings.
+[INFO] 22:43:48:50 Elestac-KERNEL/(23178:23182): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 22:43:48:51 Elestac-KERNEL/(23178:23183): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 22:43:48:51 Elestac-KERNEL/(23178:23178): Connecting to UMC on 127.0.0.1:6801.
+[INFO] 22:43:48:51 Elestac-KERNEL/(23178:23178): Stack size (sent to UMC): 0008.
+[INFO] 22:43:48:51 Elestac-KERNEL/(23178:23178): Page size: (received from UMC): 64.
+[INFO] 22:43:48:51 Elestac-KERNEL/(23178:23178): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 22:44:02:630 Elestac-KERNEL/(23178:23178): New console arriving (1).
+[INFO] 22:44:02:631 Elestac-KERNEL/(23178:23178): NEW (0) program with PID=0008 arriving.
+[INFO] 22:44:02:631 Elestac-KERNEL/(23178:23193): Requesting 0001 pages to UMC.
+[INFO] 22:44:03:635 Elestac-KERNEL/(23178:23193): UMC replied.
+[INFO] 22:44:03:635 Elestac-KERNEL/(23178:23193): Pages of code + stack = 1.
+[INFO] 22:44:03:635 Elestac-KERNEL/(23178:23193): The program with PID=0008 is now READY (1).
+[INFO] 22:44:03:635 Elestac-KERNEL/(23178:23193): Consoles after accepting: 1.
+[INFO] 23:01:26:546 Elestac-KERNEL/(23178:23178): New CPU arriving (1).
+[INFO] 23:01:26:546 Elestac-KERNEL/(23178:23178): New CPU accepted with ID 9
+[INFO] 23:01:26:546 Elestac-KERNEL/(23178:23178): Submitting to CPU 9 the PID 8.
+[INFO] 00:18:41:90 Elestac-KERNEL/(25545:25545): Loading settings.
+[INFO] 00:18:41:93 Elestac-KERNEL/(25545:25549): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 00:18:41:94 Elestac-KERNEL/(25545:25545): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 00:18:41:94 Elestac-KERNEL/(25545:25545): Stack size (sent to UMC): 0008.
+[INFO] 00:18:41:94 Elestac-KERNEL/(25545:25550): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 00:18:41:94 Elestac-KERNEL/(25545:25545): Page size: (received from UMC): 64.
+[INFO] 00:18:41:94 Elestac-KERNEL/(25545:25545): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 00:19:01:799 Elestac-KERNEL/(25545:25545): New console arriving (1).
+[INFO] 00:19:01:799 Elestac-KERNEL/(25545:25545): NEW (0) program with PID=0008 arriving.
+[INFO] 00:19:01:799 Elestac-KERNEL/(25545:25558): Requesting 0001 pages to UMC.
+[INFO] 00:19:02:804 Elestac-KERNEL/(25545:25558): UMC replied.
+[INFO] 00:19:02:804 Elestac-KERNEL/(25545:25558): Pages of code + stack = 1.
+[INFO] 00:19:02:805 Elestac-KERNEL/(25545:25558): The program with PID=0008 is now READY (1).
+[INFO] 00:19:02:805 Elestac-KERNEL/(25545:25558): Consoles after accepting: 1.
+[INFO] 00:28:28:475 Elestac-KERNEL/(25545:25545): A console has closed the connection, the associated PID 0008 will be terminated.
+[INFO] 00:33:55:339 Elestac-KERNEL/(25969:25969): Loading settings.
+[INFO] 00:33:55:339 Elestac-KERNEL/(25969:25973): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 00:33:55:339 Elestac-KERNEL/(25969:25974): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 00:33:55:340 Elestac-KERNEL/(25969:25969): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 00:33:55:340 Elestac-KERNEL/(25969:25969): Stack size (sent to UMC): 0008.
+[INFO] 00:33:55:340 Elestac-KERNEL/(25969:25969): Page size: (received from UMC): 5.
+[INFO] 00:33:55:340 Elestac-KERNEL/(25969:25969): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 00:34:57:725 Elestac-KERNEL/(25969:25969): New console arriving (1).
+[INFO] 00:34:57:725 Elestac-KERNEL/(25969:25969): NEW (0) program with PID=0008 arriving.
+[INFO] 00:34:57:725 Elestac-KERNEL/(25969:25992): Requesting 0011 pages to UMC.
+[INFO] 00:34:58:734 Elestac-KERNEL/(25969:25992): UMC replied.
+[INFO] 00:34:58:734 Elestac-KERNEL/(25969:25992): Pages of code + stack = 11.
+[INFO] 00:34:58:735 Elestac-KERNEL/(25969:25992): The program with PID=0008 is now READY (1).
+[INFO] 00:34:58:735 Elestac-KERNEL/(25969:25992): Consoles after accepting: 1.
+[INFO] 00:36:01:375 Elestac-KERNEL/(25969:25969): New CPU arriving (1).
+[INFO] 00:36:01:375 Elestac-KERNEL/(25969:25969): New CPU accepted with ID 9
+[INFO] 00:36:01:375 Elestac-KERNEL/(25969:25969): Submitting to CPU 9 the PID 8.
+[INFO] 00:38:21:28 Elestac-KERNEL/(25969:25969): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 00:38:26:721 Elestac-KERNEL/(25969:25969): CPU 9 has something to say.
+[INFO] 00:38:26:721 Elestac-KERNEL/(25969:25969): CPU 9 has closed the connection.
+[INFO] 00:41:13:28 Elestac-KERNEL/(26302:26302): Loading settings.
+[INFO] 00:41:13:28 Elestac-KERNEL/(26302:26307): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 00:41:13:29 Elestac-KERNEL/(26302:26308): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 00:41:13:29 Elestac-KERNEL/(26302:26302): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 00:41:13:29 Elestac-KERNEL/(26302:26302): Stack size (sent to UMC): 0008.
+[INFO] 00:41:13:29 Elestac-KERNEL/(26302:26302): Page size: (received from UMC): 5.
+[INFO] 00:41:13:29 Elestac-KERNEL/(26302:26302): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 00:41:22:77 Elestac-KERNEL/(26302:26302): New console arriving (1).
+[INFO] 00:41:22:77 Elestac-KERNEL/(26302:26302): NEW (0) program with PID=0008 arriving.
+[INFO] 00:41:22:77 Elestac-KERNEL/(26302:26317): Requesting 0011 pages to UMC.
+[INFO] 00:41:23:86 Elestac-KERNEL/(26302:26317): UMC replied.
+[INFO] 00:41:23:87 Elestac-KERNEL/(26302:26317): Pages of code + stack = 11.
+[INFO] 00:41:23:87 Elestac-KERNEL/(26302:26317): The program with PID=0008 is now READY (1).
+[INFO] 00:41:23:87 Elestac-KERNEL/(26302:26317): Consoles after accepting: 1.
+[INFO] 00:43:19:244 Elestac-KERNEL/(26302:26302): New CPU arriving (1).
+[INFO] 00:43:19:244 Elestac-KERNEL/(26302:26302): New CPU accepted with ID 9
+[INFO] 00:43:19:244 Elestac-KERNEL/(26302:26302): Submitting to CPU 9 the PID 8.
+[INFO] 00:45:04:31 Elestac-KERNEL/(26302:26302): A console has closed the connection, the associated PID 0008 will be terminated.
+[INFO] 01:43:15:196 Elestac-KERNEL/(27790:27790): Loading settings.
+[INFO] 01:43:15:197 Elestac-KERNEL/(27790:27795): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 01:43:15:197 Elestac-KERNEL/(27790:27796): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 01:43:15:197 Elestac-KERNEL/(27790:27790): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 01:43:15:198 Elestac-KERNEL/(27790:27790): Stack size (sent to UMC): 0008.
+[INFO] 01:43:15:198 Elestac-KERNEL/(27790:27790): Page size: (received from UMC): 5.
+[INFO] 01:43:15:198 Elestac-KERNEL/(27790:27790): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 01:43:23:858 Elestac-KERNEL/(27790:27790): New console arriving (1).
+[INFO] 01:43:23:858 Elestac-KERNEL/(27790:27790): NEW (0) program with PID=0008 arriving.
+[INFO] 01:43:23:858 Elestac-KERNEL/(27790:27802): Requesting 0011 pages to UMC.
+[INFO] 01:43:24:865 Elestac-KERNEL/(27790:27802): UMC replied.
+[INFO] 01:43:24:865 Elestac-KERNEL/(27790:27802): Pages of code + stack = 11.
+[INFO] 01:43:24:866 Elestac-KERNEL/(27790:27802): The program with PID=0008 is now READY (1).
+[INFO] 01:43:24:866 Elestac-KERNEL/(27790:27802): Consoles after accepting: 1.
+[INFO] 01:44:35:132 Elestac-KERNEL/(27790:27790): New CPU arriving (1).
+[INFO] 01:44:35:132 Elestac-KERNEL/(27790:27790): New CPU accepted with ID 9
+[INFO] 01:44:35:132 Elestac-KERNEL/(27790:27790): Submitting to CPU 9 the PID 8.
+[INFO] 01:46:56:810 Elestac-KERNEL/(27790:27790): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 01:47:03:757 Elestac-KERNEL/(27790:27790): CPU 9 has something to say.
+[INFO] 01:47:03:757 Elestac-KERNEL/(27790:27790): CPU 9 has closed the connection.
+[INFO] 01:49:22:575 Elestac-KERNEL/(28488:28488): Loading settings.
+[INFO] 01:49:22:575 Elestac-KERNEL/(28488:28492): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 01:49:22:575 Elestac-KERNEL/(28488:28493): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 01:49:22:575 Elestac-KERNEL/(28488:28488): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 01:49:22:576 Elestac-KERNEL/(28488:28488): Stack size (sent to UMC): 0008.
+[INFO] 01:49:22:576 Elestac-KERNEL/(28488:28488): Page size: (received from UMC): 5.
+[INFO] 01:49:22:576 Elestac-KERNEL/(28488:28488): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 01:49:45:179 Elestac-KERNEL/(28488:28488): New console arriving (1).
+[INFO] 01:49:45:179 Elestac-KERNEL/(28488:28488): NEW (0) program with PID=0008 arriving.
+[INFO] 01:49:45:179 Elestac-KERNEL/(28488:28505): Requesting 0011 pages to UMC.
+[INFO] 01:49:46:186 Elestac-KERNEL/(28488:28505): UMC replied.
+[INFO] 01:49:46:186 Elestac-KERNEL/(28488:28505): Pages of code + stack = 11.
+[INFO] 01:49:46:186 Elestac-KERNEL/(28488:28505): The program with PID=0008 is now READY (1).
+[INFO] 01:49:46:186 Elestac-KERNEL/(28488:28505): Consoles after accepting: 1.
+[INFO] 01:49:53:356 Elestac-KERNEL/(28488:28488): New CPU arriving (1).
+[INFO] 01:49:53:356 Elestac-KERNEL/(28488:28488): New CPU accepted with ID 9
+[INFO] 01:49:53:356 Elestac-KERNEL/(28488:28488): Submitting to CPU 9 the PID 8.
+[INFO] 01:55:30:259 Elestac-KERNEL/(28488:28488): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 01:55:35:574 Elestac-KERNEL/(28488:28488): CPU 9 has something to say.
+[INFO] 01:55:35:574 Elestac-KERNEL/(28488:28488): CPU 9 has closed the connection.
+[INFO] 02:00:10:536 Elestac-KERNEL/(28777:28777): Loading settings.
+[INFO] 02:00:10:537 Elestac-KERNEL/(28777:28781): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 02:00:10:540 Elestac-KERNEL/(28777:28782): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 02:00:10:540 Elestac-KERNEL/(28777:28777): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 02:00:10:540 Elestac-KERNEL/(28777:28777): Stack size (sent to UMC): 0008.
+[INFO] 02:00:10:540 Elestac-KERNEL/(28777:28777): Page size: (received from UMC): 5.
+[INFO] 02:00:10:541 Elestac-KERNEL/(28777:28777): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 02:00:17:104 Elestac-KERNEL/(28777:28777): New console arriving (1).
+[INFO] 02:00:17:104 Elestac-KERNEL/(28777:28777): NEW (0) program with PID=0008 arriving.
+[INFO] 02:00:17:105 Elestac-KERNEL/(28777:28790): Requesting 0011 pages to UMC.
+[INFO] 02:00:18:108 Elestac-KERNEL/(28777:28790): UMC replied.
+[INFO] 02:00:18:108 Elestac-KERNEL/(28777:28790): Pages of code + stack = 11.
+[INFO] 02:00:18:108 Elestac-KERNEL/(28777:28790): The program with PID=0008 is now READY (1).
+[INFO] 02:00:18:108 Elestac-KERNEL/(28777:28790): Consoles after accepting: 1.
+[INFO] 02:00:27:308 Elestac-KERNEL/(28777:28777): New CPU arriving (1).
+[INFO] 02:00:27:308 Elestac-KERNEL/(28777:28777): New CPU accepted with ID 9
+[INFO] 02:00:27:308 Elestac-KERNEL/(28777:28777): Submitting to CPU 9 the PID 8.
+[INFO] 03:12:13:680 Elestac-KERNEL/(28777:28777): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 03:12:30:977 Elestac-KERNEL/(28777:28777): CPU 9 has something to say.
+[INFO] 03:12:30:977 Elestac-KERNEL/(28777:28777): CPU 9 has closed the connection.
+[INFO] 03:14:43:757 Elestac-KERNEL/(30139:30139): Loading settings.
+[INFO] 03:14:43:758 Elestac-KERNEL/(30139:30143): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 03:14:43:758 Elestac-KERNEL/(30139:30144): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 03:14:43:758 Elestac-KERNEL/(30139:30139): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 03:14:43:758 Elestac-KERNEL/(30139:30139): Stack size (sent to UMC): 0008.
+[INFO] 03:14:43:759 Elestac-KERNEL/(30139:30139): Page size: (received from UMC): 5.
+[INFO] 03:14:43:759 Elestac-KERNEL/(30139:30139): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 03:15:05:433 Elestac-KERNEL/(30139:30139): New console arriving (1).
+[INFO] 03:15:05:433 Elestac-KERNEL/(30139:30139): NEW (0) program with PID=0008 arriving.
+[INFO] 03:15:05:433 Elestac-KERNEL/(30139:30153): Requesting 0011 pages to UMC.
+[INFO] 03:15:06:439 Elestac-KERNEL/(30139:30153): UMC replied.
+[INFO] 03:15:06:439 Elestac-KERNEL/(30139:30153): Pages of code + stack = 11.
+[INFO] 03:15:06:440 Elestac-KERNEL/(30139:30153): The program with PID=0008 is now READY (1).
+[INFO] 03:15:06:440 Elestac-KERNEL/(30139:30153): Consoles after accepting: 1.
+[INFO] 03:28:55:697 Elestac-KERNEL/(30139:30139): New CPU arriving (1).
+[INFO] 03:28:55:697 Elestac-KERNEL/(30139:30139): New CPU accepted with ID 9
+[INFO] 03:28:55:697 Elestac-KERNEL/(30139:30139): Submitting to CPU 9 the PID 8.
+[INFO] 03:37:59:885 Elestac-KERNEL/(30139:30139): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 03:38:08:563 Elestac-KERNEL/(30139:30139): CPU 9 has something to say.
+[INFO] 03:38:08:563 Elestac-KERNEL/(30139:30139): CPU 9 has closed the connection.
+[INFO] 03:40:59:733 Elestac-KERNEL/(30720:30720): Loading settings.
+[INFO] 03:40:59:734 Elestac-KERNEL/(30720:30724): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 03:40:59:734 Elestac-KERNEL/(30720:30720): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 03:40:59:735 Elestac-KERNEL/(30720:30720): Stack size (sent to UMC): 0008.
+[INFO] 03:40:59:735 Elestac-KERNEL/(30720:30725): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 03:40:59:735 Elestac-KERNEL/(30720:30720): Page size: (received from UMC): 5.
+[INFO] 03:40:59:735 Elestac-KERNEL/(30720:30720): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 03:41:10:287 Elestac-KERNEL/(30720:30720): New console arriving (1).
+[INFO] 03:41:10:287 Elestac-KERNEL/(30720:30720): NEW (0) program with PID=0008 arriving.
+[INFO] 03:41:10:288 Elestac-KERNEL/(30720:30736): Requesting 0011 pages to UMC.
+[INFO] 03:41:11:291 Elestac-KERNEL/(30720:30736): UMC replied.
+[INFO] 03:41:11:291 Elestac-KERNEL/(30720:30736): Pages of code + stack = 11.
+[INFO] 03:41:11:291 Elestac-KERNEL/(30720:30736): The program with PID=0008 is now READY (1).
+[INFO] 03:41:11:291 Elestac-KERNEL/(30720:30736): Consoles after accepting: 1.
+[INFO] 03:41:16:18 Elestac-KERNEL/(30720:30720): New CPU arriving (1).
+[INFO] 03:41:16:18 Elestac-KERNEL/(30720:30720): New CPU accepted with ID 9
+[INFO] 03:41:16:18 Elestac-KERNEL/(30720:30720): Submitting to CPU 9 the PID 8.
+[INFO] 04:16:12:170 Elestac-KERNEL/(30720:30720): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 04:16:30:7 Elestac-KERNEL/(30720:30720): CPU 9 has something to say.
+[INFO] 04:16:30:7 Elestac-KERNEL/(30720:30720): CPU 9 has closed the connection.
+[INFO] 04:16:56:824 Elestac-KERNEL/(31503:31503): Loading settings.
+[INFO] 04:16:56:824 Elestac-KERNEL/(31503:31507): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 04:16:56:825 Elestac-KERNEL/(31503:31503): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 04:16:56:825 Elestac-KERNEL/(31503:31503): Stack size (sent to UMC): 0008.
+[INFO] 04:16:56:825 Elestac-KERNEL/(31503:31508): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 04:16:56:825 Elestac-KERNEL/(31503:31503): Page size: (received from UMC): 5.
+[INFO] 04:16:56:825 Elestac-KERNEL/(31503:31503): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 04:17:11:442 Elestac-KERNEL/(31503:31503): New console arriving (1).
+[INFO] 04:17:11:442 Elestac-KERNEL/(31503:31503): NEW (0) program with PID=0008 arriving.
+[INFO] 04:17:11:442 Elestac-KERNEL/(31503:31515): Requesting 0011 pages to UMC.
+[INFO] 04:17:12:450 Elestac-KERNEL/(31503:31515): UMC replied.
+[INFO] 04:17:12:451 Elestac-KERNEL/(31503:31515): Pages of code + stack = 11.
+[INFO] 04:17:12:451 Elestac-KERNEL/(31503:31515): The program with PID=0008 is now READY (1).
+[INFO] 04:17:12:451 Elestac-KERNEL/(31503:31515): Consoles after accepting: 1.
+[INFO] 04:17:21:577 Elestac-KERNEL/(31503:31503): New CPU arriving (1).
+[INFO] 04:17:21:577 Elestac-KERNEL/(31503:31503): New CPU accepted with ID 9
+[INFO] 04:17:21:577 Elestac-KERNEL/(31503:31503): Submitting to CPU 9 the PID 8.
+[INFO] 04:26:32:899 Elestac-KERNEL/(31503:31503): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 04:26:37:338 Elestac-KERNEL/(31503:31503): CPU 9 has something to say.
+[INFO] 04:26:37:339 Elestac-KERNEL/(31503:31503): CPU 9 has closed the connection.
+[INFO] 04:29:09:515 Elestac-KERNEL/(31846:31846): Loading settings.
+[INFO] 04:29:09:515 Elestac-KERNEL/(31846:31850): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 04:29:09:515 Elestac-KERNEL/(31846:31851): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 04:29:09:515 Elestac-KERNEL/(31846:31846): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 04:29:09:516 Elestac-KERNEL/(31846:31846): Stack size (sent to UMC): 0008.
+[INFO] 04:29:09:516 Elestac-KERNEL/(31846:31846): Page size: (received from UMC): 5.
+[INFO] 04:29:09:516 Elestac-KERNEL/(31846:31846): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 04:29:14:761 Elestac-KERNEL/(31846:31846): New console arriving (1).
+[INFO] 04:29:14:761 Elestac-KERNEL/(31846:31846): NEW (0) program with PID=0008 arriving.
+[INFO] 04:29:14:761 Elestac-KERNEL/(31846:31856): Requesting 0011 pages to UMC.
+[INFO] 04:29:15:764 Elestac-KERNEL/(31846:31856): UMC replied.
+[INFO] 04:29:15:764 Elestac-KERNEL/(31846:31856): Pages of code + stack = 11.
+[INFO] 04:29:15:764 Elestac-KERNEL/(31846:31856): The program with PID=0008 is now READY (1).
+[INFO] 04:29:15:764 Elestac-KERNEL/(31846:31856): Consoles after accepting: 1.
+[INFO] 04:29:20:176 Elestac-KERNEL/(31846:31846): New CPU arriving (1).
+[INFO] 04:29:20:177 Elestac-KERNEL/(31846:31846): New CPU accepted with ID 9
+[INFO] 04:29:20:177 Elestac-KERNEL/(31846:31846): Submitting to CPU 9 the PID 8.
+[INFO] 05:01:58:268 Elestac-KERNEL/(31846:31846): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 05:02:11:185 Elestac-KERNEL/(31846:31846): CPU 9 has something to say.
+[INFO] 05:02:11:185 Elestac-KERNEL/(31846:31846): CPU 9 has closed the connection.
+[INFO] 05:02:46:439 Elestac-KERNEL/(32549:32549): Loading settings.
+[INFO] 05:02:46:439 Elestac-KERNEL/(32549:32553): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 05:02:46:440 Elestac-KERNEL/(32549:32554): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 05:02:46:440 Elestac-KERNEL/(32549:32549): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 05:02:46:441 Elestac-KERNEL/(32549:32549): Stack size (sent to UMC): 0008.
+[INFO] 05:02:46:441 Elestac-KERNEL/(32549:32549): Page size: (received from UMC): 5.
+[INFO] 05:02:46:441 Elestac-KERNEL/(32549:32549): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 05:02:51:616 Elestac-KERNEL/(32549:32549): New console arriving (1).
+[INFO] 05:02:51:616 Elestac-KERNEL/(32549:32549): NEW (0) program with PID=0008 arriving.
+[INFO] 05:02:51:616 Elestac-KERNEL/(32549:32558): Requesting 0011 pages to UMC.
+[INFO] 05:02:52:620 Elestac-KERNEL/(32549:32558): UMC replied.
+[INFO] 05:02:52:620 Elestac-KERNEL/(32549:32558): Pages of code + stack = 11.
+[INFO] 05:02:52:620 Elestac-KERNEL/(32549:32558): The program with PID=0008 is now READY (1).
+[INFO] 05:02:52:620 Elestac-KERNEL/(32549:32558): Consoles after accepting: 1.
+[INFO] 05:02:59:811 Elestac-KERNEL/(32549:32549): New CPU arriving (1).
+[INFO] 05:02:59:811 Elestac-KERNEL/(32549:32549): New CPU accepted with ID 9
+[INFO] 05:02:59:811 Elestac-KERNEL/(32549:32549): Submitting to CPU 9 the PID 8.
+[INFO] 05:47:05:731 Elestac-KERNEL/(32549:32549): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 05:47:13:594 Elestac-KERNEL/(32549:32549): CPU 9 has something to say.
+[INFO] 05:47:13:594 Elestac-KERNEL/(32549:32549): CPU 9 has closed the connection.
+[INFO] 05:47:42:232 Elestac-KERNEL/(1324:1324): Loading settings.
+[INFO] 05:47:42:233 Elestac-KERNEL/(1324:1329): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 05:47:42:233 Elestac-KERNEL/(1324:1324): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 05:47:42:233 Elestac-KERNEL/(1324:1324): Stack size (sent to UMC): 0008.
+[INFO] 05:47:42:233 Elestac-KERNEL/(1324:1330): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 05:47:42:233 Elestac-KERNEL/(1324:1324): Page size: (received from UMC): 5.
+[INFO] 05:47:42:233 Elestac-KERNEL/(1324:1324): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 05:47:48:171 Elestac-KERNEL/(1324:1324): New console arriving (1).
+[INFO] 05:47:48:171 Elestac-KERNEL/(1324:1324): NEW (0) program with PID=0008 arriving.
+[INFO] 05:47:48:171 Elestac-KERNEL/(1324:1335): Requesting 0011 pages to UMC.
+[INFO] 05:47:49:174 Elestac-KERNEL/(1324:1335): UMC replied.
+[INFO] 05:47:49:174 Elestac-KERNEL/(1324:1335): Pages of code + stack = 11.
+[INFO] 05:47:49:175 Elestac-KERNEL/(1324:1335): The program with PID=0008 is now READY (1).
+[INFO] 05:47:49:175 Elestac-KERNEL/(1324:1335): Consoles after accepting: 1.
+[INFO] 05:48:45:942 Elestac-KERNEL/(1324:1324): New CPU arriving (1).
+[INFO] 05:48:45:942 Elestac-KERNEL/(1324:1324): New CPU accepted with ID 9
+[INFO] 05:48:45:942 Elestac-KERNEL/(1324:1324): Submitting to CPU 9 the PID 8.
+[INFO] 05:55:35:429 Elestac-KERNEL/(1324:1324): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 05:55:42:473 Elestac-KERNEL/(1324:1324): CPU 9 has something to say.
+[INFO] 05:55:42:473 Elestac-KERNEL/(1324:1324): CPU 9 has closed the connection.
+[INFO] 05:56:48:561 Elestac-KERNEL/(1719:1719): Loading settings.
+[INFO] 05:56:48:561 Elestac-KERNEL/(1719:1723): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 05:56:48:561 Elestac-KERNEL/(1719:1724): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 05:56:48:561 Elestac-KERNEL/(1719:1719): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 05:56:48:562 Elestac-KERNEL/(1719:1719): Stack size (sent to UMC): 0008.
+[INFO] 05:56:48:562 Elestac-KERNEL/(1719:1719): Page size: (received from UMC): 5.
+[INFO] 05:56:48:562 Elestac-KERNEL/(1719:1719): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 05:56:53:921 Elestac-KERNEL/(1719:1719): New console arriving (1).
+[INFO] 05:56:53:921 Elestac-KERNEL/(1719:1719): NEW (0) program with PID=0008 arriving.
+[INFO] 05:56:53:921 Elestac-KERNEL/(1719:1731): Requesting 0011 pages to UMC.
+[INFO] 05:56:54:924 Elestac-KERNEL/(1719:1731): UMC replied.
+[INFO] 05:56:54:924 Elestac-KERNEL/(1719:1731): Pages of code + stack = 11.
+[INFO] 05:56:54:924 Elestac-KERNEL/(1719:1731): The program with PID=0008 is now READY (1).
+[INFO] 05:56:54:924 Elestac-KERNEL/(1719:1731): Consoles after accepting: 1.
+[INFO] 05:56:58:689 Elestac-KERNEL/(1719:1719): New CPU arriving (1).
+[INFO] 05:56:58:689 Elestac-KERNEL/(1719:1719): New CPU accepted with ID 9
+[INFO] 05:56:58:689 Elestac-KERNEL/(1719:1719): Submitting to CPU 9 the PID 8.
+[INFO] 05:58:52:313 Elestac-KERNEL/(1719:1719): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 05:58:59:763 Elestac-KERNEL/(1719:1719): CPU 9 has something to say.
+[INFO] 05:58:59:763 Elestac-KERNEL/(1719:1719): CPU 9 has closed the connection.
+[INFO] 05:59:25:72 Elestac-KERNEL/(1892:1892): Loading settings.
+[INFO] 05:59:25:76 Elestac-KERNEL/(1892:1896): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 05:59:25:76 Elestac-KERNEL/(1892:1897): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 05:59:25:76 Elestac-KERNEL/(1892:1892): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 05:59:25:76 Elestac-KERNEL/(1892:1892): Stack size (sent to UMC): 0008.
+[INFO] 05:59:25:76 Elestac-KERNEL/(1892:1892): Page size: (received from UMC): 5.
+[INFO] 05:59:25:76 Elestac-KERNEL/(1892:1892): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 05:59:27:996 Elestac-KERNEL/(1892:1892): New console arriving (1).
+[INFO] 05:59:27:996 Elestac-KERNEL/(1892:1892): NEW (0) program with PID=0008 arriving.
+[INFO] 05:59:27:996 Elestac-KERNEL/(1892:1901): Requesting 0011 pages to UMC.
+[INFO] 05:59:28:999 Elestac-KERNEL/(1892:1901): UMC replied.
+[INFO] 05:59:28:999 Elestac-KERNEL/(1892:1901): Pages of code + stack = 11.
+[INFO] 05:59:28:999 Elestac-KERNEL/(1892:1901): The program with PID=0008 is now READY (1).
+[INFO] 05:59:28:999 Elestac-KERNEL/(1892:1901): Consoles after accepting: 1.
+[INFO] 05:59:35:17 Elestac-KERNEL/(1892:1892): New CPU arriving (1).
+[INFO] 05:59:35:17 Elestac-KERNEL/(1892:1892): New CPU accepted with ID 9
+[INFO] 05:59:35:17 Elestac-KERNEL/(1892:1892): Submitting to CPU 9 the PID 8.
+[INFO] 18:09:31:538 Elestac-KERNEL/(1892:1892): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 18:09:35:583 Elestac-KERNEL/(1892:1892): CPU 9 has something to say.
+[INFO] 18:09:35:583 Elestac-KERNEL/(1892:1892): CPU 9 has closed the connection.
+[INFO] 18:10:09:459 Elestac-KERNEL/(10953:10953): Loading settings.
+[INFO] 18:10:09:460 Elestac-KERNEL/(10953:10957): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 18:10:09:461 Elestac-KERNEL/(10953:10953): Connecting to UMC on 127.0.0.1:6802.
+[INFO] 18:10:09:461 Elestac-KERNEL/(10953:10953): Stack size (sent to UMC): 0008.
+[INFO] 18:10:09:461 Elestac-KERNEL/(10953:10958): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 18:10:09:461 Elestac-KERNEL/(10953:10953): Page size: (received from UMC): 5.
+[INFO] 18:10:09:461 Elestac-KERNEL/(10953:10953): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 18:11:14:691 Elestac-KERNEL/(10953:10953): New console arriving (1).
+[INFO] 18:11:14:691 Elestac-KERNEL/(10953:10953): NEW (0) program with PID=0008 arriving.
+[INFO] 18:11:14:692 Elestac-KERNEL/(10953:10972): Requesting 0011 pages to UMC.
+[INFO] 18:11:15:701 Elestac-KERNEL/(10953:10972): UMC replied.
+[INFO] 18:11:15:701 Elestac-KERNEL/(10953:10972): Pages of code + stack = 11.
+[INFO] 18:11:15:701 Elestac-KERNEL/(10953:10972): The program with PID=0008 is now READY (1).
+[INFO] 18:11:15:701 Elestac-KERNEL/(10953:10972): Consoles after accepting: 1.
+[INFO] 18:11:25:675 Elestac-KERNEL/(10953:10953): New CPU arriving (1).
+[INFO] 18:11:25:675 Elestac-KERNEL/(10953:10953): New CPU accepted with ID 9
+[INFO] 18:11:25:675 Elestac-KERNEL/(10953:10953): Submitting to CPU 9 the PID 8.
+[INFO] 18:39:18:589 Elestac-KERNEL/(10953:10953): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 18:39:33:526 Elestac-KERNEL/(10953:10953): CPU 9 has something to say.
+[INFO] 18:39:33:526 Elestac-KERNEL/(10953:10953): CPU 9 has closed the connection.
+[INFO] 23:38:27:506 Elestac-KERNEL/(6874:6874): Loading settings.
+[INFO] 23:38:27:506 Elestac-KERNEL/(6874:6878): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 23:38:27:506 Elestac-KERNEL/(6874:6879): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 23:38:27:506 Elestac-KERNEL/(6874:6874): Connecting to UMC on 127.0.0.1:6803.
+[INFO] 23:38:27:507 Elestac-KERNEL/(6874:6874): Stack size (sent to UMC): 0008.
+[INFO] 23:38:27:507 Elestac-KERNEL/(6874:6874): Page size: (received from UMC): 5.
+[INFO] 23:38:27:507 Elestac-KERNEL/(6874:6874): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 23:39:07:642 Elestac-KERNEL/(6935:6935): Loading settings.
+[INFO] 23:39:07:643 Elestac-KERNEL/(6935:6940): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 23:39:07:643 Elestac-KERNEL/(6935:6935): Connecting to UMC on 127.0.0.1:6803.
+[INFO] 23:39:07:643 Elestac-KERNEL/(6935:6935): Stack size (sent to UMC): 0008.
+[INFO] 23:39:07:643 Elestac-KERNEL/(6935:6941): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 23:41:42:952 Elestac-KERNEL/(7194:7194): Loading settings.
+[INFO] 23:41:42:952 Elestac-KERNEL/(7194:7198): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 23:41:42:952 Elestac-KERNEL/(7194:7199): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 23:41:42:952 Elestac-KERNEL/(7194:7194): Connecting to UMC on 127.0.0.1:6804.
+[INFO] 23:41:42:952 Elestac-KERNEL/(7194:7194): Stack size (sent to UMC): 0008.
+[INFO] 23:41:42:953 Elestac-KERNEL/(7194:7194): Page size: (received from UMC): 5.
+[ERROR] 23:41:42:953 Elestac-KERNEL/(7194:7194): Error while creating the CONSOLE server.
+[INFO] 23:43:27:928 Elestac-KERNEL/(7243:7243): Loading settings.
+[INFO] 23:43:27:929 Elestac-KERNEL/(7243:7247): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 23:43:27:929 Elestac-KERNEL/(7243:7248): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 23:43:27:929 Elestac-KERNEL/(7243:7243): Connecting to UMC on 127.0.0.1:6804.
+[ERROR] 23:43:27:929 Elestac-KERNEL/(7243:7243): Could not connect to the UMC. Please, try again.
+[INFO] 13:26:22:305 Elestac-KERNEL/(15754:15754): Loading settings.
+[INFO] 13:26:22:306 Elestac-KERNEL/(15754:15758): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 13:26:22:308 Elestac-KERNEL/(15754:15754): Connecting to UMC on 127.0.0.1:6805.
+[INFO] 13:26:22:308 Elestac-KERNEL/(15754:15754): Stack size (sent to UMC): 0008.
+[INFO] 13:26:22:308 Elestac-KERNEL/(15754:15759): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 13:26:22:309 Elestac-KERNEL/(15754:15754): Page size: (received from UMC): 5.
+[INFO] 13:26:22:309 Elestac-KERNEL/(15754:15754): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 13:27:20:227 Elestac-KERNEL/(15754:15754): New console arriving (1).
+[INFO] 13:27:20:227 Elestac-KERNEL/(15754:15754): NEW (0) program with PID=0008 arriving.
+[INFO] 13:27:20:227 Elestac-KERNEL/(15754:15806): Requesting 0011 pages to UMC.
+[INFO] 13:27:27:402 Elestac-KERNEL/(15754:15806): UMC replied.
+[INFO] 13:27:27:402 Elestac-KERNEL/(15754:15806): Pages of code + stack = 11.
+[INFO] 13:27:27:402 Elestac-KERNEL/(15754:15806): The program with PID=0008 is now READY (1).
+[INFO] 13:27:27:402 Elestac-KERNEL/(15754:15806): Consoles after accepting: 1.
+[INFO] 13:28:52:399 Elestac-KERNEL/(15754:15754): A console has closed the connection, the associated PID 0008 will be terminated.
+[INFO] 13:35:04:792 Elestac-KERNEL/(16263:16263): Loading settings.
+[INFO] 13:35:04:800 Elestac-KERNEL/(16263:16267): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 13:35:04:800 Elestac-KERNEL/(16263:16263): Connecting to UMC on 127.0.0.1:6805.
+[INFO] 13:35:04:800 Elestac-KERNEL/(16263:16268): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 13:35:04:800 Elestac-KERNEL/(16263:16263): Stack size (sent to UMC): 0008.
+[INFO] 13:35:04:801 Elestac-KERNEL/(16263:16263): Page size: (received from UMC): 5.
+[INFO] 13:35:04:801 Elestac-KERNEL/(16263:16263): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 13:35:36:600 Elestac-KERNEL/(16263:16263): New console arriving (1).
+[INFO] 13:35:36:600 Elestac-KERNEL/(16263:16263): NEW (0) program with PID=0008 arriving.
+[INFO] 13:35:36:600 Elestac-KERNEL/(16263:16286): Requesting 0011 pages to UMC.
+[INFO] 13:35:41:939 Elestac-KERNEL/(16263:16286): UMC replied.
+[INFO] 13:35:41:939 Elestac-KERNEL/(16263:16286): Pages of code + stack = 11.
+[INFO] 13:35:41:939 Elestac-KERNEL/(16263:16286): The program with PID=0008 is now READY (1).
+[INFO] 13:35:41:939 Elestac-KERNEL/(16263:16286): Consoles after accepting: 1.
+[INFO] 13:36:18:101 Elestac-KERNEL/(16263:16263): New CPU arriving (1).
+[INFO] 13:36:18:101 Elestac-KERNEL/(16263:16263): New CPU accepted with ID 9
+[INFO] 13:36:18:101 Elestac-KERNEL/(16263:16263): Submitting to CPU 9 the PID 8.
+[DEBUG] 13:40:22:704 Elestac-KERNEL/(16263:16263): CPU 9 has something to say.
+[DEBUG] 13:40:22:704 Elestac-KERNEL/(16263:16263): Receving a PCB
+[INFO] 13:40:22:740 Elestac-KERNEL/(16263:16263): Submitting to CPU 9 the PID 8.
+[INFO] 14:06:19:642 Elestac-KERNEL/(17581:17581): Loading settings.
+[INFO] 14:06:19:644 Elestac-KERNEL/(17581:17586): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 14:06:19:645 Elestac-KERNEL/(17581:17587): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 14:06:19:645 Elestac-KERNEL/(17581:17581): Connecting to UMC on 127.0.0.1:6805.
+[INFO] 14:06:19:645 Elestac-KERNEL/(17581:17581): Stack size (sent to UMC): 0008.
+[INFO] 14:06:19:646 Elestac-KERNEL/(17581:17581): Page size: (received from UMC): 5.
+[INFO] 14:06:19:646 Elestac-KERNEL/(17581:17581): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 14:06:27:477 Elestac-KERNEL/(17581:17581): New console arriving (1).
+[INFO] 14:06:27:477 Elestac-KERNEL/(17581:17581): NEW (0) program with PID=0008 arriving.
+[INFO] 14:06:27:478 Elestac-KERNEL/(17581:17595): Requesting 0011 pages to UMC.
+[INFO] 14:06:33:654 Elestac-KERNEL/(17581:17595): UMC replied.
+[INFO] 14:06:33:654 Elestac-KERNEL/(17581:17595): Pages of code + stack = 11.
+[INFO] 14:06:33:654 Elestac-KERNEL/(17581:17595): The program with PID=0008 is now READY (1).
+[INFO] 14:06:33:654 Elestac-KERNEL/(17581:17595): Consoles after accepting: 1.
+[INFO] 14:08:11:72 Elestac-KERNEL/(17581:17581): New CPU arriving (1).
+[INFO] 14:08:11:72 Elestac-KERNEL/(17581:17581): New CPU accepted with ID 9
+[INFO] 14:08:11:72 Elestac-KERNEL/(17581:17581): Submitting to CPU 9 the PID 8.
+[DEBUG] 14:13:00:663 Elestac-KERNEL/(17581:17581): CPU 9 has something to say.
+[DEBUG] 14:13:00:663 Elestac-KERNEL/(17581:17581): Receving a PCB
+[INFO] 14:13:00:700 Elestac-KERNEL/(17581:17581): Submitting to CPU 9 the PID 8.
+[INFO] 14:14:33:437 Elestac-KERNEL/(17581:17581): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 14:14:38:464 Elestac-KERNEL/(17581:17581): CPU 9 has something to say.
+[INFO] 14:14:38:464 Elestac-KERNEL/(17581:17581): CPU 9 has closed the connection.

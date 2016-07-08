@@ -455,6 +455,7 @@ void * funcion_menu (void * noseusa)
                     break;
 			  case PAGINAS_MODIFICADAS:
 				  	marcarPaginasModificadas();
+				  	break;
                case SALIR:
                     flag = 1;
                     break;
@@ -758,7 +759,10 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 		char trama_handshake[4];
 		sprintf(trama_handshake,"%04d",cantidadDePaginasSolicitadas);
 
-		if ( send(*socketBuff,(void *)trama_handshake,4,0) == -1) perror("send");
+		if ( send(*socketBuff,(void *)trama_handshake,4,0) == -1)
+			perror("send");
+		else
+			printf("\n Nuevo Proceso en Memoria :[%04d] \n ",pid_aux);
 
 	}else
 		if ( send(*socketBuff,(void *)"0000",4,0) == -1 ) perror("send");
@@ -2247,6 +2251,10 @@ void dump(void){
 	 * */
 
 	printf("\nReporte , situacion actual Memoria \n");
+	if( headerListaDePids->head == NULL){
+		printf("\n No hay ningun proceso \n");
+		return;
+	}
 	list_iterate(headerListaDePids,imprimirTablaDePaginas);
 
 	imprimirTablaDePaginasEnArchivo();
