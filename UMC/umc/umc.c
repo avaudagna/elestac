@@ -468,6 +468,10 @@ pthread_exit(0);
 
 void marcarPaginasModificadas() {
 
+	if( headerListaDePids->head == NULL)
+		return;
+	if( ( headerFIFOxPID == NULL ) || ( headerFIFOxPID->head == NULL) )
+		return;
 	list_iterate(headerListaDePids,modificarTablaPaginasDePid);
 	list_iterate(headerFIFOxPID,modificarFifoPaginasDePid);
 }
@@ -1338,7 +1342,7 @@ void algoritmoClock(int *pPid, int numPagNueva, int tamanioContenidoPagina, void
 
 		if (!estado) {
 			//recorredor = fifoPID->head->data;		// reseteo el puntero recorredor
-			pthread_rwlock_rdlock(semFifosxPid);
+			//pthread_rwlock_rdlock(semFifosxPid);
 			recorredor = list_get_nodo(fifoPID,0);
 			for (i = 0; ( i <= (punteroPIDClock->indice) ) && ( recorredor != NULL ) ; i++, recorredor = recorredor->next) {
 
