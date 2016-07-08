@@ -1260,6 +1260,7 @@ void almacenarBytes(int *socketBuff, int *pid_actual) {
 						punteroAlgoritmo(pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina,&marcoVictima);
 						guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
 						setBitDeUso(pid_actual,_pagina,1);
+						setBitModificado(*pid_actual, _pagina, 1);
 						enviarMsgACPU(socketBuff,OK,1);
 						actualizarTlb(pid_actual,aux);
 					}
@@ -1398,7 +1399,7 @@ void algoritmoClock(int *pPid, int numPagNueva, int tamanioContenidoPagina, void
 	if ( punteroPIDClock->indice >= fifoPID->elements_count)		// si lo que reemplace, era el ultimo nodo de la fifo, entonces reinicio el indice :)
 		punteroPIDClock->indice=0;
 
-
+    free(bufferContenidoPagina);
 }
 
 
