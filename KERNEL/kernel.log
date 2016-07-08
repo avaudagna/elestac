@@ -244,3 +244,74 @@
 [INFO] 15:30:28:596 Elestac-KERNEL/(15860:15868): do_work: Starting the device Coso with a sleep of 10 milliseconds
 
 [INFO] 15:30:28:596 Elestac-KERNEL/(15860:15860): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 13:46:46:955 Elestac-KERNEL/(6286:6286): Loading settings.
+[INFO] 13:46:46:955 Elestac-KERNEL/(6286:6290): do_work: Starting the device Disco with a sleep of 1000 milliseconds.
+[INFO] 13:46:46:956 Elestac-KERNEL/(6286:6292): do_work: Starting the device Scanner with a sleep of 1000 milliseconds.
+[INFO] 13:46:46:956 Elestac-KERNEL/(6286:6291): do_work: Starting the device Impresora with a sleep of 2000 milliseconds.
+[INFO] 13:46:46:956 Elestac-KERNEL/(6286:6293): do_work: Starting the device Coso with a sleep of 10 milliseconds.
+[INFO] 13:46:46:956 Elestac-KERNEL/(6286:6286): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 13:46:46:956 Elestac-KERNEL/(6286:6286): Stack size (sent to UMC): 0030.
+[INFO] 13:46:46:956 Elestac-KERNEL/(6286:6286): Page size: (received from UMC): 64.
+[INFO] 13:46:46:956 Elestac-KERNEL/(6286:6286): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 13:48:06:993 Elestac-KERNEL/(6286:6286): New console arriving (1).
+[INFO] 13:48:06:994 Elestac-KERNEL/(6286:6286): NEW (0) program with PID=0007 arriving.
+[INFO] 13:48:06:994 Elestac-KERNEL/(6286:6401): Requesting 0001 pages to UMC.
+[INFO] 13:48:10:972 Elestac-KERNEL/(6286:6286): New CPU arriving (1).
+[INFO] 13:48:10:973 Elestac-KERNEL/(6286:6286): New CPU accepted with ID 8
+[INFO] 13:48:42:408 Elestac-KERNEL/(6286:6401): UMC replied.
+[INFO] 13:48:42:408 Elestac-KERNEL/(6286:6401): Pages of code + stack = 1.
+[INFO] 13:48:42:408 Elestac-KERNEL/(6286:6401): The program with PID=0007 is now READY (1).
+[INFO] 13:48:42:412 Elestac-KERNEL/(6286:6401): Consoles after accepting: 1.
+[INFO] 13:48:42:1 Elestac-KERNEL/(6286:6286): Submitting to CPU 8 the PID 7.
+[DEBUG] 13:48:50:639 Elestac-KERNEL/(6286:6286): CPU 8 has something to say.
+[INFO] 13:48:50:639 Elestac-KERNEL/(6286:6286): CPU 8 has closed the connection.
+[INFO] 13:49:02:628 Elestac-KERNEL/(6547:6547): Loading settings.
+[INFO] 13:49:02:635 Elestac-KERNEL/(6547:6551): do_work: Starting the device Disco with a sleep of 1000 milliseconds.
+[INFO] 13:49:02:636 Elestac-KERNEL/(6547:6552): do_work: Starting the device Impresora with a sleep of 2000 milliseconds.
+[INFO] 13:49:02:640 Elestac-KERNEL/(6547:6547): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 13:49:02:640 Elestac-KERNEL/(6547:6547): Stack size (sent to UMC): 0030.
+[INFO] 13:49:02:640 Elestac-KERNEL/(6547:6554): do_work: Starting the device Coso with a sleep of 10 milliseconds.
+[INFO] 13:49:02:642 Elestac-KERNEL/(6547:6553): do_work: Starting the device Scanner with a sleep of 1000 milliseconds.
+[INFO] 13:49:02:648 Elestac-KERNEL/(6547:6547): Page size: (received from UMC): 5.
+[INFO] 13:49:02:648 Elestac-KERNEL/(6547:6547): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 13:49:03:586 Elestac-KERNEL/(6547:6547): New console arriving (1).
+[INFO] 13:49:03:587 Elestac-KERNEL/(6547:6547): NEW (0) program with PID=0007 arriving.
+[INFO] 13:49:03:600 Elestac-KERNEL/(6547:6558): Requesting 0011 pages to UMC.
+[INFO] 13:49:04:604 Elestac-KERNEL/(6547:6558): UMC replied.
+[INFO] 13:49:04:604 Elestac-KERNEL/(6547:6558): Pages of code + stack = 11.
+[INFO] 13:49:04:604 Elestac-KERNEL/(6547:6558): The program with PID=0007 is now READY (1).
+[INFO] 13:49:04:608 Elestac-KERNEL/(6547:6558): Consoles after accepting: 1.
+[INFO] 13:49:10:844 Elestac-KERNEL/(6547:6547): New CPU arriving (1).
+[INFO] 13:49:10:844 Elestac-KERNEL/(6547:6547): New CPU accepted with ID 8
+[INFO] 13:49:10:844 Elestac-KERNEL/(6547:6547): Submitting to CPU 8 the PID 7.
+[DEBUG] 13:49:14:892 Elestac-KERNEL/(6547:6547): CPU 8 has something to say.
+[INFO] 13:49:14:892 Elestac-KERNEL/(6547:6547): CPU sent protocol ID: 1º`.
+[INFO] 13:49:18:993 Elestac-KERNEL/(6547:6547): Submitting to CPU 8 the PID 7.
+[DEBUG] 13:49:23:35 Elestac-KERNEL/(6547:6547): CPU 8 has something to say.
+[INFO] 13:49:23:35 Elestac-KERNEL/(6547:6547): CPU sent protocol ID: 1ª`.
+[INFO] 13:49:28:870 Elestac-KERNEL/(6547:6547): Submitting to CPU 8 the PID 7.
+[DEBUG] 13:49:28:913 Elestac-KERNEL/(6547:6547): CPU 8 has something to say.
+[INFO] 13:49:28:913 Elestac-KERNEL/(6547:6547): CPU sent protocol ID: 4º`.
+[DEBUG] 13:49:30:918 Elestac-KERNEL/(6547:6547): CPU 8 has something to say.
+[INFO] 13:49:30:918 Elestac-KERNEL/(6547:6547): CPU sent protocol ID: ‡ª`.
+[INFO] 14:08:21:441 Elestac-KERNEL/(7085:7085): Loading settings.
+[INFO] 14:08:21:441 Elestac-KERNEL/(7085:7089): do_work: Starting the device Disco with a sleep of 1000 milliseconds.
+[INFO] 14:08:21:442 Elestac-KERNEL/(7085:7090): do_work: Starting the device Impresora with a sleep of 2000 milliseconds.
+[INFO] 14:08:21:442 Elestac-KERNEL/(7085:7091): do_work: Starting the device Scanner with a sleep of 1000 milliseconds.
+[INFO] 14:08:21:442 Elestac-KERNEL/(7085:7085): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 14:08:21:442 Elestac-KERNEL/(7085:7085): Stack size (sent to UMC): 0030.
+[INFO] 14:08:21:442 Elestac-KERNEL/(7085:7092): do_work: Starting the device Coso with a sleep of 10 milliseconds.
+[INFO] 14:08:21:442 Elestac-KERNEL/(7085:7085): Page size: (received from UMC): 5.
+[INFO] 14:08:21:442 Elestac-KERNEL/(7085:7085): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 14:08:21:976 Elestac-KERNEL/(7085:7085): New console arriving (1).
+[INFO] 14:08:21:976 Elestac-KERNEL/(7085:7085): NEW (0) program with PID=0007 arriving.
+[INFO] 14:08:21:992 Elestac-KERNEL/(7085:7101): Requesting 0011 pages to UMC.
+[INFO] 14:08:23:8 Elestac-KERNEL/(7085:7101): UMC replied.
+[INFO] 14:08:23:8 Elestac-KERNEL/(7085:7101): Pages of code + stack = 11.
+[INFO] 14:08:23:8 Elestac-KERNEL/(7085:7101): The program with PID=0007 is now READY (1).
+[INFO] 14:08:23:9 Elestac-KERNEL/(7085:7101): Consoles after accepting: 1.
+[INFO] 14:08:24:482 Elestac-KERNEL/(7085:7085): New CPU arriving (1).
+[INFO] 14:08:24:483 Elestac-KERNEL/(7085:7085): New CPU accepted with ID 8
+[INFO] 14:08:24:483 Elestac-KERNEL/(7085:7085): Submitting to CPU 8 the PID 7.
+[DEBUG] 14:08:28:531 Elestac-KERNEL/(7085:7085): CPU 8 has something to say.
+[INFO] 14:08:28:531 Elestac-KERNEL/(7085:7085): CPU sent protocol ID: 1º`.

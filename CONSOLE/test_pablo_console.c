@@ -9,7 +9,7 @@ gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
 #include "socketCommons/socketCommons.h"
 #include <signal.h>
 
-#define KERNEL_ADDR "192.168.0.18"
+#define KERNEL_ADDR "127.0.0.1"
 #define KERNEL_PORT 5011
 
 void tratarSeniales(int);

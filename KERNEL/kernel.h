@@ -1,8 +1,8 @@
 #ifndef KERNEL_H_
 #define KERNEL_H_
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include <math.h>
@@ -20,6 +20,7 @@
 #include "libs/serialize.h"
 #include "libs/pcb.h"
 #include "libs/stack.h"
+#include "libs/pcb_tests.h"
 
 #define EVENT_SIZE      (sizeof(struct inotify_event) + 24)
 #define EVENT_BUF_LEN   ( 256 * EVENT_SIZE )
@@ -29,9 +30,9 @@ struct {
 				PUERTO_CPU,
 				QUANTUM,
 				QUANTUM_SLEEP;
-		char** 	SEM_IDS;
+		char** 	SEM_ID;
 		char** 	SEM_INIT;
-		char** 	IO_IDS;
+		char** 	IO_ID;
 		char** 	IO_SLEEP;
 		int     IO_COUNT;
 		char** 	SHARED_VARS;

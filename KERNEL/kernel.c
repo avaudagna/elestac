@@ -8,6 +8,7 @@ gcc -I/usr/include/commons -I/usr/include/commons/collections -o umc umc.c -L/us
  * Y la consola asi:
 gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
 */
+#include <libs/pcb_tests.h>
 #include "kernel.h"
 
 /* BEGIN OF GLOBAL STUFF I NEED EVERYWHERE */
@@ -33,6 +34,7 @@ int main (int argc, char **argv){
 	consolas_conectadas = list_create();
 	if (start_kernel(argc, argv[1])<0) return 0; //load settings
 	clientUMC=connect2UMC();
+	//clientUMC=100;setup.PAGE_SIZE=1024; //TODO Delete -> lo hace connect2UMC()
 	if (clientUMC<0){
 		log_error(kernel_log, "Could not connect to the UMC. Please, try again.");
 		return 0;
@@ -53,7 +55,7 @@ int main (int argc, char **argv){
 	close(configFileFD);
 	close(consoleServer);
 	close(cpuServer);
-	close(clientUMC);
+	close(clientUMC); // TODO un-comment when real UMC is present
 	log_destroy(kernel_log);
 	return 0;
 }
@@ -66,16 +68,18 @@ int start_kernel(int argc, char* configFile){
 		if (loadConfig(configFile)<0) {
 			log_error(kernel_log, "Config file can not be loaded. Please, try again.");
     		return -1;
-    	}else{
-			configFileName = malloc(sizeof(configFile));
-			strcpy(configFileName, configFile);
-			char cwd[1024];
-			getcwd(cwd, sizeof(cwd));
-			configFilePath = malloc(sizeof(cwd));
-			strcpy(configFilePath, cwd);
-		}
-		configFileFD = inotify_init();
-		configFileWatcher = inotify_add_watch(configFileFD, configFilePath, IN_MODIFY | IN_CREATE);
+    	}
+//		else{
+//			configFileName = realloc(configFileName, sizeof(configFile));
+//			strcpy(configFileName, configFile);
+//			char cwd[1024];
+//			getcwd(cwd, sizeof(cwd));
+//			configFilePath = realloc(configFilePath, sizeof(cwd));
+//			strcpy(configFilePath, cwd);
+//		}
+//		configFileFD = inotify_init();
+//		configFilePath = "/home/alan/repos/tp-2016-1c-Vamo-a-calmarno/KERNEL"; // TODO borrar fuera de testing
+//		configFileWatcher = inotify_add_watch(configFileFD, configFilePath, IN_MODIFY | IN_CREATE);
 	} else {
 		int i = 0;
 		for (i = 0; i < 10001; i++){
@@ -94,16 +98,18 @@ int start_kernel(int argc, char* configFile){
 void* do_work(void *p) {
 	int miID = *((int *) p);
 	t_io *io_op;
-	log_info(kernel_log, "do_work: Starting the device %s with a sleep of %s milliseconds.", setup.IO_IDS[miID], setup.IO_SLEEP[miID]);
+	log_info(kernel_log, "do_work: Starting the device %s with a sleep of %s milliseconds.", setup.IO_ID[miID], setup.IO_SLEEP[miID]);
 	while(1){
 		sem_wait(&semaforo_io[miID]);
-		log_info(kernel_log, "A new I/O request arrived at %s", setup.IO_IDS[miID]);
+		log_info(kernel_log, "A new I/O request arrived at %s", setup.IO_ID[miID]);
 		pthread_mutex_lock(&mut_io_list);
 		io_op = list_remove(solicitudes_io[miID], 0);
 		pthread_mutex_unlock(&mut_io_list);
 		if (io_op != NULL){
-			log_info(kernel_log,"%s will perform %s operations.", setup.IO_IDS[miID], io_op->io_units);
+			log_info(kernel_log,"%s will perform %s operations.", setup.IO_ID[miID], io_op->io_units);
 			int processing_io = atoi(setup.IO_SLEEP[miID]) * atoi(io_op->io_units) * 1000;
+			// TODO Carefull here !! usleep() may fail when processing_io is > 1 sec.
+			// TODO Example provided in setup.data has delays bigger than 1 sec.
 			usleep((useconds_t) processing_io);
 			bool match_PCB(void *pcb){
 				t_pcb *unPCB = pcb;
@@ -116,7 +122,7 @@ void* do_work(void *p) {
 				elPCB->status = READY;
 				list_add(PCB_READY, elPCB);
 			} // Else -> The PCB was killed by end_program while performing I/O
-			log_info(kernel_log, "do_work: Finished an io operation on device %s requested by PID %d.", setup.IO_IDS[miID], io_op->pid);
+			log_info(kernel_log, "do_work: Finished an io operation on device %s requested by PID %d.", setup.IO_ID[miID], io_op->pid);
 			free(io_op);
 		}
 	}
@@ -133,9 +139,9 @@ int loadConfig(char* configFile){
 		setup.PUERTO_CPU = config_get_int_value(config,"PUERTO_CPU");
 		setup.QUANTUM = config_get_int_value(config,"QUANTUM");
 		setup.QUANTUM_SLEEP = config_get_int_value(config,"QUANTUM_SLEEP");
-		setup.IO_IDS = config_get_array_value(config,"IO_IDS");
+		setup.IO_ID = config_get_array_value(config,"IO_ID");
 		setup.IO_SLEEP = config_get_array_value(config,"IO_SLEEP");
-		while(setup.IO_IDS[counter])
+		while(setup.IO_ID[counter])
 			counter++;
 		setup.IO_COUNT = counter;
 		solicitudes_io = realloc(solicitudes_io, counter * sizeof(t_list));
@@ -148,7 +154,7 @@ int loadConfig(char* configFile){
 			*thread_id=i;
 			pthread_create(&io_device[i],NULL,do_work, thread_id);
 		}
-		setup.SEM_IDS=config_get_array_value(config,"SEM_IDS");
+		setup.SEM_ID=config_get_array_value(config,"SEM_ID");
 		setup.SEM_INIT=config_get_array_value(config,"SEM_INIT");
 		counter=0;
 		setup.SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
@@ -214,7 +220,7 @@ void tratarSeniales(int senial){
 	switch (senial){
 	case SIGINT:
 		// Detecta Ctrl+C y evita el cierre.
-		printf("Me di cuenta que me tiraste la senial :8 \nDale Ctrl+C una vez más para confirmar.\n\n");
+		printf("Esto acabará con el sistema. Presione Ctrl+C una vez más para confirmar.\n\n");
 		signal (SIGINT, SIG_DFL); // solo controlo una vez.
 		break;
 	case SIGPIPE:
@@ -222,7 +228,7 @@ void tratarSeniales(int senial){
 		printf("La consola o el CPU con el que estabas hablando se murió. Llamá al 911.\n\n");
 		break;
 	default:
-		printf("Me tiraste la senial\n");
+		printf("Otra senial\n");
 		break;
 	}
 }
@@ -242,6 +248,7 @@ t_pcb * recvPCB(int cpuID){
 	recv(cpuID, pcb_serializado, (size_t) pcb_size, 0);
 	incomingPCB = (t_pcb *)calloc(1,sizeof(t_pcb));
 	int pcb_serializado_cursor = 0;
+	printSerializedPcb(pcb_serializado);
 	deserialize_pcb(&incomingPCB, pcb_serializado, &pcb_serializado_cursor);
 	free(tmp_buff);
 	free(pcb_serializado);
@@ -268,11 +275,12 @@ void check_CPU_FD_ISSET(void *cpu){
 	if (FD_ISSET(laCPU->clientID, &allSockets)) {
 		log_debug(kernel_log,"CPU %d has something to say.", laCPU->clientID);
 		if (recv(laCPU->clientID, cpu_protocol, 1, 0) > 0){
+			log_info(kernel_log,"CPU sent protocol ID: %s.",cpu_protocol);
+			t_io *io_op = malloc(sizeof(t_io)); // TODO Free esto sin matar lo que puse en la lista
+			t_pcb *incomingPCB = recvPCB(laCPU->clientID); // TODO Free esto sin romper nada
 			switch (atoi(cpu_protocol)) {
 			case 1:// Quantum end
 			case 2:// Program END
-				log_debug(kernel_log, "Receving a PCB");
-				t_pcb *incomingPCB = recvPCB(laCPU->clientID);
 				if (laCPU->status == EXIT || incomingPCB->status==EXIT){
 					list_add(PCB_EXIT, incomingPCB);
 				} else {
@@ -281,8 +289,6 @@ void check_CPU_FD_ISSET(void *cpu){
 				restoreCPU(laCPU);
 				break;
 			case 3:// IO
-				log_debug(kernel_log, "Receving an Input/Output request + a PCB");
-				t_io *io_op = malloc(sizeof(t_io));
 				io_op->pid = laCPU->pid;
 				recv(laCPU->clientID, tmp_buff, 4, 0); // size of the io_name
 				recv(laCPU->clientID, io_op->io_name, (size_t) atoi(tmp_buff), 0);
@@ -301,12 +307,10 @@ void check_CPU_FD_ISSET(void *cpu){
 				restoreCPU(laCPU);
 				break;
 			case 4:// semaforo
-				log_debug(kernel_log, "Receving a semaphore operation");
 				//wait   [identificador de semáforo]
 				//signal [identificador de semáforo]
 				break;
 			case 5:// var compartida
-				log_debug(kernel_log, "Receving a shared var operation");
 				recv(laCPU->clientID, tmp_buff, 1, 0);
 				if (strncmp(tmp_buff, "1",1) == 0) setValue = 1;
 				recv(laCPU->clientID, tmp_buff, 4, 0);
@@ -327,7 +331,6 @@ void check_CPU_FD_ISSET(void *cpu){
 				free(theShared);
 				break;
 			case 6:// imprimirValor
-				log_debug(kernel_log, "Receving a value to print on console");
 				recv(laCPU->clientID, tmp_buff, 4, 0);
 				size_t nameSize = (size_t) atoi(tmp_buff);
 				char *theName = malloc(nameSize);
@@ -340,7 +343,6 @@ void check_CPU_FD_ISSET(void *cpu){
 				free(value2console);
 				break;
 			case 7:// imprimirTexto
-				log_debug(kernel_log, "Receving a text to print on console");
 				recv(laCPU->clientID, tmp_buff, 4, 0);
 				size_t txtSize = (size_t) atoi(tmp_buff);
 				char *theTXT = malloc(txtSize);
@@ -512,7 +514,7 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 }
 
 void round_robin(){
-	int       tmp_buffer_size = 1+sizeof(int)*3; /* 1+QUANTUM+QUANTUM_SLEEP+PCB_SIZE */
+	int       tmp_buffer_size = 1+4+4+4; /* 1+QUANTUM+QUANTUM_SLEEP+PCB_SIZE */
 	int       pcb_buffer_size = 0;
 	void     *pcb_buffer = NULL;
 	void     *tmp_buffer = NULL;
@@ -524,12 +526,10 @@ void round_robin(){
 	serialize_pcb(tuPCB, &pcb_buffer, &pcb_buffer_size);
 	tmp_buffer = malloc((size_t) tmp_buffer_size+pcb_buffer_size);
 	asprintf(&tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
-    tmp_buffer = realloc(tmp_buffer , (size_t) tmp_buffer_size + pcb_buffer_size);
 	serialize_data(pcb_buffer, (size_t ) pcb_buffer_size, &tmp_buffer, &tmp_buffer_size );
 	log_info(kernel_log,"Submitting to CPU %d the PID %d.", laCPU->clientID, tuPCB->pid);
 	send(laCPU->clientID, tmp_buffer, tmp_buffer_size, 0);
 	free(tmp_buffer);
-    free(pcb_buffer);
 	list_add(cpus_executing,laCPU);
 }
 
@@ -610,7 +610,7 @@ void process_io() {
 int getIOindex(char *io_name) {
 	int i;
 	for (i = 0; i < setup.IO_COUNT; i++) {
-		if (strcmp(setup.IO_IDS[i],io_name) == 0) {
+		if (strcmp(setup.IO_ID[i],io_name) == 0) {
 			return i;
 		}
 	}
@@ -637,4 +637,3 @@ void call_handlers() {
 	if (list_size(PCB_BLOCKED) > 0) process_io();
 	while (list_size(cpus_conectadas) > 0 && list_size(PCB_READY) > 0 ) round_robin();
 }
-// C'est tout
