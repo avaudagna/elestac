@@ -645,6 +645,7 @@ void cambioProcesoActivo(int *socket, int *pid){
 	if ( (recv(*socket, (void*) (buffer), 4, 0)) <= 0 )
 		perror("recv");
 	*pid = atoi(buffer);
+	printf("Cambio de Proceso activo , nuevo PID = [%04d]\n",*pid);
 
 }
 
@@ -1099,6 +1100,8 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 
 	_tamanio=atoi(buffer);
 
+	printf("Pedido Bytes : (%d,%d,%d)\n",_pagina,_offset,_tamanio);
+
 	if((umcGlobalParameters.entradasTLB > 0 ) && (consultarTLB(pid_actual,_pagina,&indice_buff))){	// ¿Se usa TLB ? y.. ¿Esta en TLB?
 		// si esta en la tabla,  ya tengo el nroDeMarco y de ahi me voy a vectorMarcos[nroDeMarco]
 		temp = (PAGINA *) malloc (sizeof(PAGINA));
@@ -1107,6 +1110,7 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 		resolverEnMP(socketBuff,temp,_offset,_tamanio);	// lo hago asi para poder reutilizar resolverEnMP , que al fin y al cabo es lo que se termina haciendo
 		actualizarTlb(pid_actual,temp);
 		free(temp);
+		printf("[ TLB HIT ]\n");
 
 	}
 	else {	// No esta en TLB o no se usa TLB
@@ -1135,6 +1139,7 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 						punteroAlgoritmo(pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina,&marcoVictima);
 						actualizarTlb(pid_actual,aux);
 						resolverEnMP(socketBuff, aux, _offset, _tamanio);
+						printf("[ PAGE TABLE MISS ]: Aplicando Algoritmo %s \n",umcGlobalParameters.algoritmo);
 					}
 				}else{		// hay marcos disponibles
 
@@ -1142,12 +1147,14 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, tamanioContenidoPagina);
 						actualizarTlb(pid_actual,aux);
                         resolverEnMP(socketBuff, aux, _offset, _tamanio);
+						printf("[ PAGE TABLE MISS ]: el proceso tiene disponible marcos en memoria\n");
 					}
 					else{	// el proceso llego a la maxima cantidad de marcos proceso
 						//algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
 						punteroAlgoritmo(pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina,&marcoVictima);
 						resolverEnMP(socketBuff, aux, _offset, _tamanio);
 						actualizarTlb(pid_actual,aux);
+						printf("[ PAGE TABLE MISS ]: Aplicando Algoritmo %s \n",umcGlobalParameters.algoritmo);
 					}
 				}
 			}
@@ -1155,6 +1162,7 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 				resolverEnMP(socketBuff, aux, _offset, _tamanio); // pagina en memoria principal , se la mando de una al CPU :)
 				actualizarTlb(pid_actual,aux);
 				setBitDeUso(pid_actual,_pagina,1);
+				printf("[ PAGE TABLE HIT ]\n");
 			}
 		}
 	}
@@ -1201,6 +1209,8 @@ void almacenarBytes(int *socketBuff, int *pid_actual) {
 
 	_tamanio=atoi(buffer);
 
+	printf("Almacenar Bytes : (%d,%d,%d)\n",_pagina,_offset,_tamanio);
+
 	// levanto bytes a almacenar
 
 	bytesAlmacenar = malloc (_tamanio);
@@ -1220,6 +1230,7 @@ void almacenarBytes(int *socketBuff, int *pid_actual) {
 		temp->nroDeMarco = indice_buff;
 		actualizarTlb(pid_actual,temp);
 		enviarMsgACPU(socketBuff,OK,1);
+		printf("[ TLB HIT ]\n");
 	}
 	else{
 		headerTablaDePaginas = obtenerTablaDePaginasDePID(*pid_actual);
@@ -1242,8 +1253,9 @@ void almacenarBytes(int *socketBuff, int *pid_actual) {
 					else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo , y una vez que ya se trajo la pagina a MP,  ahi si guardo los bytes
 						//algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
 						punteroAlgoritmo(pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina,&marcoVictima);
-						//guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
-						//setBitDeUso(*pid_actual,_pagina,1);
+						guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
+						setBitDeUso(*pid_actual,_pagina,1);
+						setBitModificado(*pid_actual, _pagina, 1);
 						enviarMsgACPU(socketBuff,OK,1);
 						actualizarTlb(pid_actual,aux);
 
