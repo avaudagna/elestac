@@ -901,6 +901,8 @@ void enviarPaginaAlSwap(char *trama, int size_trama){
 		exit(1);
 	}
 
+
+
 }
 
 void agregarPagina(int pid, PAGINA *pagina_aux) {
@@ -1287,13 +1289,13 @@ void setBitModificado(int pPid, int pagina, int valorBitModificado) {
 	aux = obtenerHeaderFifoxPid(pPid);
 
 	paginaClock = obtenerPaginaDeFifo(aux, pagina);
-
+    pthread_rwlock_wrlock(semFifosxPid);
 	paginaClock->bitDeModificado = valorBitModificado;
-
+    pthread_rwlock_unlock(semFifosxPid);
 	pagAux = obtenerPagina(pPid,pagina);
-
+    pthread_rwlock_wrlock(semListaPids);
 	pagAux->modificado = 1;
-
+    pthread_rwlock_unlock(semListaPids);
 
 }
 
@@ -1375,8 +1377,11 @@ void algoritmoClock(int *pPid, int numPagNueva, int tamanioContenidoPagina, void
 	pagina_victima = obtenerPagina(*pPid, ((CLOCK_PAGINA *) recorredor->data)->nroPagina);
 	*marcoVictima = pagina_victima->nroDeMarco;
 
-	if (pagina_victima->modificado == 1)    // pagina modificada, enviarla a swap antes de reemplazarla
+	if (pagina_victima->modificado == 1) {    // pagina modificada, enviarla a swap antes de reemplazarla
 		PedidoPaginaASwap(*pPid,pagina_victima->nroPagina,ESCRITURA);
+        swapUpdate();
+        setBitModificado(*pPid,pagina_victima->nroPagina,0);
+    }
 	// Actualizaciones sobre la tabla de paginas ( actualizo campo nro de marco y bit de presencia )
 	pagina_nueva = obtenerPagina(*pPid,numPagNueva);
 	pthread_rwlock_wrlock(semListaPids);
@@ -1488,8 +1493,10 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, int tamanioContenidoPa
 	pagina_victima = obtenerPagina(*pPid, ((CLOCK_PAGINA *) recorredor->data)->nroPagina);
 	*marcoVictima = pagina_victima->nroDeMarco;
 
-	if (pagina_victima->modificado == 1)    // pagina modificada, enviarla a swap antes de reemplazarla
+	if (pagina_victima->modificado == 1)  {   // pagina modificada, enviarla a swap antes de reemplazarla
 		PedidoPaginaASwap(*pPid,pagina_victima->nroPagina,ESCRITURA);
+        swapUpdate();
+    }
 	// Actualizaciones sobre la tabla de paginas ( actualizo campo nro de marco y bit de presencia )
 	pagina_nueva = obtenerPagina(*pPid,numPagNueva);
 	pagina_nueva->nroDeMarco = pagina_victima->nroDeMarco ;
@@ -1629,6 +1636,7 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 	int 	__pid;
 
 	sprintf(buffer, "2%04d%04d", *pid_actual, nroPagina);    // PIDO PAGINA
+    printf("\nSending request to SWAP : %s \n",buffer);
 
 	// while(recv(swap) > 0 :
 
@@ -1643,12 +1651,17 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 	__pid = atoi(buff_pid);
 
 
+
+    printf("\nSWAP answer pid : %d ",__pid);
+
 	if (__pid == *pid_actual) {    // valido que la pagina que me respondio swap se corresponda a la que pedi
 
 		contenidoPagina = (void *) malloc(sizeof(umcGlobalParameters.marcosSize));
 
 		if ((*tamanioContenidoPagina = recv(socketClienteSwap, contenidoPagina, umcGlobalParameters.marcosSize, 0)) <= 0)
 			perror("recv");
+
+        printf(", content : %s\n", (char*) contenidoPagina);
 
 		return contenidoPagina;
 	}
