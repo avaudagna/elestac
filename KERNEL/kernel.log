@@ -653,3 +653,1731 @@
 [INFO] 14:14:33:437 Elestac-KERNEL/(17581:17581): A console has closed the connection, the associated PID 0008 will be terminated.
 [DEBUG] 14:14:38:464 Elestac-KERNEL/(17581:17581): CPU 9 has something to say.
 [INFO] 14:14:38:464 Elestac-KERNEL/(17581:17581): CPU 9 has closed the connection.
+[INFO] 14:23:34:828 Elestac-KERNEL/(8633:8633): Loading settings.
+[INFO] 14:23:34:830 Elestac-KERNEL/(8633:8637): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 14:23:34:830 Elestac-KERNEL/(8633:8633): Connecting to UMC on 127.0.0.1:6805.
+[INFO] 14:23:34:830 Elestac-KERNEL/(8633:8638): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 14:23:34:830 Elestac-KERNEL/(8633:8633): Stack size (sent to UMC): 0008.
+[INFO] 14:23:34:831 Elestac-KERNEL/(8633:8633): Page size: (received from UMC): 5.
+[INFO] 14:23:34:831 Elestac-KERNEL/(8633:8633): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 14:23:40:465 Elestac-KERNEL/(8633:8633): New CPU arriving (1).
+[INFO] 14:23:40:465 Elestac-KERNEL/(8633:8633): New CPU accepted with ID 8
+[INFO] 14:24:02:312 Elestac-KERNEL/(8633:8633): New console arriving (1).
+[INFO] 14:24:02:312 Elestac-KERNEL/(8633:8633): NEW (0) program with PID=0009 arriving.
+[INFO] 14:24:02:312 Elestac-KERNEL/(8633:8772): Requesting 0011 pages to UMC.
+[INFO] 14:24:03:317 Elestac-KERNEL/(8633:8772): UMC replied.
+[INFO] 14:24:03:317 Elestac-KERNEL/(8633:8772): Pages of code + stack = 11.
+[INFO] 14:24:03:320 Elestac-KERNEL/(8633:8772): The program with PID=0009 is now READY (1).
+[INFO] 14:24:03:320 Elestac-KERNEL/(8633:8772): Consoles after accepting: 0.
+[INFO] 14:24:03:320 Elestac-KERNEL/(8633:8633): Submitting to CPU 8 the PID 9.
+[DEBUG] 14:24:04:113 Elestac-KERNEL/(8633:8633): CPU 8 has something to say.
+[DEBUG] 14:24:04:113 Elestac-KERNEL/(8633:8633): Receving a PCB
+[INFO] 14:24:04:113 Elestac-KERNEL/(8633:8633): Submitting to CPU 8 the PID 9.
+[INFO] 14:26:06:89 Elestac-KERNEL/(8908:8908): Loading settings.
+[INFO] 14:26:06:91 Elestac-KERNEL/(8908:8912): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 14:26:06:94 Elestac-KERNEL/(8908:8908): Connecting to UMC on 127.0.0.1:6805.
+[INFO] 14:26:06:95 Elestac-KERNEL/(8908:8908): Stack size (sent to UMC): 0008.
+[INFO] 14:26:06:95 Elestac-KERNEL/(8908:8913): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 14:26:06:96 Elestac-KERNEL/(8908:8908): Page size: (received from UMC): 5.
+[INFO] 14:26:06:96 Elestac-KERNEL/(8908:8908): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 14:26:47:397 Elestac-KERNEL/(8908:8908): New CPU arriving (1).
+[INFO] 14:26:47:397 Elestac-KERNEL/(8908:8908): New CPU accepted with ID 8
+[DEBUG] 14:26:49:238 Elestac-KERNEL/(8908:8908): CPU 8 has something to say.
+[INFO] 14:26:49:238 Elestac-KERNEL/(8908:8908): CPU 8 has closed the connection.
+[INFO] 14:27:14:861 Elestac-KERNEL/(9113:9113): Loading settings.
+[INFO] 14:27:14:861 Elestac-KERNEL/(9113:9117): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 14:27:14:864 Elestac-KERNEL/(9113:9113): Connecting to UMC on 127.0.0.1:6805.
+[INFO] 14:27:14:864 Elestac-KERNEL/(9113:9113): Stack size (sent to UMC): 0008.
+[INFO] 14:27:14:879 Elestac-KERNEL/(9113:9118): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 14:27:14:886 Elestac-KERNEL/(9113:9113): Page size: (received from UMC): 5.
+[INFO] 14:27:14:886 Elestac-KERNEL/(9113:9113): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 14:27:17:877 Elestac-KERNEL/(9113:9113): New console arriving (1).
+[INFO] 14:27:17:878 Elestac-KERNEL/(9113:9113): NEW (0) program with PID=0008 arriving.
+[INFO] 14:27:17:878 Elestac-KERNEL/(9113:9121): Requesting 0011 pages to UMC.
+[INFO] 14:27:18:881 Elestac-KERNEL/(9113:9121): UMC replied.
+[INFO] 14:27:18:881 Elestac-KERNEL/(9113:9121): Pages of code + stack = 11.
+[INFO] 14:27:18:881 Elestac-KERNEL/(9113:9121): The program with PID=0008 is now READY (1).
+[INFO] 14:27:18:884 Elestac-KERNEL/(9113:9121): Consoles after accepting: 1.
+[INFO] 14:27:22:437 Elestac-KERNEL/(9113:9113): New CPU arriving (1).
+[INFO] 14:27:22:437 Elestac-KERNEL/(9113:9113): New CPU accepted with ID 9
+[INFO] 14:27:22:437 Elestac-KERNEL/(9113:9113): Submitting to CPU 9 the PID 8.
+[DEBUG] 14:27:26:792 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[DEBUG] 14:27:26:793 Elestac-KERNEL/(9113:9113): Receving a PCB
+[INFO] 14:27:26:836 Elestac-KERNEL/(9113:9113): Submitting to CPU 9 the PID 8.
+[DEBUG] 14:27:27:129 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[DEBUG] 14:27:27:129 Elestac-KERNEL/(9113:9113): Receving a semaphore operation
+[DEBUG] 14:27:27:129 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[DEBUG] 14:27:27:129 Elestac-KERNEL/(9113:9113): Receving a PCB
+[INFO] 14:27:27:380 Elestac-KERNEL/(9113:9113): Submitting to CPU 9 the PID 50.
+[DEBUG] 14:27:27:380 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:380 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: zõ`
+[DEBUG] 14:27:27:380 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:380 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:380 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:380 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:380 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:380 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:420 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:420 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 14:27:27:420 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:420 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:420 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:420 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:420 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:420 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:420 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:420 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 14:27:27:420 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:420 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:420 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:420 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:420 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:420 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:420 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:420 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 14:27:27:420 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:420 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:420 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: aä`
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: õ`
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: õ`
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: bõ`
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:421 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:421 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:422 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:422 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo:  ä`
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: (ä`
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[ERROR] 14:27:27:423 Elestac-KERNEL/(9113:9113): Caso no contemplado. CPU dijo: 
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): CPU 9 has something to say.
+[DEBUG] 14:27:27:423 Elestac-KERNEL/(9113:9113): Receving a PCB
+[INFO] 14:39:59:423 Elestac-KERNEL/(9863:9863): Loading settings.
+[INFO] 14:39:59:424 Elestac-KERNEL/(9863:9868): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 14:39:59:424 Elestac-KERNEL/(9863:9863): Connecting to UMC on 127.0.0.1:6805.
+[INFO] 14:39:59:424 Elestac-KERNEL/(9863:9863): Stack size (sent to UMC): 0008.
+[INFO] 14:39:59:424 Elestac-KERNEL/(9863:9867): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 14:39:59:425 Elestac-KERNEL/(9863:9863): Page size: (received from UMC): 5.
+[INFO] 14:39:59:425 Elestac-KERNEL/(9863:9863): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 14:40:06:354 Elestac-KERNEL/(9863:9863): New console arriving (1).
+[INFO] 14:40:06:355 Elestac-KERNEL/(9863:9863): NEW (0) program with PID=0008 arriving.
+[INFO] 14:40:06:355 Elestac-KERNEL/(9863:9873): Requesting 0011 pages to UMC.
+[INFO] 14:40:07:364 Elestac-KERNEL/(9863:9873): UMC replied.
+[INFO] 14:40:07:364 Elestac-KERNEL/(9863:9873): Pages of code + stack = 11.
+[INFO] 14:40:07:365 Elestac-KERNEL/(9863:9873): The program with PID=0008 is now READY (1).
+[INFO] 14:40:07:365 Elestac-KERNEL/(9863:9873): Consoles after accepting: 1.
+[INFO] 14:40:27:432 Elestac-KERNEL/(9863:9863): New CPU arriving (1).
+[INFO] 14:40:27:432 Elestac-KERNEL/(9863:9863): New CPU accepted with ID 9
+[INFO] 14:40:27:432 Elestac-KERNEL/(9863:9863): Submitting to CPU 9 the PID 8.
+[DEBUG] 14:40:54:424 Elestac-KERNEL/(9863:9863): CPU 9 has something to say.
+[DEBUG] 14:40:54:424 Elestac-KERNEL/(9863:9863): Receving a PCB
+[INFO] 14:40:54:460 Elestac-KERNEL/(9863:9863): Submitting to CPU 9 the PID 8.
+[INFO] 14:42:43:368 Elestac-KERNEL/(9863:9863): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 14:42:46:90 Elestac-KERNEL/(9863:9863): CPU 9 has something to say.
+[INFO] 14:42:46:90 Elestac-KERNEL/(9863:9863): CPU 9 has closed the connection.
+[INFO] 14:42:59:943 Elestac-KERNEL/(10044:10044): Loading settings.
+[INFO] 14:42:59:948 Elestac-KERNEL/(10044:10048): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 14:42:59:950 Elestac-KERNEL/(10044:10044): Connecting to UMC on 127.0.0.1:6805.
+[INFO] 14:42:59:950 Elestac-KERNEL/(10044:10044): Stack size (sent to UMC): 0008.
+[INFO] 14:42:59:950 Elestac-KERNEL/(10044:10049): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 14:42:59:960 Elestac-KERNEL/(10044:10044): Page size: (received from UMC): 5.
+[INFO] 14:42:59:960 Elestac-KERNEL/(10044:10044): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 14:43:05:705 Elestac-KERNEL/(10044:10044): New CPU arriving (1).
+[INFO] 14:43:05:705 Elestac-KERNEL/(10044:10044): New CPU accepted with ID 8
+[INFO] 14:43:14:105 Elestac-KERNEL/(10044:10044): New console arriving (1).
+[INFO] 14:43:14:105 Elestac-KERNEL/(10044:10044): NEW (0) program with PID=0009 arriving.
+[INFO] 14:43:14:105 Elestac-KERNEL/(10044:10084): Requesting 0011 pages to UMC.
+[INFO] 14:43:15:108 Elestac-KERNEL/(10044:10084): UMC replied.
+[INFO] 14:43:15:108 Elestac-KERNEL/(10044:10084): Pages of code + stack = 11.
+[INFO] 14:43:15:108 Elestac-KERNEL/(10044:10084): The program with PID=0009 is now READY (1).
+[INFO] 14:43:15:111 Elestac-KERNEL/(10044:10044): Submitting to CPU 8 the PID 9.
+[INFO] 14:43:15:111 Elestac-KERNEL/(10044:10084): Consoles after accepting: 0.
+[DEBUG] 14:51:25:292 Elestac-KERNEL/(10044:10044): CPU 8 has something to say.
+[INFO] 14:51:25:296 Elestac-KERNEL/(10044:10044): CPU 8 has closed the connection.
+[INFO] 14:51:51:153 Elestac-KERNEL/(10517:10517): Loading settings.
+[INFO] 14:51:51:153 Elestac-KERNEL/(10517:10521): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 14:51:51:153 Elestac-KERNEL/(10517:10517): Connecting to UMC on 127.0.0.1:6805.
+[ERROR] 14:51:51:153 Elestac-KERNEL/(10517:10517): Could not connect to the UMC. Please, try again.
+[INFO] 14:52:21:975 Elestac-KERNEL/(10548:10548): Loading settings.
+[INFO] 14:52:21:980 Elestac-KERNEL/(10548:10552): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 14:52:21:986 Elestac-KERNEL/(10548:10553): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 14:52:21:986 Elestac-KERNEL/(10548:10548): Connecting to UMC on 127.0.0.1:6805.
+[ERROR] 14:52:21:987 Elestac-KERNEL/(10548:10548): Could not connect to the UMC. Please, try again.
+[INFO] 14:52:53:214 Elestac-KERNEL/(10719:10719): Loading settings.
+[INFO] 14:52:53:215 Elestac-KERNEL/(10719:10723): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 14:52:53:215 Elestac-KERNEL/(10719:10719): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 14:52:53:216 Elestac-KERNEL/(10719:10719): Stack size (sent to UMC): 0008.
+[INFO] 14:52:53:216 Elestac-KERNEL/(10719:10724): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 14:52:53:216 Elestac-KERNEL/(10719:10719): Page size: (received from UMC): 5.
+[INFO] 14:52:53:217 Elestac-KERNEL/(10719:10719): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 14:52:56:809 Elestac-KERNEL/(10719:10719): New console arriving (1).
+[INFO] 14:52:56:809 Elestac-KERNEL/(10719:10719): NEW (0) program with PID=0008 arriving.
+[INFO] 14:52:56:810 Elestac-KERNEL/(10719:10730): Requesting 0011 pages to UMC.
+[INFO] 14:52:57:813 Elestac-KERNEL/(10719:10730): UMC replied.
+[INFO] 14:52:57:814 Elestac-KERNEL/(10719:10730): Pages of code + stack = 11.
+[INFO] 14:52:57:814 Elestac-KERNEL/(10719:10730): The program with PID=0008 is now READY (1).
+[INFO] 14:52:57:819 Elestac-KERNEL/(10719:10730): Consoles after accepting: 1.
+[INFO] 14:53:01:945 Elestac-KERNEL/(10719:10719): New CPU arriving (1).
+[INFO] 14:53:01:945 Elestac-KERNEL/(10719:10719): New CPU accepted with ID 9
+[INFO] 14:53:01:945 Elestac-KERNEL/(10719:10719): Submitting to CPU 9 the PID 8.
+[DEBUG] 15:02:16:333 Elestac-KERNEL/(10719:10719): CPU 9 has something to say.
+[INFO] 15:02:16:333 Elestac-KERNEL/(10719:10719): CPU 9 has closed the connection.
+[INFO] 15:02:26:405 Elestac-KERNEL/(11159:11159): Loading settings.
+[INFO] 15:02:26:406 Elestac-KERNEL/(11159:11163): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 15:02:26:406 Elestac-KERNEL/(11159:11159): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 15:02:26:407 Elestac-KERNEL/(11159:11159): Stack size (sent to UMC): 0008.
+[INFO] 15:02:26:407 Elestac-KERNEL/(11159:11164): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 15:02:26:408 Elestac-KERNEL/(11159:11159): Page size: (received from UMC): 5.
+[INFO] 15:02:26:408 Elestac-KERNEL/(11159:11159): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 15:02:27:781 Elestac-KERNEL/(11159:11159): New console arriving (1).
+[INFO] 15:02:27:781 Elestac-KERNEL/(11159:11159): NEW (0) program with PID=0008 arriving.
+[INFO] 15:02:27:782 Elestac-KERNEL/(11159:11173): Requesting 0011 pages to UMC.
+[INFO] 15:02:28:796 Elestac-KERNEL/(11159:11173): UMC replied.
+[INFO] 15:02:28:796 Elestac-KERNEL/(11159:11173): Pages of code + stack = 11.
+[INFO] 15:02:28:796 Elestac-KERNEL/(11159:11173): The program with PID=0008 is now READY (1).
+[INFO] 15:02:28:797 Elestac-KERNEL/(11159:11173): Consoles after accepting: 1.
+[INFO] 15:02:31:109 Elestac-KERNEL/(11159:11159): New CPU arriving (1).
+[INFO] 15:02:31:109 Elestac-KERNEL/(11159:11159): New CPU accepted with ID 9
+[INFO] 15:02:31:109 Elestac-KERNEL/(11159:11159): Submitting to CPU 9 the PID 8.
+[DEBUG] 15:06:42:478 Elestac-KERNEL/(11159:11159): CPU 9 has something to say.
+[INFO] 15:06:42:481 Elestac-KERNEL/(11159:11159): CPU 9 has closed the connection.
+[INFO] 15:06:53:613 Elestac-KERNEL/(11491:11491): Loading settings.
+[INFO] 15:06:53:624 Elestac-KERNEL/(11491:11495): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 15:06:53:629 Elestac-KERNEL/(11491:11491): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 15:06:53:630 Elestac-KERNEL/(11491:11491): Stack size (sent to UMC): 0008.
+[INFO] 15:06:53:630 Elestac-KERNEL/(11491:11496): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 15:06:53:633 Elestac-KERNEL/(11491:11491): Page size: (received from UMC): 5.
+[INFO] 15:06:53:633 Elestac-KERNEL/(11491:11491): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 15:07:01:533 Elestac-KERNEL/(11491:11491): New console arriving (1).
+[INFO] 15:07:01:534 Elestac-KERNEL/(11491:11491): NEW (0) program with PID=0008 arriving.
+[INFO] 15:07:01:534 Elestac-KERNEL/(11491:11518): Requesting 0011 pages to UMC.
+[INFO] 15:07:02:538 Elestac-KERNEL/(11491:11518): UMC replied.
+[INFO] 15:07:02:538 Elestac-KERNEL/(11491:11518): Pages of code + stack = 11.
+[INFO] 15:07:14:699 Elestac-KERNEL/(11491:11518): The program with PID=0008 is now READY (1).
+[INFO] 15:07:14:699 Elestac-KERNEL/(11491:11491): New CPU arriving (1).
+[INFO] 15:07:14:699 Elestac-KERNEL/(11491:11518): Consoles after accepting: 1.
+[INFO] 15:07:14:699 Elestac-KERNEL/(11491:11491): New CPU accepted with ID 9
+[INFO] 15:07:14:699 Elestac-KERNEL/(11491:11491): Submitting to CPU 9 the PID 8.
+[DEBUG] 15:07:35:706 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[DEBUG] 15:07:35:706 Elestac-KERNEL/(11491:11491): Receving a PCB
+[INFO] 15:07:35:707 Elestac-KERNEL/(11491:11491): Submitting to CPU 9 the PID 8.
+[DEBUG] 15:07:35:0 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[DEBUG] 15:07:35:0 Elestac-KERNEL/(11491:11491): Receving a semaphore operation
+[DEBUG] 15:07:35:0 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[DEBUG] 15:07:35:0 Elestac-KERNEL/(11491:11491): Receving a PCB
+[INFO] 15:07:36:252 Elestac-KERNEL/(11491:11491): Submitting to CPU 9 the PID 50.
+[DEBUG] 15:07:36:253 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:253 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: áú`
+[DEBUG] 15:07:36:253 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:253 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:253 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:253 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:253 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:253 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:292 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:292 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 15:07:36:292 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:292 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:292 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:292 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:293 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:293 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:294 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:294 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 15:07:36:294 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:294 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:294 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:294 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:294 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:294 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:294 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:294 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: Cä`
+[DEBUG] 15:07:36:294 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:295 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:295 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:295 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:295 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:295 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:295 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:295 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 15:07:36:295 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:295 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:295 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:295 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:295 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:295 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:295 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:295 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:296 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:296 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:296 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:296 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:296 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:296 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:296 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:296 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:297 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:297 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:297 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:297 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:297 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:297 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:297 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:298 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 15:07:36:298 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:298 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:298 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:298 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:298 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:298 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:298 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:298 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: aä`
+[DEBUG] 15:07:36:298 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:298 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 15:07:36:298 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:298 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:298 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:298 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:298 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:298 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:298 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:298 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:299 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:299 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:299 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:299 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:299 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:299 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:299 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:299 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 15:07:36:299 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:299 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:299 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:299 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:299 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:299 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:299 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:300 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: bú`
+[DEBUG] 15:07:36:300 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:300 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 15:07:36:300 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:300 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:300 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:300 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:300 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:302 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:302 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:302 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 15:07:36:302 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:302 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:302 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:302 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:302 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:302 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:302 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:303 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 15:07:36:303 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:303 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:303 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:303 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:303 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:303 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:303 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:303 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: cä`
+[DEBUG] 15:07:36:303 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:303 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 15:07:36:303 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:303 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:303 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:303 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:303 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:304 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:304 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:304 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 15:07:36:304 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:304 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:304 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:304 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:304 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:304 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:304 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:304 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 15:07:36:304 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:304 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:304 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:304 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:304 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:304 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:304 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:305 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:305 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:305 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:305 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:305 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:305 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:305 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:305 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:305 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:305 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:305 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:305 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:305 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:305 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:305 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:305 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:305 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 15:07:36:306 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:306 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:306 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:306 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:306 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:306 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:306 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:306 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 15:07:36:306 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:306 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:306 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:307 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:307 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:307 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:307 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:307 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 15:07:36:307 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:307 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:307 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:307 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:307 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:307 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:307 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:308 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:308 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:308 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:308 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:308 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:308 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:308 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:308 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:308 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 15:07:36:308 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:308 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:308 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:308 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:308 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:308 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:311 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:311 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:311 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:311 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:311 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:311 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:311 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:311 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:312 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:312 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 15:07:36:312 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:312 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:312 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:312 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:312 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:312 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:312 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:312 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:312 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:312 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:312 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:312 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:312 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:312 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:312 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:312 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo:  ú`
+[DEBUG] 15:07:36:312 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:312 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:312 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:312 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:312 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:312 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:312 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:312 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:313 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:313 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:313 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:313 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:313 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:313 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:313 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:313 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: (ú`
+[DEBUG] 15:07:36:313 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:313 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:313 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:313 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:313 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:313 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:313 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:313 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:313 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:313 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:313 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:313 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:313 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[ERROR] 15:07:36:313 Elestac-KERNEL/(11491:11491): Caso no contemplado. CPU dijo: 
+[DEBUG] 15:07:36:313 Elestac-KERNEL/(11491:11491): CPU 9 has something to say.
+[DEBUG] 15:07:36:313 Elestac-KERNEL/(11491:11491): Receving a PCB
+[INFO] 15:11:15:752 Elestac-KERNEL/(11745:11745): Loading settings.
+[INFO] 15:11:15:752 Elestac-KERNEL/(11745:11749): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 15:11:15:753 Elestac-KERNEL/(11745:11745): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 15:11:15:753 Elestac-KERNEL/(11745:11745): Stack size (sent to UMC): 0008.
+[INFO] 15:11:15:753 Elestac-KERNEL/(11745:11750): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 15:11:15:754 Elestac-KERNEL/(11745:11745): Page size: (received from UMC): 5.
+[INFO] 15:11:15:754 Elestac-KERNEL/(11745:11745): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 15:11:16:920 Elestac-KERNEL/(11745:11745): New console arriving (1).
+[INFO] 15:11:16:920 Elestac-KERNEL/(11745:11745): NEW (0) program with PID=0008 arriving.
+[INFO] 15:11:16:920 Elestac-KERNEL/(11745:11760): Requesting 0011 pages to UMC.
+[INFO] 15:11:17:924 Elestac-KERNEL/(11745:11760): UMC replied.
+[INFO] 15:11:17:924 Elestac-KERNEL/(11745:11760): Pages of code + stack = 11.
+[INFO] 15:11:17:924 Elestac-KERNEL/(11745:11760): The program with PID=0008 is now READY (1).
+[INFO] 15:11:17:928 Elestac-KERNEL/(11745:11760): Consoles after accepting: 1.
+[INFO] 15:11:20:914 Elestac-KERNEL/(11745:11745): New CPU arriving (1).
+[INFO] 15:11:20:914 Elestac-KERNEL/(11745:11745): New CPU accepted with ID 9
+[INFO] 15:11:20:914 Elestac-KERNEL/(11745:11745): Submitting to CPU 9 the PID 8.
+[DEBUG] 15:11:21:713 Elestac-KERNEL/(11745:11745): CPU 9 has something to say.
+[DEBUG] 15:11:21:713 Elestac-KERNEL/(11745:11745): Receving a PCB
+[INFO] 15:11:21:752 Elestac-KERNEL/(11745:11745): Submitting to CPU 9 the PID 8.
+[DEBUG] 15:14:55:646 Elestac-KERNEL/(11745:11745): CPU 9 has something to say.
+[INFO] 15:14:55:648 Elestac-KERNEL/(11745:11745): CPU 9 has closed the connection.
+[INFO] 15:15:15:660 Elestac-KERNEL/(11972:11972): Loading settings.
+[INFO] 15:15:15:660 Elestac-KERNEL/(11972:11976): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 15:15:15:660 Elestac-KERNEL/(11972:11972): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 15:15:15:661 Elestac-KERNEL/(11972:11972): Stack size (sent to UMC): 0008.
+[INFO] 15:15:15:661 Elestac-KERNEL/(11972:11977): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 15:15:15:661 Elestac-KERNEL/(11972:11972): Page size: (received from UMC): 5.
+[INFO] 15:15:15:662 Elestac-KERNEL/(11972:11972): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 15:15:17:229 Elestac-KERNEL/(11972:11972): New console arriving (1).
+[INFO] 15:15:17:230 Elestac-KERNEL/(11972:11972): NEW (0) program with PID=0008 arriving.
+[INFO] 15:15:17:230 Elestac-KERNEL/(11972:11987): Requesting 0011 pages to UMC.
+[INFO] 15:15:18:233 Elestac-KERNEL/(11972:11987): UMC replied.
+[INFO] 15:15:18:233 Elestac-KERNEL/(11972:11987): Pages of code + stack = 11.
+[INFO] 15:15:18:233 Elestac-KERNEL/(11972:11987): The program with PID=0008 is now READY (1).
+[INFO] 15:15:18:233 Elestac-KERNEL/(11972:11987): Consoles after accepting: 1.
+[INFO] 15:15:22:873 Elestac-KERNEL/(11972:11972): New CPU arriving (1).
+[INFO] 15:15:22:873 Elestac-KERNEL/(11972:11972): New CPU accepted with ID 9
+[INFO] 15:15:22:873 Elestac-KERNEL/(11972:11972): Submitting to CPU 9 the PID 8.
+[DEBUG] 15:42:07:396 Elestac-KERNEL/(11972:11972): CPU 9 has something to say.
+[INFO] 15:42:07:396 Elestac-KERNEL/(11972:11972): CPU 9 has closed the connection.
+[INFO] 15:42:23:204 Elestac-KERNEL/(12839:12839): Loading settings.
+[INFO] 15:42:23:213 Elestac-KERNEL/(12839:12843): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 15:42:23:223 Elestac-KERNEL/(12839:12839): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 15:42:23:224 Elestac-KERNEL/(12839:12839): Stack size (sent to UMC): 0008.
+[INFO] 15:42:23:227 Elestac-KERNEL/(12839:12844): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 15:42:23:228 Elestac-KERNEL/(12839:12839): Page size: (received from UMC): 5.
+[ERROR] 15:42:23:228 Elestac-KERNEL/(12839:12839): Error while creating the CONSOLE server.
+[INFO] 15:42:57:801 Elestac-KERNEL/(13124:13124): Loading settings.
+[INFO] 15:42:57:802 Elestac-KERNEL/(13124:13128): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 15:42:57:802 Elestac-KERNEL/(13124:13124): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 15:42:57:808 Elestac-KERNEL/(13124:13124): Stack size (sent to UMC): 0008.
+[INFO] 15:42:57:813 Elestac-KERNEL/(13124:13124): Page size: (received from UMC): 5.
+[INFO] 15:42:57:813 Elestac-KERNEL/(13124:13124): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 15:42:57:802 Elestac-KERNEL/(13124:13129): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 15:43:01:511 Elestac-KERNEL/(13124:13124): New console arriving (1).
+[INFO] 15:43:01:511 Elestac-KERNEL/(13124:13124): NEW (0) program with PID=0008 arriving.
+[INFO] 15:43:01:511 Elestac-KERNEL/(13124:13143): Requesting 0011 pages to UMC.
+[INFO] 15:43:02:514 Elestac-KERNEL/(13124:13143): UMC replied.
+[INFO] 15:43:02:514 Elestac-KERNEL/(13124:13143): Pages of code + stack = 11.
+[INFO] 15:43:02:514 Elestac-KERNEL/(13124:13143): The program with PID=0008 is now READY (1).
+[INFO] 15:43:02:520 Elestac-KERNEL/(13124:13143): Consoles after accepting: 1.
+[INFO] 15:43:16:275 Elestac-KERNEL/(13124:13124): New CPU arriving (1).
+[INFO] 15:43:16:275 Elestac-KERNEL/(13124:13124): New CPU accepted with ID 9
+[INFO] 15:43:16:276 Elestac-KERNEL/(13124:13124): Submitting to CPU 9 the PID 8.
+[DEBUG] 15:44:11:606 Elestac-KERNEL/(13124:13124): CPU 9 has something to say.
+[INFO] 15:44:11:609 Elestac-KERNEL/(13124:13124): CPU 9 has closed the connection.
+[INFO] 15:44:24:19 Elestac-KERNEL/(13327:13327): Loading settings.
+[INFO] 15:44:24:20 Elestac-KERNEL/(13327:13331): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 15:44:24:20 Elestac-KERNEL/(13327:13327): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 15:44:24:20 Elestac-KERNEL/(13327:13327): Stack size (sent to UMC): 0008.
+[INFO] 15:44:24:21 Elestac-KERNEL/(13327:13332): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 15:44:24:21 Elestac-KERNEL/(13327:13327): Page size: (received from UMC): 5.
+[INFO] 15:44:24:21 Elestac-KERNEL/(13327:13327): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 15:44:25:47 Elestac-KERNEL/(13327:13327): New console arriving (1).
+[INFO] 15:44:25:47 Elestac-KERNEL/(13327:13327): NEW (0) program with PID=0008 arriving.
+[INFO] 15:44:25:47 Elestac-KERNEL/(13327:13335): Requesting 0011 pages to UMC.
+[INFO] 15:44:26:50 Elestac-KERNEL/(13327:13335): UMC replied.
+[INFO] 15:44:26:50 Elestac-KERNEL/(13327:13335): Pages of code + stack = 11.
+[INFO] 15:44:26:50 Elestac-KERNEL/(13327:13335): The program with PID=0008 is now READY (1).
+[INFO] 15:44:26:52 Elestac-KERNEL/(13327:13335): Consoles after accepting: 1.
+[INFO] 15:44:27:607 Elestac-KERNEL/(13327:13327): New CPU arriving (1).
+[INFO] 15:44:27:608 Elestac-KERNEL/(13327:13327): New CPU accepted with ID 9
+[INFO] 15:44:27:608 Elestac-KERNEL/(13327:13327): Submitting to CPU 9 the PID 8.
+[DEBUG] 15:49:39:732 Elestac-KERNEL/(13327:13327): CPU 9 has something to say.
+[INFO] 15:49:39:732 Elestac-KERNEL/(13327:13327): CPU 9 has closed the connection.
+[INFO] 15:51:12:404 Elestac-KERNEL/(14032:14032): Loading settings.
+[INFO] 15:51:12:420 Elestac-KERNEL/(14032:14039): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 15:51:12:424 Elestac-KERNEL/(14032:14041): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 15:51:12:424 Elestac-KERNEL/(14032:14032): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 15:51:12:425 Elestac-KERNEL/(14032:14032): Stack size (sent to UMC): 0008.
+[INFO] 15:51:12:425 Elestac-KERNEL/(14032:14032): Page size: (received from UMC): 5.
+[INFO] 15:51:12:425 Elestac-KERNEL/(14032:14032): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 15:51:14:671 Elestac-KERNEL/(14032:14032): New console arriving (1).
+[INFO] 15:51:14:676 Elestac-KERNEL/(14032:14032): NEW (0) program with PID=0008 arriving.
+[INFO] 15:51:14:680 Elestac-KERNEL/(14032:14056): Requesting 0011 pages to UMC.
+[INFO] 15:51:15:689 Elestac-KERNEL/(14032:14056): UMC replied.
+[INFO] 15:51:15:689 Elestac-KERNEL/(14032:14056): Pages of code + stack = 11.
+[INFO] 15:51:15:689 Elestac-KERNEL/(14032:14056): The program with PID=0008 is now READY (1).
+[INFO] 15:51:15:692 Elestac-KERNEL/(14032:14056): Consoles after accepting: 1.
+[INFO] 15:51:19:176 Elestac-KERNEL/(14032:14032): New CPU arriving (1).
+[INFO] 15:51:19:176 Elestac-KERNEL/(14032:14032): New CPU accepted with ID 9
+[INFO] 15:51:19:176 Elestac-KERNEL/(14032:14032): Submitting to CPU 9 the PID 8.
+[DEBUG] 15:52:46:139 Elestac-KERNEL/(14032:14032): CPU 9 has something to say.
+[INFO] 15:52:46:140 Elestac-KERNEL/(14032:14032): CPU 9 has closed the connection.
+[INFO] 17:38:52:151 Elestac-KERNEL/(16253:16253): Loading settings.
+[INFO] 17:38:52:155 Elestac-KERNEL/(16253:16253): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 17:38:52:156 Elestac-KERNEL/(16253:16253): Stack size (sent to UMC): 0008.
+[INFO] 17:38:52:155 Elestac-KERNEL/(16253:16257): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 17:38:52:157 Elestac-KERNEL/(16253:16258): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 17:38:52:157 Elestac-KERNEL/(16253:16253): Page size: (received from UMC): 5.
+[INFO] 17:38:52:157 Elestac-KERNEL/(16253:16253): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 17:38:56:816 Elestac-KERNEL/(16253:16253): New console arriving (1).
+[INFO] 17:38:56:816 Elestac-KERNEL/(16253:16253): NEW (0) program with PID=0008 arriving.
+[INFO] 17:38:56:816 Elestac-KERNEL/(16253:16276): Requesting 0011 pages to UMC.
+[INFO] 17:38:57:819 Elestac-KERNEL/(16253:16276): UMC replied.
+[INFO] 17:38:57:819 Elestac-KERNEL/(16253:16276): Pages of code + stack = 11.
+[INFO] 17:38:57:819 Elestac-KERNEL/(16253:16276): The program with PID=0008 is now READY (1).
+[INFO] 17:38:57:819 Elestac-KERNEL/(16253:16276): Consoles after accepting: 1.
+[INFO] 17:39:00:328 Elestac-KERNEL/(16253:16253): New CPU arriving (1).
+[INFO] 17:39:00:329 Elestac-KERNEL/(16253:16253): New CPU accepted with ID 9
+[INFO] 17:39:00:329 Elestac-KERNEL/(16253:16253): Submitting to CPU 9 the PID 8.
+[DEBUG] 17:42:32:263 Elestac-KERNEL/(16253:16253): CPU 9 has something to say.
+[INFO] 17:42:32:264 Elestac-KERNEL/(16253:16253): CPU 9 has closed the connection.
+[INFO] 17:42:40:498 Elestac-KERNEL/(16602:16602): Loading settings.
+[INFO] 17:42:40:498 Elestac-KERNEL/(16602:16606): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 17:42:40:499 Elestac-KERNEL/(16602:16602): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 17:42:40:499 Elestac-KERNEL/(16602:16602): Stack size (sent to UMC): 0008.
+[INFO] 17:42:40:499 Elestac-KERNEL/(16602:16607): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 17:42:40:500 Elestac-KERNEL/(16602:16602): Page size: (received from UMC): 5.
+[INFO] 17:42:40:500 Elestac-KERNEL/(16602:16602): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 17:42:41:61 Elestac-KERNEL/(16602:16602): New console arriving (1).
+[INFO] 17:42:41:61 Elestac-KERNEL/(16602:16602): NEW (0) program with PID=0008 arriving.
+[INFO] 17:42:41:71 Elestac-KERNEL/(16602:16610): Requesting 0011 pages to UMC.
+[INFO] 17:42:42:83 Elestac-KERNEL/(16602:16610): UMC replied.
+[INFO] 17:42:42:84 Elestac-KERNEL/(16602:16610): Pages of code + stack = 11.
+[INFO] 17:42:42:84 Elestac-KERNEL/(16602:16610): The program with PID=0008 is now READY (1).
+[INFO] 17:42:42:90 Elestac-KERNEL/(16602:16610): Consoles after accepting: 1.
+[INFO] 17:42:49:195 Elestac-KERNEL/(16602:16602): New CPU arriving (1).
+[INFO] 17:42:49:196 Elestac-KERNEL/(16602:16602): New CPU accepted with ID 9
+[INFO] 17:42:49:196 Elestac-KERNEL/(16602:16602): Submitting to CPU 9 the PID 8.
+[DEBUG] 17:48:22:21 Elestac-KERNEL/(16602:16602): CPU 9 has something to say.
+[INFO] 17:48:22:21 Elestac-KERNEL/(16602:16602): CPU 9 has closed the connection.
+[INFO] 17:48:40:579 Elestac-KERNEL/(16938:16938): Loading settings.
+[INFO] 17:48:40:579 Elestac-KERNEL/(16938:16942): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 17:48:40:588 Elestac-KERNEL/(16938:16938): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 17:48:40:588 Elestac-KERNEL/(16938:16938): Stack size (sent to UMC): 0008.
+[INFO] 17:48:40:588 Elestac-KERNEL/(16938:16943): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 17:48:40:594 Elestac-KERNEL/(16938:16938): Page size: (received from UMC): 5.
+[INFO] 17:48:40:594 Elestac-KERNEL/(16938:16938): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 17:48:42:57 Elestac-KERNEL/(16938:16938): New console arriving (1).
+[INFO] 17:48:42:58 Elestac-KERNEL/(16938:16938): NEW (0) program with PID=0008 arriving.
+[INFO] 17:48:42:62 Elestac-KERNEL/(16938:16946): Requesting 0011 pages to UMC.
+[INFO] 17:48:48:210 Elestac-KERNEL/(16938:16946): UMC replied.
+[INFO] 17:48:48:211 Elestac-KERNEL/(16938:16946): Pages of code + stack = 11.
+[INFO] 17:48:48:211 Elestac-KERNEL/(16938:16946): The program with PID=0008 is now READY (1).
+[INFO] 17:48:48:212 Elestac-KERNEL/(16938:16946): Consoles after accepting: 1.
+[INFO] 17:48:52:864 Elestac-KERNEL/(16938:16938): New CPU arriving (1).
+[INFO] 17:48:52:864 Elestac-KERNEL/(16938:16938): New CPU accepted with ID 9
+[INFO] 17:48:52:864 Elestac-KERNEL/(16938:16938): Submitting to CPU 9 the PID 8.
+[DEBUG] 17:56:30:216 Elestac-KERNEL/(16938:16938): CPU 9 has something to say.
+[INFO] 17:56:30:217 Elestac-KERNEL/(16938:16938): CPU 9 has closed the connection.
+[INFO] 17:56:38:506 Elestac-KERNEL/(17283:17283): Loading settings.
+[INFO] 17:56:38:516 Elestac-KERNEL/(17283:17287): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 17:56:38:522 Elestac-KERNEL/(17283:17283): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 17:56:38:522 Elestac-KERNEL/(17283:17283): Stack size (sent to UMC): 0008.
+[INFO] 17:56:38:522 Elestac-KERNEL/(17283:17288): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 17:56:38:536 Elestac-KERNEL/(17283:17283): Page size: (received from UMC): 5.
+[INFO] 17:56:38:536 Elestac-KERNEL/(17283:17283): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 17:56:40:348 Elestac-KERNEL/(17283:17283): New console arriving (1).
+[INFO] 17:56:40:349 Elestac-KERNEL/(17283:17283): NEW (0) program with PID=0008 arriving.
+[INFO] 17:56:40:356 Elestac-KERNEL/(17283:17298): Requesting 0011 pages to UMC.
+[INFO] 17:56:49:570 Elestac-KERNEL/(17283:17298): UMC replied.
+[INFO] 17:56:49:570 Elestac-KERNEL/(17283:17298): Pages of code + stack = 11.
+[INFO] 17:56:49:570 Elestac-KERNEL/(17283:17298): The program with PID=0008 is now READY (1).
+[INFO] 17:56:49:572 Elestac-KERNEL/(17283:17298): Consoles after accepting: 1.
+[INFO] 17:57:20:531 Elestac-KERNEL/(17283:17283): New CPU arriving (1).
+[INFO] 17:57:20:531 Elestac-KERNEL/(17283:17283): New CPU accepted with ID 9
+[INFO] 17:57:20:531 Elestac-KERNEL/(17283:17283): Submitting to CPU 9 the PID 8.
+[DEBUG] 18:18:11:572 Elestac-KERNEL/(17283:17283): CPU 9 has something to say.
+[INFO] 18:18:11:573 Elestac-KERNEL/(17283:17283): CPU 9 has closed the connection.
+[INFO] 18:18:27:36 Elestac-KERNEL/(18154:18154): Loading settings.
+[INFO] 18:18:27:36 Elestac-KERNEL/(18154:18159): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 18:18:27:38 Elestac-KERNEL/(18154:18154): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 18:18:27:38 Elestac-KERNEL/(18154:18154): Stack size (sent to UMC): 0008.
+[INFO] 18:18:27:46 Elestac-KERNEL/(18154:18160): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 18:18:27:47 Elestac-KERNEL/(18154:18154): Page size: (received from UMC): 5.
+[INFO] 18:18:27:47 Elestac-KERNEL/(18154:18154): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 18:18:29:190 Elestac-KERNEL/(18154:18154): New console arriving (1).
+[INFO] 18:18:29:190 Elestac-KERNEL/(18154:18154): NEW (0) program with PID=0008 arriving.
+[INFO] 18:18:29:191 Elestac-KERNEL/(18154:18173): Requesting 0011 pages to UMC.
+[INFO] 18:18:30:196 Elestac-KERNEL/(18154:18173): UMC replied.
+[INFO] 18:18:30:196 Elestac-KERNEL/(18154:18173): Pages of code + stack = 11.
+[INFO] 18:18:30:196 Elestac-KERNEL/(18154:18173): The program with PID=0008 is now READY (1).
+[INFO] 18:18:30:201 Elestac-KERNEL/(18154:18173): Consoles after accepting: 1.
+[INFO] 18:18:32:925 Elestac-KERNEL/(18154:18154): New CPU arriving (1).
+[INFO] 18:18:32:925 Elestac-KERNEL/(18154:18154): New CPU accepted with ID 9
+[INFO] 18:18:32:925 Elestac-KERNEL/(18154:18154): Submitting to CPU 9 the PID 8.
+[DEBUG] 18:18:33:724 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[DEBUG] 18:18:33:724 Elestac-KERNEL/(18154:18154): Receving a PCB
+[INFO] 18:18:33:760 Elestac-KERNEL/(18154:18154): Submitting to CPU 9 the PID 8.
+[DEBUG] 18:18:44:893 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[DEBUG] 18:18:44:893 Elestac-KERNEL/(18154:18154): Receving a semaphore operation
+[DEBUG] 18:18:44:893 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[DEBUG] 18:18:44:893 Elestac-KERNEL/(18154:18154): Receving a PCB
+[INFO] 18:18:45:145 Elestac-KERNEL/(18154:18154): Submitting to CPU 9 the PID 50.
+[DEBUG] 18:18:45:146 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:146 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: áú`
+[DEBUG] 18:18:45:146 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:146 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:146 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:146 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:146 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:146 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:184 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:184 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 18:18:45:184 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:184 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:184 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:184 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:184 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: Cä`
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: aä`
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: bú`
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 18:18:45:185 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:185 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: cä`
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:186 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:186 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo:  ú`
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: (ú`
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[ERROR] 18:18:45:187 Elestac-KERNEL/(18154:18154): Caso no contemplado. CPU dijo: 
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): CPU 9 has something to say.
+[DEBUG] 18:18:45:187 Elestac-KERNEL/(18154:18154): Receving a PCB
+[INFO] 18:20:58:298 Elestac-KERNEL/(18381:18381): Loading settings.
+[INFO] 18:20:58:304 Elestac-KERNEL/(18381:18385): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 18:20:58:308 Elestac-KERNEL/(18381:18381): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 18:20:58:308 Elestac-KERNEL/(18381:18386): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 18:20:58:308 Elestac-KERNEL/(18381:18381): Stack size (sent to UMC): 0008.
+[INFO] 18:20:58:319 Elestac-KERNEL/(18381:18381): Page size: (received from UMC): 5.
+[INFO] 18:20:58:320 Elestac-KERNEL/(18381:18381): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 18:21:04:88 Elestac-KERNEL/(18381:18381): New CPU arriving (1).
+[INFO] 18:21:04:89 Elestac-KERNEL/(18381:18381): New CPU accepted with ID 8
+[INFO] 18:21:08:781 Elestac-KERNEL/(18381:18381): New console arriving (1).
+[INFO] 18:21:08:781 Elestac-KERNEL/(18381:18381): NEW (0) program with PID=0009 arriving.
+[INFO] 18:21:08:781 Elestac-KERNEL/(18381:18420): Requesting 0011 pages to UMC.
+[INFO] 18:21:09:790 Elestac-KERNEL/(18381:18420): UMC replied.
+[INFO] 18:21:09:791 Elestac-KERNEL/(18381:18420): Pages of code + stack = 11.
+[INFO] 18:21:09:791 Elestac-KERNEL/(18381:18420): The program with PID=0009 is now READY (1).
+[INFO] 18:21:09:796 Elestac-KERNEL/(18381:18381): Submitting to CPU 8 the PID 9.
+[INFO] 18:21:09:796 Elestac-KERNEL/(18381:18420): Consoles after accepting: 0.
+[DEBUG] 18:21:10:605 Elestac-KERNEL/(18381:18381): CPU 8 has something to say.
+[DEBUG] 18:21:10:605 Elestac-KERNEL/(18381:18381): Receving a PCB
+[INFO] 18:21:10:606 Elestac-KERNEL/(18381:18381): Submitting to CPU 8 the PID 9.
+[INFO] 18:24:16:805 Elestac-KERNEL/(18743:18743): Loading settings.
+[INFO] 18:24:16:812 Elestac-KERNEL/(18743:18747): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 18:24:16:817 Elestac-KERNEL/(18743:18743): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 18:24:16:818 Elestac-KERNEL/(18743:18748): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 18:24:16:818 Elestac-KERNEL/(18743:18743): Stack size (sent to UMC): 0008.
+[INFO] 18:24:16:832 Elestac-KERNEL/(18743:18743): Page size: (received from UMC): 5.
+[INFO] 18:24:16:832 Elestac-KERNEL/(18743:18743): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 18:24:18:330 Elestac-KERNEL/(18743:18743): New console arriving (1).
+[INFO] 18:24:18:331 Elestac-KERNEL/(18743:18743): NEW (0) program with PID=0008 arriving.
+[INFO] 18:24:18:335 Elestac-KERNEL/(18743:18758): Requesting 0011 pages to UMC.
+[INFO] 18:24:19:342 Elestac-KERNEL/(18743:18758): UMC replied.
+[INFO] 18:24:19:343 Elestac-KERNEL/(18743:18758): Pages of code + stack = 11.
+[INFO] 18:24:19:343 Elestac-KERNEL/(18743:18758): The program with PID=0008 is now READY (1).
+[INFO] 18:24:19:346 Elestac-KERNEL/(18743:18758): Consoles after accepting: 1.
+[INFO] 18:24:23:563 Elestac-KERNEL/(18743:18743): New CPU arriving (1).
+[INFO] 18:24:23:563 Elestac-KERNEL/(18743:18743): New CPU accepted with ID 9
+[INFO] 18:24:23:564 Elestac-KERNEL/(18743:18743): Submitting to CPU 9 the PID 8.
+[DEBUG] 18:24:24:364 Elestac-KERNEL/(18743:18743): CPU 9 has something to say.
+[DEBUG] 18:24:24:364 Elestac-KERNEL/(18743:18743): Receving a PCB
+[INFO] 18:24:24:400 Elestac-KERNEL/(18743:18743): Submitting to CPU 9 the PID 8.
+[INFO] 18:28:11:513 Elestac-KERNEL/(19014:19014): Loading settings.
+[INFO] 18:28:11:520 Elestac-KERNEL/(19014:19018): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 18:28:11:526 Elestac-KERNEL/(19014:19014): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 18:28:11:527 Elestac-KERNEL/(19014:19014): Stack size (sent to UMC): 0008.
+[INFO] 18:28:11:527 Elestac-KERNEL/(19014:19019): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 18:28:11:552 Elestac-KERNEL/(19014:19014): Page size: (received from UMC): 5.
+[INFO] 18:28:11:552 Elestac-KERNEL/(19014:19014): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 18:28:13:711 Elestac-KERNEL/(19014:19014): New console arriving (1).
+[INFO] 18:28:13:712 Elestac-KERNEL/(19014:19014): NEW (0) program with PID=0008 arriving.
+[INFO] 18:28:13:712 Elestac-KERNEL/(19014:19030): Requesting 0011 pages to UMC.
+[INFO] 18:28:14:717 Elestac-KERNEL/(19014:19030): UMC replied.
+[INFO] 18:28:14:717 Elestac-KERNEL/(19014:19030): Pages of code + stack = 11.
+[INFO] 18:28:14:717 Elestac-KERNEL/(19014:19030): The program with PID=0008 is now READY (1).
+[INFO] 18:28:14:717 Elestac-KERNEL/(19014:19030): Consoles after accepting: 1.
+[INFO] 18:28:20:503 Elestac-KERNEL/(19014:19014): New CPU arriving (1).
+[INFO] 18:28:20:504 Elestac-KERNEL/(19014:19014): New CPU accepted with ID 9
+[INFO] 18:28:20:504 Elestac-KERNEL/(19014:19014): Submitting to CPU 9 the PID 8.
+[DEBUG] 18:36:34:550 Elestac-KERNEL/(19014:19014): CPU 9 has something to say.
+[INFO] 18:36:34:551 Elestac-KERNEL/(19014:19014): CPU 9 has closed the connection.
+[INFO] 18:36:43:512 Elestac-KERNEL/(19376:19376): Loading settings.
+[INFO] 18:36:43:528 Elestac-KERNEL/(19376:19380): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 18:36:43:537 Elestac-KERNEL/(19376:19376): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 18:36:43:538 Elestac-KERNEL/(19376:19376): Stack size (sent to UMC): 0008.
+[INFO] 18:36:43:539 Elestac-KERNEL/(19376:19381): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 18:36:43:545 Elestac-KERNEL/(19376:19376): Page size: (received from UMC): 5.
+[INFO] 18:36:43:545 Elestac-KERNEL/(19376:19376): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 18:36:44:624 Elestac-KERNEL/(19376:19376): New console arriving (1).
+[INFO] 18:36:44:624 Elestac-KERNEL/(19376:19376): NEW (0) program with PID=0008 arriving.
+[INFO] 18:36:44:632 Elestac-KERNEL/(19376:19386): Requesting 0011 pages to UMC.
+[INFO] 18:36:45:638 Elestac-KERNEL/(19376:19386): UMC replied.
+[INFO] 18:36:45:638 Elestac-KERNEL/(19376:19386): Pages of code + stack = 11.
+[INFO] 18:36:45:638 Elestac-KERNEL/(19376:19386): The program with PID=0008 is now READY (1).
+[INFO] 18:36:45:638 Elestac-KERNEL/(19376:19386): Consoles after accepting: 1.
+[INFO] 18:36:48:807 Elestac-KERNEL/(19376:19376): New CPU arriving (1).
+[INFO] 18:36:48:807 Elestac-KERNEL/(19376:19376): New CPU accepted with ID 9
+[INFO] 18:36:48:807 Elestac-KERNEL/(19376:19376): Submitting to CPU 9 the PID 8.
+[DEBUG] 18:40:42:703 Elestac-KERNEL/(19376:19376): CPU 9 has something to say.
+[INFO] 18:40:42:703 Elestac-KERNEL/(19376:19376): CPU 9 has closed the connection.
+[INFO] 18:41:02:838 Elestac-KERNEL/(20408:20408): Loading settings.
+[INFO] 18:41:02:844 Elestac-KERNEL/(20408:20412): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 18:41:02:850 Elestac-KERNEL/(20408:20408): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 18:41:02:850 Elestac-KERNEL/(20408:20408): Stack size (sent to UMC): 0008.
+[INFO] 18:41:02:851 Elestac-KERNEL/(20408:20413): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 18:41:02:856 Elestac-KERNEL/(20408:20408): Page size: (received from UMC): 5.
+[INFO] 18:41:02:856 Elestac-KERNEL/(20408:20408): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 18:41:04:135 Elestac-KERNEL/(20408:20408): New console arriving (1).
+[INFO] 18:41:04:135 Elestac-KERNEL/(20408:20408): NEW (0) program with PID=0008 arriving.
+[INFO] 18:41:04:156 Elestac-KERNEL/(20408:20417): Requesting 0011 pages to UMC.
+[INFO] 18:41:05:159 Elestac-KERNEL/(20408:20417): UMC replied.
+[INFO] 18:41:05:159 Elestac-KERNEL/(20408:20417): Pages of code + stack = 11.
+[INFO] 18:41:05:159 Elestac-KERNEL/(20408:20417): The program with PID=0008 is now READY (1).
+[INFO] 18:41:05:160 Elestac-KERNEL/(20408:20417): Consoles after accepting: 1.
+[INFO] 18:41:07:663 Elestac-KERNEL/(20408:20408): New CPU arriving (1).
+[INFO] 18:41:07:664 Elestac-KERNEL/(20408:20408): New CPU accepted with ID 9
+[INFO] 18:41:07:664 Elestac-KERNEL/(20408:20408): Submitting to CPU 9 the PID 8.
+[DEBUG] 18:46:28:736 Elestac-KERNEL/(20408:20408): CPU 9 has something to say.
+[INFO] 18:46:28:736 Elestac-KERNEL/(20408:20408): CPU 9 has closed the connection.
+[INFO] 18:46:44:117 Elestac-KERNEL/(20748:20748): Loading settings.
+[INFO] 18:46:44:117 Elestac-KERNEL/(20748:20752): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 18:46:44:140 Elestac-KERNEL/(20748:20748): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 18:46:44:141 Elestac-KERNEL/(20748:20748): Stack size (sent to UMC): 0008.
+[INFO] 18:46:44:141 Elestac-KERNEL/(20748:20753): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 18:46:44:144 Elestac-KERNEL/(20748:20748): Page size: (received from UMC): 5.
+[INFO] 18:46:44:147 Elestac-KERNEL/(20748:20748): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 18:46:50:256 Elestac-KERNEL/(20748:20748): New console arriving (1).
+[INFO] 18:46:50:256 Elestac-KERNEL/(20748:20748): NEW (0) program with PID=0008 arriving.
+[INFO] 18:46:50:257 Elestac-KERNEL/(20748:20775): Requesting 0011 pages to UMC.
+[INFO] 18:46:51:259 Elestac-KERNEL/(20748:20775): UMC replied.
+[INFO] 18:46:51:260 Elestac-KERNEL/(20748:20775): Pages of code + stack = 11.
+[INFO] 18:46:51:260 Elestac-KERNEL/(20748:20775): The program with PID=0008 is now READY (1).
+[INFO] 18:46:51:260 Elestac-KERNEL/(20748:20775): Consoles after accepting: 1.
+[INFO] 18:46:54:524 Elestac-KERNEL/(20748:20748): New CPU arriving (1).
+[INFO] 18:46:54:524 Elestac-KERNEL/(20748:20748): New CPU accepted with ID 9
+[INFO] 18:46:54:524 Elestac-KERNEL/(20748:20748): Submitting to CPU 9 the PID 8.
+[INFO] 19:03:09:139 Elestac-KERNEL/(20748:20748): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 19:03:09:892 Elestac-KERNEL/(20748:20748): CPU 9 has something to say.
+[INFO] 19:03:09:892 Elestac-KERNEL/(20748:20748): CPU 9 has closed the connection.
+[INFO] 19:03:20:985 Elestac-KERNEL/(21411:21411): Loading settings.
+[INFO] 19:03:20:985 Elestac-KERNEL/(21411:21415): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 19:03:20:988 Elestac-KERNEL/(21411:21411): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 19:03:20:989 Elestac-KERNEL/(21411:21411): Stack size (sent to UMC): 0008.
+[INFO] 19:03:20:990 Elestac-KERNEL/(21411:21416): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 19:03:20:995 Elestac-KERNEL/(21411:21411): Page size: (received from UMC): 5.
+[INFO] 19:03:20:995 Elestac-KERNEL/(21411:21411): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 19:03:23:660 Elestac-KERNEL/(21411:21411): New console arriving (1).
+[INFO] 19:03:23:660 Elestac-KERNEL/(21411:21411): NEW (0) program with PID=0008 arriving.
+[INFO] 19:03:23:664 Elestac-KERNEL/(21411:21433): Requesting 0011 pages to UMC.
+[INFO] 19:03:24:680 Elestac-KERNEL/(21411:21433): UMC replied.
+[INFO] 19:03:24:680 Elestac-KERNEL/(21411:21433): Pages of code + stack = 11.
+[INFO] 19:03:24:681 Elestac-KERNEL/(21411:21433): The program with PID=0008 is now READY (1).
+[INFO] 19:03:24:683 Elestac-KERNEL/(21411:21433): Consoles after accepting: 1.
+[INFO] 19:03:30:548 Elestac-KERNEL/(21411:21411): New CPU arriving (1).
+[INFO] 19:03:30:548 Elestac-KERNEL/(21411:21411): New CPU accepted with ID 9
+[INFO] 19:03:30:549 Elestac-KERNEL/(21411:21411): Submitting to CPU 9 the PID 8.
+[DEBUG] 19:34:43:102 Elestac-KERNEL/(21411:21411): CPU 9 has something to say.
+[DEBUG] 19:34:43:103 Elestac-KERNEL/(21411:21411): Receving a PCB
+[INFO] 19:34:49:178 Elestac-KERNEL/(21411:21411): Submitting to CPU 9 the PID 8.
+[INFO] 19:55:06:296 Elestac-KERNEL/(21411:21411): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 19:55:07:819 Elestac-KERNEL/(21411:21411): CPU 9 has something to say.
+[INFO] 19:55:07:819 Elestac-KERNEL/(21411:21411): CPU 9 has closed the connection.
+[INFO] 19:55:15:744 Elestac-KERNEL/(22729:22729): Loading settings.
+[INFO] 19:55:15:753 Elestac-KERNEL/(22729:22733): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 19:55:15:764 Elestac-KERNEL/(22729:22729): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 19:55:15:764 Elestac-KERNEL/(22729:22734): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 19:55:15:765 Elestac-KERNEL/(22729:22729): Stack size (sent to UMC): 0008.
+[INFO] 19:55:15:768 Elestac-KERNEL/(22729:22729): Page size: (received from UMC): 5.
+[INFO] 19:55:15:768 Elestac-KERNEL/(22729:22729): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 19:55:16:464 Elestac-KERNEL/(22729:22729): New console arriving (1).
+[INFO] 19:55:16:464 Elestac-KERNEL/(22729:22729): NEW (0) program with PID=0008 arriving.
+[INFO] 19:55:16:476 Elestac-KERNEL/(22729:22737): Requesting 0011 pages to UMC.
+[INFO] 19:55:27:818 Elestac-KERNEL/(22729:22737): UMC replied.
+[INFO] 19:55:27:818 Elestac-KERNEL/(22729:22737): Pages of code + stack = 11.
+[INFO] 19:55:27:818 Elestac-KERNEL/(22729:22737): The program with PID=0008 is now READY (1).
+[INFO] 19:55:27:818 Elestac-KERNEL/(22729:22737): Consoles after accepting: 1.
+[INFO] 19:55:27:824 Elestac-KERNEL/(22729:22729): New CPU arriving (1).
+[INFO] 19:55:27:824 Elestac-KERNEL/(22729:22729): New CPU accepted with ID 9
+[INFO] 19:55:27:824 Elestac-KERNEL/(22729:22729): Submitting to CPU 9 the PID 8.
+[DEBUG] 20:02:54:791 Elestac-KERNEL/(22729:22729): CPU 9 has something to say.
+[INFO] 20:02:54:792 Elestac-KERNEL/(22729:22729): CPU 9 has closed the connection.
+[INFO] 20:03:14:210 Elestac-KERNEL/(23226:23226): Loading settings.
+[INFO] 20:03:14:223 Elestac-KERNEL/(23226:23230): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 20:03:14:228 Elestac-KERNEL/(23226:23226): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 20:03:14:228 Elestac-KERNEL/(23226:23226): Stack size (sent to UMC): 0008.
+[INFO] 20:03:14:229 Elestac-KERNEL/(23226:23231): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 20:03:14:234 Elestac-KERNEL/(23226:23226): Page size: (received from UMC): 5.
+[INFO] 20:03:14:234 Elestac-KERNEL/(23226:23226): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 20:03:15:768 Elestac-KERNEL/(23226:23226): New console arriving (1).
+[INFO] 20:03:15:772 Elestac-KERNEL/(23226:23226): NEW (0) program with PID=0008 arriving.
+[INFO] 20:03:15:779 Elestac-KERNEL/(23226:23237): Requesting 0011 pages to UMC.
+[INFO] 20:03:19:56 Elestac-KERNEL/(23226:23226): New CPU arriving (1).
+[INFO] 20:03:19:57 Elestac-KERNEL/(23226:23226): New CPU accepted with ID 9
+[INFO] 20:03:26:349 Elestac-KERNEL/(23226:23237): UMC replied.
+[INFO] 20:03:26:349 Elestac-KERNEL/(23226:23237): Pages of code + stack = 11.
+[INFO] 20:03:26:349 Elestac-KERNEL/(23226:23237): The program with PID=0008 is now READY (1).
+[INFO] 20:03:26:349 Elestac-KERNEL/(23226:23226): Submitting to CPU 9 the PID 8.
+[INFO] 20:03:26:352 Elestac-KERNEL/(23226:23237): Consoles after accepting: 0.
+[DEBUG] 20:12:46:302 Elestac-KERNEL/(23226:23226): CPU 9 has something to say.
+[DEBUG] 20:12:46:302 Elestac-KERNEL/(23226:23226): Receving a PCB
+[INFO] 20:12:46:303 Elestac-KERNEL/(23226:23226): Submitting to CPU 9 the PID 8.
+[INFO] 20:34:57:835 Elestac-KERNEL/(23226:23226): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 20:35:01:436 Elestac-KERNEL/(23226:23226): CPU 9 has something to say.
+[INFO] 20:35:01:436 Elestac-KERNEL/(23226:23226): CPU 9 has closed the connection.
+[INFO] 20:36:09:805 Elestac-KERNEL/(24278:24278): Loading settings.
+[INFO] 20:36:09:805 Elestac-KERNEL/(24278:24282): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 20:36:09:806 Elestac-KERNEL/(24278:24278): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 20:36:09:807 Elestac-KERNEL/(24278:24278): Stack size (sent to UMC): 0008.
+[INFO] 20:36:09:807 Elestac-KERNEL/(24278:24283): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 20:36:09:808 Elestac-KERNEL/(24278:24278): Page size: (received from UMC): 5.
+[INFO] 20:36:09:808 Elestac-KERNEL/(24278:24278): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 20:36:14:545 Elestac-KERNEL/(24278:24278): New console arriving (1).
+[INFO] 20:36:14:545 Elestac-KERNEL/(24278:24278): NEW (0) program with PID=0008 arriving.
+[INFO] 20:36:14:545 Elestac-KERNEL/(24278:24297): Requesting 0011 pages to UMC.
+[INFO] 20:38:52:802 Elestac-KERNEL/(24278:24297): UMC replied.
+[INFO] 20:38:52:802 Elestac-KERNEL/(24278:24297): Pages of code + stack = 11.
+[INFO] 20:38:52:802 Elestac-KERNEL/(24278:24297): The program with PID=0008 is now READY (1).
+[INFO] 20:38:52:804 Elestac-KERNEL/(24278:24297): Consoles after accepting: 1.
+[INFO] 20:39:14:447 Elestac-KERNEL/(24278:24278): New CPU arriving (1).
+[INFO] 20:39:14:447 Elestac-KERNEL/(24278:24278): New CPU accepted with ID 9
+[INFO] 20:39:14:447 Elestac-KERNEL/(24278:24278): Submitting to CPU 9 the PID 8.
+[INFO] 20:39:59:195 Elestac-KERNEL/(24278:24278): New CPU arriving (1).
+[INFO] 20:39:59:196 Elestac-KERNEL/(24278:24278): New CPU accepted with ID 10
+[DEBUG] 20:41:46:531 Elestac-KERNEL/(24278:24278): CPU 10 has something to say.
+[INFO] 20:41:46:531 Elestac-KERNEL/(24278:24278): CPU 10 has closed the connection.
+[INFO] 20:43:35:525 Elestac-KERNEL/(24278:24278): A console has closed the connection, the associated PID 0008 will be terminated.
+[DEBUG] 20:43:36:805 Elestac-KERNEL/(24278:24278): CPU 9 has something to say.
+[INFO] 20:43:36:805 Elestac-KERNEL/(24278:24278): CPU 9 has closed the connection.
+[INFO] 20:43:52:520 Elestac-KERNEL/(24832:24832): Loading settings.
+[INFO] 20:43:52:533 Elestac-KERNEL/(24832:24836): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 20:43:52:537 Elestac-KERNEL/(24832:24832): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 20:43:52:537 Elestac-KERNEL/(24832:24832): Stack size (sent to UMC): 0008.
+[INFO] 20:43:52:537 Elestac-KERNEL/(24832:24837): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 20:43:52:538 Elestac-KERNEL/(24832:24832): Page size: (received from UMC): 5.
+[INFO] 20:43:52:538 Elestac-KERNEL/(24832:24832): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 20:43:57:275 Elestac-KERNEL/(24832:24832): New console arriving (1).
+[INFO] 20:43:57:275 Elestac-KERNEL/(24832:24832): NEW (0) program with PID=0008 arriving.
+[INFO] 20:43:57:285 Elestac-KERNEL/(24832:24850): Requesting 0011 pages to UMC.
+[INFO] 20:44:10:349 Elestac-KERNEL/(24832:24850): UMC replied.
+[INFO] 20:44:10:349 Elestac-KERNEL/(24832:24850): Pages of code + stack = 11.
+[INFO] 20:44:10:349 Elestac-KERNEL/(24832:24850): The program with PID=0008 is now READY (1).
+[INFO] 20:44:10:349 Elestac-KERNEL/(24832:24850): Consoles after accepting: 1.
+[INFO] 20:44:21:453 Elestac-KERNEL/(24832:24832): New CPU arriving (1).
+[INFO] 20:44:21:454 Elestac-KERNEL/(24832:24832): New CPU accepted with ID 9
+[INFO] 20:44:21:454 Elestac-KERNEL/(24832:24832): Submitting to CPU 9 the PID 8.
+[DEBUG] 20:48:43:162 Elestac-KERNEL/(24832:24832): CPU 9 has something to say.
+[DEBUG] 20:48:43:162 Elestac-KERNEL/(24832:24832): Receving a PCB
+[INFO] 20:48:43:200 Elestac-KERNEL/(24832:24832): Submitting to CPU 9 the PID 8.
+[DEBUG] 20:59:17:187 Elestac-KERNEL/(24832:24832): CPU 9 has something to say.
+[INFO] 20:59:17:187 Elestac-KERNEL/(24832:24832): CPU 9 has closed the connection.
+[INFO] 21:00:19:43 Elestac-KERNEL/(25536:25536): Loading settings.
+[INFO] 21:00:19:49 Elestac-KERNEL/(25536:25540): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 21:00:19:60 Elestac-KERNEL/(25536:25536): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 21:00:19:61 Elestac-KERNEL/(25536:25536): Stack size (sent to UMC): 0008.
+[INFO] 21:00:19:61 Elestac-KERNEL/(25536:25541): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 21:00:19:63 Elestac-KERNEL/(25536:25536): Page size: (received from UMC): 5.
+[INFO] 21:00:19:63 Elestac-KERNEL/(25536:25536): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 21:00:22:154 Elestac-KERNEL/(25536:25536): New CPU arriving (1).
+[INFO] 21:00:22:155 Elestac-KERNEL/(25536:25536): New CPU accepted with ID 8
+[INFO] 21:00:28:906 Elestac-KERNEL/(25536:25536): New console arriving (1).
+[INFO] 21:00:28:906 Elestac-KERNEL/(25536:25536): NEW (0) program with PID=0009 arriving.
+[INFO] 21:00:28:919 Elestac-KERNEL/(25536:25593): Requesting 0011 pages to UMC.
+[INFO] 21:00:34:881 Elestac-KERNEL/(25536:25593): UMC replied.
+[INFO] 21:00:34:881 Elestac-KERNEL/(25536:25593): Pages of code + stack = 11.
+[INFO] 21:00:34:882 Elestac-KERNEL/(25536:25593): The program with PID=0009 is now READY (1).
+[INFO] 21:00:34:882 Elestac-KERNEL/(25536:25536): Submitting to CPU 8 the PID 9.
+[INFO] 21:00:34:884 Elestac-KERNEL/(25536:25593): Consoles after accepting: 0.
+[DEBUG] 21:02:03:703 Elestac-KERNEL/(25536:25536): CPU 8 has something to say.
+[DEBUG] 21:02:03:704 Elestac-KERNEL/(25536:25536): Receving a PCB
+[INFO] 21:02:03:704 Elestac-KERNEL/(25536:25536): Submitting to CPU 8 the PID 9.
+[DEBUG] 21:03:06:740 Elestac-KERNEL/(25536:25536): CPU 8 has something to say.
+[INFO] 21:03:06:740 Elestac-KERNEL/(25536:25536): CPU 8 has closed the connection.
+[INFO] 21:03:15:878 Elestac-KERNEL/(25788:25788): Loading settings.
+[INFO] 21:03:15:887 Elestac-KERNEL/(25788:25792): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 21:03:15:904 Elestac-KERNEL/(25788:25788): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 21:03:15:905 Elestac-KERNEL/(25788:25788): Stack size (sent to UMC): 0008.
+[INFO] 21:03:15:907 Elestac-KERNEL/(25788:25793): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 21:03:15:910 Elestac-KERNEL/(25788:25788): Page size: (received from UMC): 5.
+[INFO] 21:03:15:910 Elestac-KERNEL/(25788:25788): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 21:03:16:38 Elestac-KERNEL/(25788:25788): New console arriving (1).
+[INFO] 21:03:16:38 Elestac-KERNEL/(25788:25788): NEW (0) program with PID=0008 arriving.
+[INFO] 21:03:16:48 Elestac-KERNEL/(25788:25796): Requesting 0011 pages to UMC.
+[INFO] 21:03:17:53 Elestac-KERNEL/(25788:25796): UMC replied.
+[INFO] 21:03:17:53 Elestac-KERNEL/(25788:25796): Pages of code + stack = 11.
+[INFO] 21:03:17:53 Elestac-KERNEL/(25788:25796): The program with PID=0008 is now READY (1).
+[INFO] 21:03:17:56 Elestac-KERNEL/(25788:25796): Consoles after accepting: 1.
+[INFO] 21:03:18:988 Elestac-KERNEL/(25788:25788): New CPU arriving (1).
+[INFO] 21:03:18:988 Elestac-KERNEL/(25788:25788): New CPU accepted with ID 9
+[INFO] 21:03:18:988 Elestac-KERNEL/(25788:25788): Submitting to CPU 9 the PID 8.
+[DEBUG] 21:06:20:972 Elestac-KERNEL/(25788:25788): CPU 9 has something to say.
+[DEBUG] 21:06:20:972 Elestac-KERNEL/(25788:25788): Receving a PCB
+[INFO] 21:06:21:8 Elestac-KERNEL/(25788:25788): Submitting to CPU 9 the PID 8.
+[DEBUG] 21:10:19:698 Elestac-KERNEL/(25788:25788): CPU 9 has something to say.
+[INFO] 21:10:19:698 Elestac-KERNEL/(25788:25788): CPU 9 has closed the connection.
+[INFO] 21:10:37:843 Elestac-KERNEL/(26232:26232): Loading settings.
+[INFO] 21:10:37:844 Elestac-KERNEL/(26232:26236): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 21:10:37:844 Elestac-KERNEL/(26232:26232): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 21:10:37:844 Elestac-KERNEL/(26232:26232): Stack size (sent to UMC): 0008.
+[INFO] 21:10:37:845 Elestac-KERNEL/(26232:26237): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 21:10:37:845 Elestac-KERNEL/(26232:26232): Page size: (received from UMC): 5.
+[INFO] 21:10:37:845 Elestac-KERNEL/(26232:26232): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 21:10:40:850 Elestac-KERNEL/(26232:26232): New console arriving (1).
+[INFO] 21:10:40:850 Elestac-KERNEL/(26232:26232): NEW (0) program with PID=0008 arriving.
+[INFO] 21:10:40:858 Elestac-KERNEL/(26232:26254): Requesting 0011 pages to UMC.
+[INFO] 21:10:44:193 Elestac-KERNEL/(26232:26232): New CPU arriving (1).
+[INFO] 21:10:44:194 Elestac-KERNEL/(26232:26232): New CPU accepted with ID 9
+[INFO] 21:10:48:976 Elestac-KERNEL/(26232:26254): UMC replied.
+[INFO] 21:10:48:976 Elestac-KERNEL/(26232:26254): Pages of code + stack = 11.
+[INFO] 21:10:48:976 Elestac-KERNEL/(26232:26254): The program with PID=0008 is now READY (1).
+[INFO] 21:10:48:980 Elestac-KERNEL/(26232:26232): Submitting to CPU 9 the PID 8.
+[INFO] 21:10:48:980 Elestac-KERNEL/(26232:26254): Consoles after accepting: 0.
+[DEBUG] 21:11:00:249 Elestac-KERNEL/(26232:26232): CPU 9 has something to say.
+[INFO] 21:11:00:249 Elestac-KERNEL/(26232:26232): CPU 9 has closed the connection.
+[INFO] 21:11:18:321 Elestac-KERNEL/(26451:26451): Loading settings.
+[INFO] 21:11:18:340 Elestac-KERNEL/(26451:26455): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 21:11:18:344 Elestac-KERNEL/(26451:26451): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 21:11:18:344 Elestac-KERNEL/(26451:26451): Stack size (sent to UMC): 0008.
+[INFO] 21:11:18:344 Elestac-KERNEL/(26451:26456): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 21:11:18:348 Elestac-KERNEL/(26451:26451): Page size: (received from UMC): 5.
+[INFO] 21:11:18:348 Elestac-KERNEL/(26451:26451): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 21:11:19:609 Elestac-KERNEL/(26451:26451): New console arriving (1).
+[INFO] 21:11:19:609 Elestac-KERNEL/(26451:26451): NEW (0) program with PID=0008 arriving.
+[INFO] 21:11:19:615 Elestac-KERNEL/(26451:26467): Requesting 0011 pages to UMC.
+[INFO] 21:11:20:622 Elestac-KERNEL/(26451:26467): UMC replied.
+[INFO] 21:11:20:622 Elestac-KERNEL/(26451:26467): Pages of code + stack = 11.
+[INFO] 21:11:20:622 Elestac-KERNEL/(26451:26467): The program with PID=0008 is now READY (1).
+[INFO] 21:11:20:628 Elestac-KERNEL/(26451:26467): Consoles after accepting: 1.
+[INFO] 21:11:23:924 Elestac-KERNEL/(26451:26451): New CPU arriving (1).
+[INFO] 21:11:23:925 Elestac-KERNEL/(26451:26451): New CPU accepted with ID 9
+[INFO] 21:11:23:925 Elestac-KERNEL/(26451:26451): Submitting to CPU 9 the PID 8.
+[DEBUG] 21:11:53:165 Elestac-KERNEL/(26451:26451): CPU 9 has something to say.
+[INFO] 21:11:53:168 Elestac-KERNEL/(26451:26451): CPU 9 has closed the connection.
+[INFO] 21:12:12:946 Elestac-KERNEL/(26677:26677): Loading settings.
+[INFO] 21:12:12:958 Elestac-KERNEL/(26677:26681): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 21:12:12:965 Elestac-KERNEL/(26677:26677): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 21:12:12:966 Elestac-KERNEL/(26677:26677): Stack size (sent to UMC): 0008.
+[INFO] 21:12:12:966 Elestac-KERNEL/(26677:26682): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 21:12:12:970 Elestac-KERNEL/(26677:26677): Page size: (received from UMC): 5.
+[INFO] 21:12:12:970 Elestac-KERNEL/(26677:26677): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 21:12:19:377 Elestac-KERNEL/(26677:26677): New console arriving (1).
+[INFO] 21:12:19:378 Elestac-KERNEL/(26677:26677): NEW (0) program with PID=0008 arriving.
+[INFO] 21:12:19:389 Elestac-KERNEL/(26677:26710): Requesting 0011 pages to UMC.
+[INFO] 21:12:20:395 Elestac-KERNEL/(26677:26710): UMC replied.
+[INFO] 21:12:20:395 Elestac-KERNEL/(26677:26710): Pages of code + stack = 11.
+[INFO] 21:12:20:395 Elestac-KERNEL/(26677:26710): The program with PID=0008 is now READY (1).
+[INFO] 21:12:20:400 Elestac-KERNEL/(26677:26710): Consoles after accepting: 1.
+[INFO] 21:12:33:516 Elestac-KERNEL/(26677:26677): New CPU arriving (1).
+[INFO] 21:12:33:517 Elestac-KERNEL/(26677:26677): New CPU accepted with ID 9
+[INFO] 21:12:33:517 Elestac-KERNEL/(26677:26677): Submitting to CPU 9 the PID 8.
+[DEBUG] 21:15:07:277 Elestac-KERNEL/(26677:26677): CPU 9 has something to say.
+[INFO] 21:15:07:277 Elestac-KERNEL/(26677:26677): CPU 9 has closed the connection.
+[INFO] 21:15:16:480 Elestac-KERNEL/(26995:26995): Loading settings.
+[INFO] 21:15:16:484 Elestac-KERNEL/(26995:26999): do_work: Starting the device HDD1 with a sleep of 500 milliseconds.
+[INFO] 21:15:16:485 Elestac-KERNEL/(26995:26995): Connecting to UMC on 127.0.0.1:6600.
+[INFO] 21:15:16:485 Elestac-KERNEL/(26995:26995): Stack size (sent to UMC): 0008.
+[INFO] 21:15:16:485 Elestac-KERNEL/(26995:27000): do_work: Starting the device LPT1 with a sleep of 200 milliseconds.
+[INFO] 21:15:16:485 Elestac-KERNEL/(26995:26995): Page size: (received from UMC): 5.
+[INFO] 21:15:16:485 Elestac-KERNEL/(26995:26995): Servers to CPUs and consoles up and running. Waiting for incoming connections.
+[INFO] 21:15:17:97 Elestac-KERNEL/(26995:26995): New console arriving (1).
+[INFO] 21:15:17:97 Elestac-KERNEL/(26995:26995): NEW (0) program with PID=0008 arriving.
+[INFO] 21:15:17:97 Elestac-KERNEL/(26995:27003): Requesting 0011 pages to UMC.
+[INFO] 21:15:18:106 Elestac-KERNEL/(26995:27003): UMC replied.
+[INFO] 21:15:18:107 Elestac-KERNEL/(26995:27003): Pages of code + stack = 11.
+[INFO] 21:15:18:107 Elestac-KERNEL/(26995:27003): The program with PID=0008 is now READY (1).
+[INFO] 21:15:18:108 Elestac-KERNEL/(26995:27003): Consoles after accepting: 1.
+[INFO] 21:15:20:286 Elestac-KERNEL/(26995:26995): New CPU arriving (1).
+[INFO] 21:15:20:286 Elestac-KERNEL/(26995:26995): New CPU accepted with ID 9
+[INFO] 21:15:20:286 Elestac-KERNEL/(26995:26995): Submitting to CPU 9 the PID 8.
+[DEBUG] 21:15:29:512 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[DEBUG] 21:15:29:512 Elestac-KERNEL/(26995:26995): Receving a PCB
+[INFO] 21:15:29:548 Elestac-KERNEL/(26995:26995): Submitting to CPU 9 the PID 8.
+[DEBUG] 21:15:29:849 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[DEBUG] 21:15:29:849 Elestac-KERNEL/(26995:26995): Receving a semaphore operation
+[DEBUG] 21:15:29:849 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[DEBUG] 21:15:29:849 Elestac-KERNEL/(26995:26995): Receving a PCB
+[INFO] 21:15:30:103 Elestac-KERNEL/(26995:26995): Submitting to CPU 9 the PID 50.
+[DEBUG] 21:15:30:103 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:103 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: áú`
+[DEBUG] 21:15:30:103 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:104 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:104 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:104 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:104 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:104 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:140 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:141 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 21:15:30:141 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:141 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:141 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:141 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:142 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:142 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:142 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:142 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 21:15:30:142 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:142 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:142 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:142 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:142 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:142 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:142 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:142 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: Cä`
+[DEBUG] 21:15:30:142 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:142 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:143 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:143 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:143 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:143 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:143 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:143 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 21:15:30:143 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:143 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:143 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:143 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:143 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:143 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:143 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:143 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:143 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:143 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:143 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:144 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:144 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:144 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:144 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:144 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:144 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:144 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:144 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:145 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:145 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:146 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:146 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:146 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 21:15:30:146 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:146 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:146 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:146 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:146 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:146 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:146 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:146 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: aä`
+[DEBUG] 21:15:30:146 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:146 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 21:15:30:146 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:146 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:146 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:147 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:147 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:147 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:147 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:147 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:147 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:147 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:147 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:147 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:147 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:147 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:147 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:147 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 21:15:30:147 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:147 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:147 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:147 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:148 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:148 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:148 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:148 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: bú`
+[DEBUG] 21:15:30:148 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:148 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 21:15:30:148 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:148 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:148 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:148 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:148 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:148 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:148 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:148 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 21:15:30:149 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:149 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:149 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:149 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:149 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:149 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:149 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:149 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ä`
+[DEBUG] 21:15:30:149 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:149 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:149 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:149 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:149 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:149 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:149 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:149 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: cä`
+[DEBUG] 21:15:30:150 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:150 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 21:15:30:150 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:150 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:150 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:150 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:150 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:150 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:150 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:150 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 21:15:30:150 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:150 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:150 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:150 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:150 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:150 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:151 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:151 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 21:15:30:151 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:151 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:151 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:151 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:151 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:151 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:151 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:151 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:151 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:151 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:151 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:151 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:151 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:152 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:152 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:152 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:152 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:152 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:152 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:152 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:152 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:152 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:152 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:152 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 21:15:30:152 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:153 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:153 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:153 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:153 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:153 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:153 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:153 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 21:15:30:153 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:153 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:153 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:153 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:153 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:153 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:153 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:153 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 21:15:30:153 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:154 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:154 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:154 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:154 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:154 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:155 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:155 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:155 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:155 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:155 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:155 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:155 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:155 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:155 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:156 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 21:15:30:156 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:156 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:156 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:156 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:156 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:156 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:156 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:156 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:156 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:156 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:156 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:156 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:157 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:157 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:157 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:157 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: ú`
+[DEBUG] 21:15:30:157 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:157 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:157 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:157 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:157 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:157 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:157 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:157 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:157 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:158 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:158 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:158 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:158 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:158 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:158 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:158 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo:  ú`
+[DEBUG] 21:15:30:158 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:158 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:158 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:158 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:158 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:158 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:158 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:159 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:159 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:159 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:159 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:159 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:159 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:159 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:159 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:159 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: (ú`
+[DEBUG] 21:15:30:159 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:159 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:159 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:160 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:160 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:160 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:160 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:160 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:160 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:160 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:160 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:160 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:160 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[ERROR] 21:15:30:160 Elestac-KERNEL/(26995:26995): Caso no contemplado. CPU dijo: 
+[DEBUG] 21:15:30:160 Elestac-KERNEL/(26995:26995): CPU 9 has something to say.
+[DEBUG] 21:15:30:160 Elestac-KERNEL/(26995:26995): Receving a PCB

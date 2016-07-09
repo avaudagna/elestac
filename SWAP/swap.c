@@ -446,7 +446,8 @@ void umc_leer(){
 
 	if(resultadoRequest != NULL){ //ENVIAMOS A UMC 1+cantPaginasLibres
 		void* respuesta = calloc(1, sizeof(int) + TAMANIO_PAGINA);
-		sprintf(respuesta,"%04d%s",pid, resultadoRequest);
+		sprintf(respuesta,"%04d",pid);
+		memcpy(respuesta+4, resultadoRequest, TAMANIO_PAGINA);
 
 		if(send(umcSocket, respuesta, sizeof(int) + TAMANIO_PAGINA,0) == -1)
 			excepcionAlHablarConUMC();

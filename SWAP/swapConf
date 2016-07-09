@@ -1,6 +1,6 @@
 IP_SWAP=127.0.0.1
 PUERTO_ESCUCHA=6006
 NOMBRE_SWAP=swap.data
-PATH_SWAP=/home/mariano/Documents/Git_Repositories/tp-2016-1c-Vamo-a-calmarno/SWAP
+PATH_SWAP=/home/alan/repos/tp-2016-1c-Vamo-a-calmarno/SWAP
 CANTIDAD_PAGINAS=512
 RETARDO_COMPACTACION=60000
