@@ -331,6 +331,7 @@ void check_CPU_FD_ISSET(void *cpu){
 				int theCPUID = laCPU->clientID;
 				pthread_t sem_thread;
 				pthread_create(&sem_thread, NULL, wait_coordination, &theCPUID);
+				log_debug(kernel_log, "Semaphore operation is now being handled by a thread.");
 				break;
 			case 5:// var compartida
 				log_debug(kernel_log, "Receving a shared var operation from CPU %d", laCPU->clientID);
