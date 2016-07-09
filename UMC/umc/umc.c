@@ -776,14 +776,16 @@ void recibirYAlmacenarNuevoProceso(int * socketBuff,int cantidadPaginasSolicitad
 // obtengo code_size
 
 	int code_size;
-	PIDPAGINAS nuevo_pid;
+	PIDPAGINAS *nuevo_pid = NULL;
 	char buffer[4];
 
-	nuevo_pid.cantPagEnMP=0;
-	nuevo_pid.pid = pid_aux;
-	nuevo_pid.headListaDePaginas = NULL;
+	nuevo_pid = (PIDPAGINAS *)malloc(sizeof(PIDPAGINAS));
+
+	nuevo_pid->cantPagEnMP=0;
+	nuevo_pid->pid = pid_aux;
+	nuevo_pid->headListaDePaginas = NULL;
 	pthread_rwlock_wrlock(semListaPids);	// Voy a modificar (ESCRIBIR) en la lista asi que pido el semaforo
-	list_add(headerListaDePids,(void *)&(nuevo_pid));		//agrego nuevo PID
+	list_add(headerListaDePids,(void *)(nuevo_pid));		//agrego nuevo PID
 	pthread_rwlock_unlock(semListaPids);	// Libero semaforo
 	// levanto el campo tamaño de codigo
 	if( (recv(*socketBuff, (void*) (buffer), 4 , 0)) <= 0){
