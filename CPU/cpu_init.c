@@ -80,11 +80,11 @@ int loadConfig(char* configFile){
     if(config != NULL){
         setup->PUERTO_KERNEL=config_get_int_value(config,"PUERTO_KERNEL");
         setup->KERNEL_IP=config_get_string_value(config,"KERNEL_IP");
-        setup->IO_ID=config_get_array_value(config,"IO_ID");
-        setup->IO_SLEEP=config_get_array_value(config,"IO_SLEEP");
-        setup->SEM_ID=config_get_array_value(config,"SEM_ID");
-        setup->SEM_INIT=config_get_array_value(config,"SEM_INIT");
-        setup->SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
+        //setup->IO_ID=config_get_array_value(config,"IO_ID");
+        //setup->IO_SLEEP=config_get_array_value(config,"IO_SLEEP");
+  //      setup->SEM_ID=config_get_array_value(config,"SEM_ID");
+ //       setup->SEM_INIT=config_get_array_value(config,"SEM_INIT");
+//      setup->SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
         setup->PUERTO_UMC=config_get_int_value(config,"PUERTO_UMC");
         setup->IP_UMC=config_get_string_value(config,"IP_UMC");
     }

@@ -234,11 +234,11 @@ void handShakeCpu(int *socketBuff);
 
 
 t_list *obtenerHeaderFifoxPid(int pPid);
-CLOCK_PID * obtenerCurrentClockPidEntry(t_list * headerFifos, int pid);
+CLOCK_PID *obtenerCurrentClockPidEntry(int pid);
 
-bool pidEstaEnListaFIFOxPID(t_list *headerFifos, int pPid);
+bool pidEstaEnListaFIFOxPID(int pPid);
 
-bool pidEstaEnListaDeUltRemp(t_list *headerPunteros, int pPid);
+bool pidEstaEnListaDeUltRemp(int pPid);
 
 CLOCK_PAGINA * obtenerPaginaDeFifo(t_list *fifoDePid, int pagina);
 
@@ -455,6 +455,7 @@ void * funcion_menu (void * noseusa)
                     break;
 			  case PAGINAS_MODIFICADAS:
 				  	marcarPaginasModificadas();
+				  	break;
                case SALIR:
                     flag = 1;
                     break;
@@ -468,6 +469,10 @@ pthread_exit(0);
 
 void marcarPaginasModificadas() {
 
+	if( headerListaDePids->head == NULL)
+		return;
+	if( ( headerFIFOxPID == NULL ) || ( headerFIFOxPID->head == NULL) )
+		return;
 	list_iterate(headerListaDePids,modificarTablaPaginasDePid);
 	list_iterate(headerFIFOxPID,modificarFifoPaginasDePid);
 }
@@ -754,7 +759,10 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 		char trama_handshake[4];
 		sprintf(trama_handshake,"%04d",cantidadDePaginasSolicitadas);
 
-		if ( send(*socketBuff,(void *)trama_handshake,4,0) == -1) perror("send");
+		if ( send(*socketBuff,(void *)trama_handshake,4,0) == -1)
+			perror("send");
+		else
+			printf("\n Nuevo Proceso en Memoria :[%04d] \n ",pid_aux);
 
 	}else
 		if ( send(*socketBuff,(void *)"0000",4,0) == -1 ) perror("send");
@@ -892,6 +900,8 @@ void enviarPaginaAlSwap(char *trama, int size_trama){
 		perror("send");
 		exit(1);
 	}
+
+
 
 }
 
@@ -1252,6 +1262,7 @@ void almacenarBytes(int *socketBuff, int *pid_actual) {
 						punteroAlgoritmo(pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina,&marcoVictima);
 						guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
 						setBitDeUso(pid_actual,_pagina,1);
+						setBitModificado(*pid_actual, _pagina, 1);
 						enviarMsgACPU(socketBuff,OK,1);
 						actualizarTlb(pid_actual,aux);
 					}
@@ -1273,13 +1284,18 @@ void setBitModificado(int pPid, int pagina, int valorBitModificado) {
 
 	t_list * aux = NULL;
 	CLOCK_PAGINA * paginaClock = NULL;
+	PAGINA *pagAux = NULL;
 
 	aux = obtenerHeaderFifoxPid(pPid);
 
 	paginaClock = obtenerPaginaDeFifo(aux, pagina);
-
+    pthread_rwlock_wrlock(semFifosxPid);
 	paginaClock->bitDeModificado = valorBitModificado;
-
+    pthread_rwlock_unlock(semFifosxPid);
+	pagAux = obtenerPagina(pPid,pagina);
+    pthread_rwlock_wrlock(semListaPids);
+	pagAux->modificado = 1;
+    pthread_rwlock_unlock(semListaPids);
 
 }
 
@@ -1338,7 +1354,7 @@ void algoritmoClock(int *pPid, int numPagNueva, int tamanioContenidoPagina, void
 
 		if (!estado) {
 			//recorredor = fifoPID->head->data;		// reseteo el puntero recorredor
-			pthread_rwlock_rdlock(semFifosxPid);
+			//pthread_rwlock_rdlock(semFifosxPid);
 			recorredor = list_get_nodo(fifoPID,0);
 			for (i = 0; ( i <= (punteroPIDClock->indice) ) && ( recorredor != NULL ) ; i++, recorredor = recorredor->next) {
 
@@ -1361,8 +1377,11 @@ void algoritmoClock(int *pPid, int numPagNueva, int tamanioContenidoPagina, void
 	pagina_victima = obtenerPagina(*pPid, ((CLOCK_PAGINA *) recorredor->data)->nroPagina);
 	*marcoVictima = pagina_victima->nroDeMarco;
 
-	if (pagina_victima->modificado == 1)    // pagina modificada, enviarla a swap antes de reemplazarla
+	if (pagina_victima->modificado == 1) {    // pagina modificada, enviarla a swap antes de reemplazarla
 		PedidoPaginaASwap(*pPid,pagina_victima->nroPagina,ESCRITURA);
+        swapUpdate();
+        setBitModificado(*pPid,pagina_victima->nroPagina,0);
+    }
 	// Actualizaciones sobre la tabla de paginas ( actualizo campo nro de marco y bit de presencia )
 	pagina_nueva = obtenerPagina(*pPid,numPagNueva);
 	pthread_rwlock_wrlock(semListaPids);
@@ -1385,7 +1404,7 @@ void algoritmoClock(int *pPid, int numPagNueva, int tamanioContenidoPagina, void
 	if ( punteroPIDClock->indice >= fifoPID->elements_count)		// si lo que reemplace, era el ultimo nodo de la fifo, entonces reinicio el indice :)
 		punteroPIDClock->indice=0;
 
-
+    free(bufferContenidoPagina);
 }
 
 
@@ -1474,8 +1493,10 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, int tamanioContenidoPa
 	pagina_victima = obtenerPagina(*pPid, ((CLOCK_PAGINA *) recorredor->data)->nroPagina);
 	*marcoVictima = pagina_victima->nroDeMarco;
 
-	if (pagina_victima->modificado == 1)    // pagina modificada, enviarla a swap antes de reemplazarla
+	if (pagina_victima->modificado == 1)  {   // pagina modificada, enviarla a swap antes de reemplazarla
 		PedidoPaginaASwap(*pPid,pagina_victima->nroPagina,ESCRITURA);
+        swapUpdate();
+    }
 	// Actualizaciones sobre la tabla de paginas ( actualizo campo nro de marco y bit de presencia )
 	pagina_nueva = obtenerPagina(*pPid,numPagNueva);
 	pagina_nueva->nroDeMarco = pagina_victima->nroDeMarco ;
@@ -1615,6 +1636,7 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 	int 	__pid;
 
 	sprintf(buffer, "2%04d%04d", *pid_actual, nroPagina);    // PIDO PAGINA
+    printf("\nSending request to SWAP : %s \n",buffer);
 
 	// while(recv(swap) > 0 :
 
@@ -1629,12 +1651,17 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 	__pid = atoi(buff_pid);
 
 
+
+    printf("\nSWAP answer pid : %d ",__pid);
+
 	if (__pid == *pid_actual) {    // valido que la pagina que me respondio swap se corresponda a la que pedi
 
 		contenidoPagina = (void *) malloc(sizeof(umcGlobalParameters.marcosSize));
 
 		if ((*tamanioContenidoPagina = recv(socketClienteSwap, contenidoPagina, umcGlobalParameters.marcosSize, 0)) <= 0)
 			perror("recv");
+
+        printf(", content : %s\n", (char*) contenidoPagina);
 
 		return contenidoPagina;
 	}
@@ -1705,19 +1732,18 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 		pthread_rwlock_wrlock(semClockPtrs);
 		list_add(headerPunterosClock,nuevoPidFifoIndice);
 		pthread_rwlock_unlock(semClockPtrs);
-	}else if( pidEstaEnListaDeUltRemp(headerPunterosClock,*pPid) == false){		//  si el pid todavia no esta en la lista de ultimo puntero, entonces lo agrego
+	}else if(pidEstaEnListaDeUltRemp(*pPid) == false){		//  si el pid todavia no esta en la lista de ultimo puntero, entonces lo agrego
 		pthread_rwlock_wrlock(semClockPtrs);
 		list_add(headerPunterosClock,nuevoPidFifoIndice);
 		pthread_rwlock_unlock(semClockPtrs);
 	}
-
 
 	if ( headerFIFOxPID == NULL) {        // si es el primer marco que se va a cargar en memoria, entonces creo la lista de pids en memoria
 		headerFIFOxPID = list_create();
 		pthread_rwlock_wrlock(semFifosxPid);
 		list_add(headerFIFOxPID, pid_clock);
 		pthread_rwlock_unlock(semFifosxPid);
-	} else if ( pidEstaEnListaFIFOxPID(headerFIFOxPID,pid_clock->pid) == false){		// si el pid  todavia no fue cargado a la lista ( pq no tiene ningun marco en memoria)
+	} else if (pidEstaEnListaFIFOxPID(pid_clock->pid) == false){		// si el pid  todavia no fue cargado a la lista ( pq no tiene ningun marco en memoria)
 		pthread_rwlock_wrlock(semFifosxPid);
 		list_add(headerFIFOxPID,pid_clock);
 		pthread_rwlock_unlock(semFifosxPid);
@@ -1727,7 +1753,7 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 //	if ( (headerFifo = obtenerHeaderFifoxPid(headerFIFOxPID,*pPid)) == NULL) // si el PID todavia no tiene ningun marco asignado en memoria , creo la FIFO asociada a ese PID
 //		headerFifo = list_create();
     CLOCK_PID * entry = NULL;
-    entry = obtenerCurrentClockPidEntry(headerFIFOxPID,*pPid);
+    entry = obtenerCurrentClockPidEntry(*pPid);
          if(entry->headerFifo == NULL) {  // si el PID todavia no tiene ningun marco asignado en memoria , creo la FIFO asociada a ese PID
             entry->headerFifo = list_create();
          }
@@ -1762,25 +1788,28 @@ void setEstadoMarco(int indice, int nuevoEstado) {
 
 }
 
-bool pidEstaEnListaDeUltRemp(t_list *headerPunteros, int pPid) {
+bool pidEstaEnListaDeUltRemp(int pPid) {
 
 	t_link_element * aux = NULL;
-	aux = headerPunteros->head ;
+	aux = headerPunterosClock->head ;
+	pthread_rwlock_rdlock(semClockPtrs);
 	while ( aux != NULL){
-
-		if ((((FIFO_INDICE*)aux->data)->pid) == pPid )
+		if ((((FIFO_INDICE*)aux->data)->pid) == pPid ) {
+			pthread_rwlock_unlock(semClockPtrs);
 			return true;
+		}
 
 		aux = aux->next;
 	}
+	pthread_rwlock_unlock(semClockPtrs);
 	return false;
 }
 
-bool pidEstaEnListaFIFOxPID(t_list *headerFifos, int pPid) {
+bool pidEstaEnListaFIFOxPID(int pPid) {
 
 	pthread_rwlock_rdlock(semFifosxPid);
 	t_link_element * aux = NULL;
-	aux = headerFifos->head ;
+	aux = headerFIFOxPID->head ;
 	while ( aux != NULL){
 		if (((CLOCK_PID *)aux->data)->pid == pPid ) {
 			pthread_rwlock_unlock(semFifosxPid);
@@ -1810,10 +1839,11 @@ t_list *obtenerHeaderFifoxPid(int pPid) {
 	return NULL;
 }
 
-CLOCK_PID * obtenerCurrentClockPidEntry(t_list * headerFifos, int pid) {
-	pthread_rwlock_rdlock(semFifosxPid);
+CLOCK_PID *obtenerCurrentClockPidEntry(int pid) {
+
 	t_link_element * aux  = NULL;
-	aux = headerFifos->head ;
+	pthread_rwlock_rdlock(semFifosxPid);
+	aux = headerFIFOxPID->head ;
 	while ( aux != NULL){
 		if (((CLOCK_PID *) aux->data)->pid == pid ) {
 				pthread_rwlock_unlock(semFifosxPid);
@@ -1844,6 +1874,9 @@ void setBitDeUso(int *pPid, int pPagina, int valorBitDeUso) {
 
 CLOCK_PAGINA * obtenerPaginaDeFifo(t_list *fifoDePid, int pagina) {
 
+	if(fifoDePid == NULL)
+		return NULL;
+
 	t_link_element *aux = NULL;
 	pthread_rwlock_rdlock(semFifosxPid);
 	aux = fifoDePid->head;
@@ -1855,8 +1888,9 @@ CLOCK_PAGINA * obtenerPaginaDeFifo(t_list *fifoDePid, int pagina) {
 		}
 		aux = aux->next;
 	}
-	return NULL;
 	pthread_rwlock_unlock(semFifosxPid);
+	return NULL;
+
 
 }
 
@@ -2236,6 +2270,10 @@ void dump(void){
 	 * */
 
 	printf("\nReporte , situacion actual Memoria \n");
+	if( headerListaDePids->head == NULL){
+		printf("\n No hay ningun proceso \n");
+		return;
+	}
 	list_iterate(headerListaDePids,imprimirTablaDePaginas);
 
 	imprimirTablaDePaginasEnArchivo();

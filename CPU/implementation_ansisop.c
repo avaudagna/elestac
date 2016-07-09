@@ -13,7 +13,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
     t_stack* actual_stack_index = actual_pcb->stack_index;
 
     //2) Obtengo la primera posicion libre del stack
-    t_posicion actual_stack_pointer = (t_posicion) actual_pcb->stack_pointer * setup->PAGE_SIZE;
+    t_posicion actual_stack_pointer = (t_posicion) actual_pcb->stack_pointer;
 
     //3) Armamos la logical address requerida
     logical_addr* direccion_espectante = armar_direccion_logica_variable(actual_stack_pointer, setup->PAGE_SIZE);
@@ -43,7 +43,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
             return ERROR;
         }
         if(strncmp(umc_response_buffer, string_itoa(UMC_OK_RESPONSE), sizeof(char)) != 0) {
-            log_error(cpu_log, "PAGE FAULT");
+            log_error(cpu_log, "STACK OVERFLOW");
             return ERROR;
         }
 
