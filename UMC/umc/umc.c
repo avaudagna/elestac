@@ -1136,25 +1136,25 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 					}
 					else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo
 						//algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
+						printf("[ PAGE TABLE MISS ]: Aplicando Algoritmo %s \n",umcGlobalParameters.algoritmo);
 						punteroAlgoritmo(pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina,&marcoVictima);
 						actualizarTlb(pid_actual,aux);
 						resolverEnMP(socketBuff, aux, _offset, _tamanio);
-						printf("[ PAGE TABLE MISS ]: Aplicando Algoritmo %s \n",umcGlobalParameters.algoritmo);
 					}
 				}else{		// hay marcos disponibles
 
 					if  ( cantPagDisponiblesxPID(pid_actual) > 0){ // SI EL PROCESO TIENE MARGEN PARA ALMACENAR MAS PAGINAS EN MEMORIA
+						printf("[ PAGE TABLE MISS ]: el proceso tiene disponible marcos en memoria\n");
 						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, tamanioContenidoPagina);
 						actualizarTlb(pid_actual,aux);
                         resolverEnMP(socketBuff, aux, _offset, _tamanio);
-						printf("[ PAGE TABLE MISS ]: el proceso tiene disponible marcos en memoria\n");
 					}
 					else{	// el proceso llego a la maxima cantidad de marcos proceso
 						//algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
+						printf("[ PAGE TABLE MISS ]: Aplicando Algoritmo %s \n",umcGlobalParameters.algoritmo);
 						punteroAlgoritmo(pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina,&marcoVictima);
 						resolverEnMP(socketBuff, aux, _offset, _tamanio);
 						actualizarTlb(pid_actual,aux);
-						printf("[ PAGE TABLE MISS ]: Aplicando Algoritmo %s \n",umcGlobalParameters.algoritmo);
 					}
 				}
 			}
@@ -1243,6 +1243,7 @@ void almacenarBytes(int *socketBuff, int *pid_actual) {
 		else {
 
 			if (aux->presencia == AUSENTE) {    // La pagina NO se encuentra en memoria principal
+				printf("[ PAGE TABLE MISS ]\n");
 
 				contenidoPagina = pedirPaginaSwap(socketBuff, pid_actual, aux->nroPagina, &tamanioContenidoPagina); //1- Pedir pagina a Swap
 
@@ -1252,9 +1253,10 @@ void almacenarBytes(int *socketBuff, int *pid_actual) {
 					}
 					else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo , y una vez que ya se trajo la pagina a MP,  ahi si guardo los bytes
 						//algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
+						printf("Aplicando %s",umcGlobalParameters.algoritmo);
 						punteroAlgoritmo(pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina,&marcoVictima);
 						guardarBytesEnPagina(pid_actual, _pagina, _offset, _tamanio, bytesAlmacenar);
-						setBitDeUso(*pid_actual,_pagina,1);
+						setBitDeUso(pid_actual,_pagina,1);
 						setBitModificado(*pid_actual, _pagina, 1);
 						enviarMsgACPU(socketBuff,OK,1);
 						actualizarTlb(pid_actual,aux);
@@ -1388,6 +1390,7 @@ void algoritmoClock(int *pPid, int numPagNueva, int tamanioContenidoPagina, void
 
 	pagina_victima = obtenerPagina(*pPid, ((CLOCK_PAGINA *) recorredor->data)->nroPagina);
 	*marcoVictima = pagina_victima->nroDeMarco;
+	printf("Reemplazo Pagina:%d en Marco:%d por Pagina:%d\n",pagina_victima->nroPagina,pagina_victima->nroDeMarco,numPagNueva);
 
 	if (pagina_victima->modificado == 1) {    // pagina modificada, enviarla a swap antes de reemplazarla
 		PedidoPaginaASwap(*pPid,pagina_victima->nroPagina,ESCRITURA);
@@ -1648,7 +1651,7 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 	int 	__pid;
 
 	sprintf(buffer, "2%04d%04d", *pid_actual, nroPagina);    // PIDO PAGINA
-    printf("\nSending request to SWAP : %s \n",buffer);
+    printf("Sending request to SWAP : %s \n",buffer);
 
 	// while(recv(swap) > 0 :
 
@@ -1664,7 +1667,7 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 
 
 
-    printf("\nSWAP answer pid : %d ",__pid);
+    printf("SWAP answer pid : %d ",__pid);
 
 	if (__pid == *pid_actual) {    // valido que la pagina que me respondio swap se corresponda a la que pedi
 
@@ -1673,7 +1676,7 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 		if ((*tamanioContenidoPagina = recv(socketClienteSwap, contenidoPagina, umcGlobalParameters.marcosSize, 0)) <= 0)
 			perror("recv");
 
-        printf(", content : %s\n", (char*) contenidoPagina);
+        //printf(", content : %s\n", (char*) contenidoPagina);
 
 		return contenidoPagina;
 	}
