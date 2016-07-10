@@ -8,6 +8,7 @@ gcc -I/usr/include/commons -I/usr/include/commons/collections -o umc umc.c -L/us
  * Y la consola asi:
 gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
 */
+#include <libs/pcb_tests.h>
 #include "kernel.h"
 
 /* BEGIN OF GLOBAL STUFF I NEED EVERYWHERE */
@@ -93,21 +94,23 @@ int start_kernel(int argc, char* configFile){
 
 void* wait_coordination(void *p) {
 	int miID = *((int *) p);
-	char *tmp_buff = malloc(4);
+	char *tmp_buff = calloc(1,4);
 	recv(miID, tmp_buff, 1, 0);
 	bool semWait=false;
 	if (strncmp(tmp_buff, "0", 1) == 0) semWait=true;
+    free(tmp_buff);
+    tmp_buff = calloc(1,4);
 	recv(miID, tmp_buff, 4, 0);
 	size_t SEM_ID_Size = (size_t) atoi(tmp_buff);
 	char *SEM_ID = malloc(SEM_ID_Size);
 	recv(miID, SEM_ID, SEM_ID_Size, 0);
 	int semIndex = getSEMindex(SEM_ID);
 	if(semWait){
-		log_info(kernel_log, "wait_coordination: WAIT semaphore %s by CPU %s.", setup.SEM_IDS[semIndex], miID);
+		log_info(kernel_log, "wait_coordination: WAIT semaphore %s by CPU %d.", setup.SEM_IDS[semIndex], miID);
 		sem_wait(&semaforo_ansisop[semIndex]);
 		send(miID, "0", 1, 0);
 	}else {
-		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %s.", setup.SEM_IDS[semIndex], miID);
+		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d.", setup.SEM_IDS[semIndex], miID);
 		sem_post(&semaforo_ansisop[semIndex]);
 	}
 	free(tmp_buff);
@@ -261,7 +264,7 @@ void add2FD_SET(void *client){
 t_pcb * recvPCB(int cpuID){
 	t_pcb *incomingPCB = NULL;
 	int pcb_size;
-	char *tmp_buff = malloc(sizeof(int));
+	void *tmp_buff = malloc(sizeof(int));
 	recv(cpuID, tmp_buff, sizeof(int), 0);
 	pcb_size = *(int*) tmp_buff;
 	void *pcb_serializado = malloc((size_t) pcb_size);
@@ -269,6 +272,7 @@ t_pcb * recvPCB(int cpuID){
 	incomingPCB = (t_pcb *)calloc(1,sizeof(t_pcb));
 	int pcb_serializado_cursor = 0;
 	deserialize_pcb(&incomingPCB, pcb_serializado, &pcb_serializado_cursor);
+    testSerializedPCB(incomingPCB, pcb_serializado);
 	free(tmp_buff);
 	free(pcb_serializado);
 	return incomingPCB;
@@ -328,10 +332,8 @@ void check_CPU_FD_ISSET(void *cpu){
 				break;
 			case 4:// semaforo
 				log_debug(kernel_log, "Receving a semaphore operation from CPU %d", laCPU->clientID);
-				int theCPUID = laCPU->clientID;
-				pthread_t sem_thread;
-				pthread_create(&sem_thread, NULL, wait_coordination, &theCPUID);
-				log_debug(kernel_log, "Semaphore operation is now being handled by a thread.");
+                wait_coordination(&laCPU->clientID);
+				log_debug(kernel_log, "Semaphore was handled successfully.");
 				break;
 			case 5:// var compartida
 				log_debug(kernel_log, "Receving a shared var operation from CPU %d", laCPU->clientID);
@@ -346,6 +348,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					recv(laCPU->clientID, tmp_buff, 4, 0);//recv & set the value
 					int theVal = atoi(tmp_buff);
 					setup.SHARED_VALUES[sharedIndex] = theVal;
+                    send(laCPU->clientID, "0", 1, 0); // send the value to the CPU
 				} else {
 					char *sharedValue = malloc(4);
 					sprintf(sharedValue, "%04d", setup.SHARED_VALUES[sharedIndex]);
@@ -552,14 +555,16 @@ void round_robin(){
 	laCPU->pid = tuPCB->pid;
 	serialize_pcb(tuPCB, &pcb_buffer, &pcb_buffer_size);
 	tmp_buffer = malloc((size_t) tmp_buffer_size+pcb_buffer_size);
-	asprintf(&tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
-    tmp_buffer = realloc(tmp_buffer , (size_t) tmp_buffer_size + pcb_buffer_size);
+    sprintf(tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
+//	asprintf(&tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
+//    tmp_buffer = realloc(tmp_buffer , (size_t) tmp_buffer_size + pcb_buffer_size);
 	serialize_data(pcb_buffer, (size_t ) pcb_buffer_size, &tmp_buffer, &tmp_buffer_size );
 	log_info(kernel_log,"Submitting to CPU %d the PID %d.", laCPU->clientID, tuPCB->pid);
 	send(laCPU->clientID, tmp_buffer, (size_t) tmp_buffer_size, 0);
+    list_add(cpus_executing,laCPU);
 	free(tmp_buffer);
     free(pcb_buffer);
-	list_add(cpus_executing,laCPU);
+    free(tuPCB);
 }
 
 void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen) { /* Search everywhere for the PID and kill it ! */

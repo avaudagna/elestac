@@ -223,7 +223,7 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
     char *value = malloc(4);
 
     int buffer_size = sizeof(char) * 2 + 4 + strlen(variable);
-    asprintf(&buffer, "%d%d%04d%s", SHARED_VAR_ID, GET_VAR, strlen(variable), variable);
+    asprintf(&buffer, "%d%d%04d%s", atoi(SHARED_VAR_ID), atoi(GET_VAR), strlen(variable), variable);
     if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
         log_error(cpu_log, "get value of %s failed", variable);
         return ERROR;
@@ -242,10 +242,10 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
     //5 + 1 + nameSize + name + value (1+1+4+nameSize+4 bytes)
 
     char* buffer = NULL;
-    char *kernel_reply = malloc(1);
+    char *kernel_reply = calloc(2, sizeof(char));
 
     int buffer_size = sizeof(char) * 2 + 8 + strlen(variable);
-    asprintf(&buffer, "%d%d%04d%s%04d", SHARED_VAR_ID, SET_VAR, strlen(variable), variable, valor);
+    asprintf(&buffer, "%d%d%04d%s%04d", atoi(SHARED_VAR_ID), atoi(SET_VAR), strlen(variable), variable, valor);
     if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
         log_error(cpu_log, "set value of %s failed", variable);
         return ERROR;
@@ -376,7 +376,7 @@ void imprimirTexto(char* texto) {
 void la_wait (t_nombre_semaforo identificador_semaforo){
     char* buffer = NULL;
     int buffer_size = sizeof(char) * 2 + 4 + strlen(identificador_semaforo);
-    asprintf(&buffer, "%d%d%04d%s", SEMAPHORE_ID, WAIT_ID, strlen(identificador_semaforo), identificador_semaforo);
+    asprintf(&buffer, "%d%d%04d%s", atoi(SEMAPHORE_ID), atoi(WAIT_ID), strlen(identificador_semaforo), identificador_semaforo);
 
     if(send(kernelSocketClient, buffer, (t_size) buffer_size, 0) < 0) {
         log_error(cpu_log, "wait(%s) failed", identificador_semaforo);
@@ -393,7 +393,7 @@ void la_wait (t_nombre_semaforo identificador_semaforo){
 void la_signal (t_nombre_semaforo identificador_semaforo){
     char* buffer = NULL;
     int buffer_size = sizeof(char) * 2 + 4 + strlen(identificador_semaforo);
-    asprintf(&buffer, "%d%d%04d%s", SEMAPHORE_ID, SIGNAL_ID, strlen(identificador_semaforo), identificador_semaforo);
+    asprintf(&buffer, "%d%d%04d%s", atoi(SEMAPHORE_ID), atoi(SIGNAL_ID), strlen(identificador_semaforo), identificador_semaforo);
 
     if(send(kernelSocketClient, buffer, (t_size) buffer_size, 0) < 0) {
         log_error(cpu_log, "signal(%s) failed", identificador_semaforo);

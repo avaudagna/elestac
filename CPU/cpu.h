@@ -56,7 +56,7 @@
 #define FIN_COMUNICACION_CPU 0
 
 int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer);
-t_list * armarDireccionesLogicasList(t_intructions *actual_instruction);
+t_list * armarDireccionesLogicasList(t_intructions *original_instruction);
 void tratarSeniales(int senial);
 int loadConfig(char* configFile);
 int get_instruction_line(t_list *instruction_addresses_list, void ** instruction_line);
