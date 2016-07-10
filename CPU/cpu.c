@@ -1,6 +1,7 @@
 #include <parser/metadata_program.h>
 #include "cpu.h"
 #include "libs/pcb_tests.h"
+#include "cpu_structs.h"
 
 
 //Variables globales
@@ -148,6 +149,7 @@ int return_pcb() {
         log_error(cpu_log, "Send serialized_buffer_length to KERNEL failed");
         return ERROR;
     }
+    log_info(cpu_log, "Pcb Size to send : %d", serialized_buffer_index);
     if( send(kernelSocketClient , serialized_pcb, (size_t) serialized_buffer_index, 0) < 0) {
         log_error(cpu_log, "Send serialized_pcb to KERNEL failed");
         return ERROR;
@@ -206,8 +208,8 @@ int execute_state_machine() {
 }
 
 int post_process_operations() {
-    log_info(cpu_log, "Starting delay of : %d seconds", actual_kernel_data->QSleep/1000);
-    usleep((u_int32_t) actual_kernel_data->QSleep * 1000);
+    log_info(cpu_log, "Starting delay of : %d seconds", actual_kernel_data->QSleep);
+    sleep(actual_kernel_data->QSleep);
     if(LAST_QUANTUM_FLAG) {
         //Signal for exiting CPU was sent
         return EXIT;
@@ -221,6 +223,9 @@ int post_process_operations() {
 
 void finished_quantum_post_process() {
     log_info(cpu_log, "=== Finished Quantum ===");
+    if(status_check() == EXECUTING) {
+        status_update(READY);
+    }
     send_quantum_end_notif();
 }
 
@@ -273,17 +278,18 @@ void program_end_notification() {
 enum_queue status_check() {
     switch (actual_pcb->status) {
         case READY:
-            actual_pcb->status = EXECUTING;
-            break;
+            return READY;
         case BLOCKED:
             //check if io has finished
             //and waste Q
-            break;
+            return BLOCKED;
         case EXECUTING:
-        default:
-            break;
+            return EXECUTING;
         case EXIT:
             return EXIT;
+        default:
+            break;
+
     }
 }
 
@@ -356,6 +362,7 @@ int get_pcb() {
         t_stack_entry * first_empty_entry = calloc(1, sizeof(t_stack_entry));
         queue_push(actual_pcb->stack_index, first_empty_entry);
     }
+    status_update(EXECUTING);
     return SUCCESS;
 }
 
@@ -486,7 +493,11 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
     return SUCCESS;
 }
 
-t_list* armarDireccionesLogicasList(t_intructions *actual_instruction) {
+t_list* armarDireccionesLogicasList(t_intructions *original_instruction) {
+
+    t_intructions* actual_instruction = calloc(1, sizeof(t_intructions));
+    actual_instruction->start = original_instruction->start;
+    actual_instruction->offset = original_instruction->offset;
 
     t_list *address_list = list_create();
     logical_addr *addr = (logical_addr*) calloc(1,sizeof(logical_addr));
@@ -519,6 +530,7 @@ t_list* armarDireccionesLogicasList(t_intructions *actual_instruction) {
         actual_instruction->offset = actual_instruction->offset - addr->tamanio;
         list_add(address_list, addr);
     }
+    free(actual_instruction);
     return address_list;
 }
 
