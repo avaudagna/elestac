@@ -352,11 +352,12 @@ void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
 void imprimir(t_valor_variable valor) {
     char* buffer = NULL;
     int buffer_size = sizeof(char) + sizeof(int);
-    asprintf(&buffer, "%d%04d", IMPRIMIR_ID, valor);
+    asprintf(&buffer, "%d%04d", atoi(IMPRIMIR_ID), valor);
     if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
         log_error(cpu_log, "imprimir value %d send to KERNEL failed", valor);
         return ;
     }
+    log_info(cpu_log, "imprimir value %d sent to KERNEL");
     free(buffer);
 }
 
@@ -364,13 +365,14 @@ void imprimirTexto(char* texto) {
 
     char* buffer = NULL;
     int texto_len = (int) strlen(texto);
-    asprintf(&buffer, "%d%04d%s", IMPRIMIR_TEXTO_ID, texto_len, texto);
+    asprintf(&buffer, "%d%04d%s", atoi(IMPRIMIR_TEXTO_ID), texto_len, texto);
     int buffer_size = (int) strlen(buffer);
 
     if(send(kernelSocketClient, buffer, (t_size) buffer_size, 0) < 0) {
-        log_error(cpu_log, "imprimirTexto send failed");
+        log_error(cpu_log, "imprimirTexto with texto : %s , send failed", texto);
         return;
     }
+    log_info(cpu_log, "imprimirTexto with texto : %s , sent to KERNEL", texto);
     free(buffer);
 }
 void la_wait (t_nombre_semaforo identificador_semaforo){

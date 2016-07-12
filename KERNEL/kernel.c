@@ -294,7 +294,7 @@ void check_CPU_FD_ISSET(void *cpu){
 	char *cpu_protocol = malloc(1);
 	int setValue = 0;
 	t_Client *laCPU = (t_Client*) cpu;
-	char *tmp_buff = malloc(4);
+	char *tmp_buff = calloc(1, sizeof(int));
 	if (FD_ISSET(laCPU->clientID, &allSockets)) {
 		log_debug(kernel_log,"CPU %d has something to say.", laCPU->clientID);
 		if (recv(laCPU->clientID, cpu_protocol, 1, 0) > 0){
@@ -360,15 +360,16 @@ void check_CPU_FD_ISSET(void *cpu){
 			case 6:// imprimirValor
 				log_debug(kernel_log, "Receving a value to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
 				recv(laCPU->clientID, tmp_buff, 4, 0);
-				size_t nameSize = (size_t) atoi(tmp_buff);
-				char *theName = malloc(nameSize);
-				recv(laCPU->clientID, theName, nameSize, 0);
-				recv(laCPU->clientID, tmp_buff, 4, 0);
-				char *value2console = malloc(1+4+nameSize+4);
-				log_debug(kernel_log, "Console %d will print the variable %s with value %d.", laCPU->pid, theName, tmp_buff);
-				asprintf(&value2console, "%d%04d%s%04d", 1, nameSize, theName, tmp_buff);//1+nameSize+name+value
-				send(laCPU->pid, value2console, (9+nameSize), 0); // send the value to the console
-				free(theName);
+//				size_t nameSize = (size_t) atoi(tmp_buff);
+//				char *theName = malloc(nameSize);
+//				recv(laCPU->clientID, theName, nameSize, 0);
+//				recv(laCPU->clientID, tmp_buff, 4, 0);
+//				char *value2console = malloc(1+4+nameSize+4);
+//				log_debug(kernel_log, "Console %d will print the variable %s with value %d.", laCPU->pid, theName, tmp_buff);
+				log_debug(kernel_log, "Console %d will print the value %d.", laCPU->pid, atoi(tmp_buff));
+				void * value2console = NULL;
+				asprintf(&value2console, "%d%04d", 1, atoi(tmp_buff));//1+nameSize+name+value
+				send(laCPU->pid, value2console, 5, 0); // send the value to the console
 				free(value2console);
 				break;
 			case 7:// imprimirTexto
@@ -378,7 +379,7 @@ void check_CPU_FD_ISSET(void *cpu){
 				char *theTXT = malloc(txtSize);
 				recv(laCPU->clientID, theTXT, txtSize, 0);
 				log_debug(kernel_log, "Console %d will print the text %s.", laCPU->pid, theTXT);
-				char *txt2console = malloc(1+4+txtSize);
+				void *txt2console = NULL;
 				asprintf(&txt2console, "%d%04d%s", 2, txtSize, theTXT);
 				send(laCPU->pid, txt2console, (5+txtSize), 0); // send the text to the console
 				free(theTXT);

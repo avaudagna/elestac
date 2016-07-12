@@ -17,17 +17,15 @@ AnSISOP_funciones funciones_generales_ansisop = {
         .AnSISOP_obtenerPosicionVariable= obtenerPosicionVariable,
         .AnSISOP_dereferenciar			= dereferenciar,
         .AnSISOP_asignar				= asignar,
-        .AnSISOP_irAlLabel              = (void*) irAlLabel,
-        .AnSISOP_imprimir				= (void*) imprimir,
-        .AnSISOP_imprimirTexto			= (void*) imprimirTexto,
+        .AnSISOP_irAlLabel              = irAlLabel,
+        .AnSISOP_imprimir				= imprimir,
+        .AnSISOP_imprimirTexto			= imprimirTexto,
         .AnSISOP_entradaSalida          = entradaSalida,
         .AnSISOP_llamarConRetorno       = llamarConRetorno,
         .AnSISOP_retornar               = retornar,
         .AnSISOP_llamarSinRetorno       = llamarSinRetorno,
         .AnSISOP_obtenerValorCompartida = obtenerValorCompartida,
         .AnSISOP_asignarValorCompartida = asignarValorCompartida,
-        .AnSISOP_imprimir               = imprimir,
-        .AnSISOP_imprimirTexto          = imprimirTexto,
 };
 
 AnSISOP_kernel funciones_kernel_ansisop = {
