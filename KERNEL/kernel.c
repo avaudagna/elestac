@@ -7,6 +7,8 @@ gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collecti
 gcc -I/usr/include/commons -I/usr/include/commons/collections -o umc umc.c -L/usr/lib -pthread -lcommons
  * Y la consola asi:
 gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
+ o la posta:
+gcc -I/usr/include/commons -o ansisop -I/usr/include/socket-commons console.c ./socketCommons/socketCommons.c -L/usr/lib -lcommons
 */
 #include "kernel.h"
 #include "libs/pcb_tests.h"
@@ -276,17 +278,16 @@ void add2FD_SET(void *client){
 }
 
 t_pcb * recvPCB(int cpuID){
-	t_pcb *incomingPCB = NULL;
+	char* tmp_buff = malloc(sizeof(int));
 	int pcb_size;
-	char *tmp_buff = malloc(sizeof(int));
 	recv(cpuID, tmp_buff, (size_t) sizeof(int), 0);
 	pcb_size = *(int*) tmp_buff;
 	void *pcb_serializado = malloc((size_t) pcb_size);
 	recv(cpuID, pcb_serializado, (size_t) pcb_size, 0);
-	incomingPCB = (t_pcb *)calloc(1,sizeof(t_pcb));
 	int pcb_serializado_cursor = 0;
+	t_pcb* incomingPCB = malloc(sizeof(t_pcb));
 	deserialize_pcb(&incomingPCB, pcb_serializado, &pcb_serializado_cursor);
-	testSerializedPCB(incomingPCB, pcb_serializado);
+	//testSerializedPCB(incomingPCB, pcb_serializado);
 	free(tmp_buff);
 	free(pcb_serializado);
 	return incomingPCB;
@@ -305,10 +306,10 @@ void restoreCPU(t_Client *laCPU){
 }
 
 void check_CPU_FD_ISSET(void *cpu){
-	char *cpu_protocol = malloc(1);
+	char* cpu_protocol = calloc(1, 1);
+	char* tmp_buff = malloc(4);
 	int setValue = 0;
-	t_Client *laCPU = (t_Client*) cpu;
-	char *tmp_buff = malloc(4);
+	t_Client* laCPU = (t_Client*) cpu;
 	if (FD_ISSET(laCPU->clientID, &allSockets)) {
 		log_debug(kernel_log,"CPU %d has something to say.", laCPU->clientID);
 		if (recv(laCPU->clientID, cpu_protocol, 1, 0) > 0){
@@ -316,7 +317,7 @@ void check_CPU_FD_ISSET(void *cpu){
 				case 1:// Quantum end
 				case 2:// Program END
 					log_debug(kernel_log, "Receving a PCB");
-					t_pcb *incomingPCB = recvPCB(laCPU->clientID);
+					t_pcb* incomingPCB = recvPCB(laCPU->clientID);
 					if (laCPU->status == EXIT || incomingPCB->status==EXIT){
 						list_add(PCB_EXIT, incomingPCB);
 					} else {
@@ -401,8 +402,6 @@ void check_CPU_FD_ISSET(void *cpu){
 				default:
 					log_error(kernel_log,"Caso no contemplado. CPU dijo: %s",cpu_protocol);
 			}
-			RoundRobinReport();
-			call_handlers();
 		} else {
 			log_info(kernel_log,"CPU %d has closed the connection.", laCPU->clientID);
 			close(laCPU->clientID);
@@ -419,9 +418,11 @@ void check_CPU_FD_ISSET(void *cpu){
 			if (list_size(cpus_executing) > 0)
 				list_remove_by_condition(cpus_executing, getCPUIndex);
 		}
+		RoundRobinReport();
 	}
 	free(cpu_protocol);
 	free(tmp_buff);
+	call_handlers();
 }
 
 void destroy_PCB(void *pcb){
@@ -540,7 +541,7 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 		log_info(kernel_log, "Pages of code + stack = %d.", code_pages);
 		send(newConsole,PID,4,0);
 		t_metadata_program* metadata = metadata_desde_literal(code);
-		t_pcb *newPCB=malloc(sizeof(t_pcb));
+		t_pcb *newPCB = malloc(sizeof(t_pcb));
 		newPCB->pid=newConsole;
 		newPCB->program_counter=metadata->instruccion_inicio;
 		newPCB->stack_pointer=code_pages * setup.PAGE_SIZE;
@@ -550,7 +551,7 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 		newPCB->instrucciones_serializado = metadata->instrucciones_serializado;
 		newPCB->etiquetas_size = metadata->etiquetas_size;
 		newPCB->etiquetas = metadata->etiquetas;
-		list_add(PCB_READY,newPCB);
+		list_add(PCB_READY, newPCB);
 		log_info(kernel_log, "The program with PID=%04d is now READY (%d).", newPCB->pid, newPCB->status);
 	} else {
 		send(newConsole,"0000",4,0);
@@ -622,8 +623,8 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen) { /* Search 
 	if (list_size(PCB_EXIT) > 0)
 		list_remove_and_destroy_by_condition(PCB_EXIT,match_PCB,destroy_PCB);
 
-	if (cpuStillOpen){
-		if (list_size(cpus_executing) > 0){
+	if (cpuStillOpen) {
+		if (list_size(cpus_executing) > 0) {
 			bool getCPUIndex(void *nbr) {
 				t_Client *aCPU = nbr;
 				return (pid == aCPU->pid);
