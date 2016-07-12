@@ -8,8 +8,8 @@ gcc -I/usr/include/commons -I/usr/include/commons/collections -o umc umc.c -L/us
  * Y la consola asi:
 gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
 */
-#include <libs/pcb_tests.h>
 #include "kernel.h"
+#include "libs/pcb_tests.h"
 
 /* BEGIN OF GLOBAL STUFF I NEED EVERYWHERE */
 int consoleServer, cpuServer, clientUMC, configFileFD;
@@ -66,8 +66,8 @@ int start_kernel(int argc, char* configFile){
 	if (argc==2){
 		if (loadConfig(configFile)<0) {
 			log_error(kernel_log, "Config file can not be loaded. Please, try again.");
-    		return -1;
-    	}else{
+			return -1;
+		}else{
 			configFileName = malloc(sizeof(configFile));
 			strcpy(configFileName, configFile);
 			char cwd[1024];
@@ -83,37 +83,50 @@ int start_kernel(int argc, char* configFile){
 			usleep(400);
 			printf("\r\e[?25l Loading... %d", i/100);
 		}
-    	printf("\r Usage: ./kernel setup.data \n");
+		printf("\r Usage: ./kernel setup.data \n");
 		log_error(kernel_log, "Config file was not provided.");
-    	return -1;
+		return -1;
 	}
 	signal (SIGINT, tratarSeniales);
 	signal (SIGPIPE, tratarSeniales);
 	return 0;
 }
 
-void* wait_coordination(void *p) {
-	int miID = *((int *) p);
-	char *tmp_buff = calloc(1,4);
-	recv(miID, tmp_buff, 1, 0);
+void* sem_wait_thread(void *p){
+	char* cosas = (char*) p;
+	char* semIndexChar = malloc(4);
+	strncpy(semIndexChar, cosas, 4);
+	char* miIDChar = malloc(4);
+	strcpy(miIDChar,&cosas[3]);
+	int semIndex = atoi(semIndexChar);
+	int miID = atoi(miIDChar);
+	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %s started.", setup.SEM_IDS[semIndex], miID);
+	sem_wait(&semaforo_ansisop[semIndex]);
+	send(miID, "0", 1, 0);
+	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %s finished.", setup.SEM_IDS[semIndex], miID);
+}
+
+int wait_coordination(int cpuID) {
+	char *tmp_buff = malloc(4);
+	recv(cpuID, tmp_buff, 1, 0);
 	bool semWait=false;
 	if (strncmp(tmp_buff, "0", 1) == 0) semWait=true;
-    free(tmp_buff);
-    tmp_buff = calloc(1,4);
-	recv(miID, tmp_buff, 4, 0);
+	recv(cpuID, tmp_buff, 4, 0);
 	size_t SEM_ID_Size = (size_t) atoi(tmp_buff);
 	char *SEM_ID = malloc(SEM_ID_Size);
-	recv(miID, SEM_ID, SEM_ID_Size, 0);
+	recv(cpuID, SEM_ID, SEM_ID_Size, 0);
 	int semIndex = getSEMindex(SEM_ID);
-	if(semWait){
-		log_info(kernel_log, "wait_coordination: WAIT semaphore %s by CPU %d.", setup.SEM_IDS[semIndex], miID);
-		sem_wait(&semaforo_ansisop[semIndex]);
-		send(miID, "0", 1, 0);
-	}else {
-		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d.", setup.SEM_IDS[semIndex], miID);
+	if(semWait) {
+		void * losDatos = malloc(8);
+		sprintf(losDatos, "%04d%04d", cpuID, semIndex);
+		pthread_t sem_thread;
+		pthread_create(&sem_thread, NULL, sem_wait_thread, &losDatos);
+	} else {
+		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %s.", setup.SEM_IDS[semIndex], cpuID);
 		sem_post(&semaforo_ansisop[semIndex]);
 	}
 	free(tmp_buff);
+	return 1;
 }
 void* do_work(void *p) {
 	int tmp = *((int *) p);
@@ -197,17 +210,18 @@ int loadConfig(char* configFile){
 
 int connect2UMC(){
 	int clientUMC;
-	char* buffer;
+	char* buffer = malloc(5);
 	char* buffer_4=malloc(4);
 	log_info(kernel_log, "Connecting to UMC on %s:%d.", setup.IP_UMC, setup.PUERTO_UMC);
 	if (getClientSocket(&clientUMC, setup.IP_UMC, setup.PUERTO_UMC)) return (-1);
 	sprintf(buffer_4, "%04d", setup.STACK_SIZE);
-	asprintf(&buffer, "%s%s", "0", buffer_4);
+	sprintf(buffer, "%d%04d", 0, setup.STACK_SIZE);
 	send(clientUMC, buffer, 5 , 0);
 	log_info(kernel_log, "Stack size (sent to UMC): %s.",buffer_4);
 	if (recv(clientUMC, buffer_4, 4, 0) < 0) return (-1);
 	setup.PAGE_SIZE=atoi(buffer_4);
 	log_info(kernel_log, "Page size: (received from UMC): %d.",setup.PAGE_SIZE);
+	free(buffer);
 	free(buffer_4);
 	return clientUMC;
 }
@@ -223,12 +237,12 @@ void *requestPages2UMC(void* request_buffer){
 	code = malloc((size_t) ansisopLen);
 	deserialize_data(code, (size_t) ansisopLen, request_buffer, &deserialize_index);
 	deserialize_data(&clientUMC, sizeof(int), request_buffer, &deserialize_index);
-	char* buffer;
 	char buffer_4[4];
 	int bufferLen=1+4+4+4+ansisopLen; //1+PID+req_pages+size+code
 	sprintf(buffer_4, "%04d", (ansisopLen/setup.PAGE_SIZE)+1);
 	log_info(kernel_log, "Requesting %s pages to UMC.", buffer_4);
-	asprintf(&buffer, "%d%04d%s%04d%s", 1,*(int*)PID,buffer_4, ansisopLen,code);
+	char* buffer = malloc((size_t) 8+4+ansisopLen);
+	sprintf(buffer, "%d%04d%s%04d%s", 1,*(int*)PID,buffer_4, ansisopLen,code);
 	send(clientUMC, buffer, (size_t) bufferLen, 0);
 	recv(clientUMC, buffer_4, 4, 0);
 	log_info(kernel_log, "UMC replied.");
@@ -241,18 +255,18 @@ void tratarSeniales(int senial){
 	printf("\t\tSystem received the signal: %d",senial);
 	printf("\n\t=============================================\n");
 	switch (senial){
-	case SIGINT:
-		// Detecta Ctrl+C y evita el cierre.
-		printf("Me di cuenta que me tiraste la senial :8 \nDale Ctrl+C una vez más para confirmar.\n\n");
-		signal (SIGINT, SIG_DFL); // solo controlo una vez.
-		break;
-	case SIGPIPE:
-		// Trato de escribir en un socket que cerro la conexion.
-		printf("La consola o el CPU con el que estabas hablando se murió. Llamá al 911.\n\n");
-		break;
-	default:
-		printf("Me tiraste la senial\n");
-		break;
+		case SIGINT:
+			// Detecta Ctrl+C y evita el cierre.
+			printf("Me di cuenta que me tiraste la senial :8 \nDale Ctrl+C una vez más para confirmar.\n\n");
+			signal (SIGINT, SIG_DFL); // solo controlo una vez.
+			break;
+		case SIGPIPE:
+			// Trato de escribir en un socket que cerro la conexion.
+			printf("La consola o el CPU con el que estabas hablando se murió. Llamá al 911.\n\n");
+			break;
+		default:
+			printf("Me tiraste la senial\n");
+			break;
 	}
 }
 
@@ -264,15 +278,15 @@ void add2FD_SET(void *client){
 t_pcb * recvPCB(int cpuID){
 	t_pcb *incomingPCB = NULL;
 	int pcb_size;
-	void *tmp_buff = malloc(sizeof(int));
-	recv(cpuID, tmp_buff, sizeof(int), 0);
+	char *tmp_buff = malloc(sizeof(int));
+	recv(cpuID, tmp_buff, (size_t) sizeof(int), 0);
 	pcb_size = *(int*) tmp_buff;
 	void *pcb_serializado = malloc((size_t) pcb_size);
 	recv(cpuID, pcb_serializado, (size_t) pcb_size, 0);
 	incomingPCB = (t_pcb *)calloc(1,sizeof(t_pcb));
 	int pcb_serializado_cursor = 0;
 	deserialize_pcb(&incomingPCB, pcb_serializado, &pcb_serializado_cursor);
-    testSerializedPCB(incomingPCB, pcb_serializado);
+	testSerializedPCB(incomingPCB, pcb_serializado);
 	free(tmp_buff);
 	free(pcb_serializado);
 	return incomingPCB;
@@ -299,94 +313,95 @@ void check_CPU_FD_ISSET(void *cpu){
 		log_debug(kernel_log,"CPU %d has something to say.", laCPU->clientID);
 		if (recv(laCPU->clientID, cpu_protocol, 1, 0) > 0){
 			switch (atoi(cpu_protocol)) {
-			case 1:// Quantum end
-			case 2:// Program END
-				log_debug(kernel_log, "Receving a PCB");
-				t_pcb *incomingPCB = recvPCB(laCPU->clientID);
-				if (laCPU->status == EXIT || incomingPCB->status==EXIT){
-					list_add(PCB_EXIT, incomingPCB);
-				} else {
-					list_add(PCB_READY, incomingPCB);
-				}
-				restoreCPU(laCPU);
-				break;
-			case 3:// IO
-				log_debug(kernel_log, "Receving an Input/Output request + a PCB");
-				t_io *io_op = malloc(sizeof(t_io));
-				io_op->pid = laCPU->pid;
-				recv(laCPU->clientID, tmp_buff, 4, 0); // size of the io_name
-				recv(laCPU->clientID, io_op->io_name, (size_t) atoi(tmp_buff), 0);
-				recv(laCPU->clientID, io_op->io_units, 4, 0);
-				io_op->io_index = getIOindex(io_op->io_name);
-				t_pcb *blockedPCB = recvPCB(laCPU->clientID);
-				if (io_op->io_index < 0 || laCPU->status == EXIT) {
-					log_error(kernel_log, "AnSisOp program request an unplugged device or the console has been closed. #VamoACalmarno");
-					list_add(PCB_EXIT,blockedPCB);
-				} else {
-					pthread_mutex_lock(&mut_io_list);
-					list_add(solicitudes_io[io_op->io_index], io_op);
-					pthread_mutex_unlock(&mut_io_list);
-					list_add(PCB_BLOCKED,incomingPCB);
-				}
-				restoreCPU(laCPU);
-				break;
-			case 4:// semaforo
-				log_debug(kernel_log, "Receving a semaphore operation from CPU %d", laCPU->clientID);
-                wait_coordination(&laCPU->clientID);
-				log_debug(kernel_log, "Semaphore was handled successfully.");
-				break;
-			case 5:// var compartida
-				log_debug(kernel_log, "Receving a shared var operation from CPU %d", laCPU->clientID);
-				recv(laCPU->clientID, tmp_buff, 1, 0);
-				if (strncmp(tmp_buff, "1",1) == 0) setValue = 1;
-				recv(laCPU->clientID, tmp_buff, 4, 0);
-				size_t varNameSize = (size_t) atoi(tmp_buff);
-				char *theShared = malloc(varNameSize);
-				recv(laCPU->clientID, theShared, varNameSize, 0);
-				int sharedIndex = getSharedIndex(theShared);
-				if (setValue == 1) {
-					recv(laCPU->clientID, tmp_buff, 4, 0);//recv & set the value
-					int theVal = atoi(tmp_buff);
-					setup.SHARED_VALUES[sharedIndex] = theVal;
-                    send(laCPU->clientID, "0", 1, 0); // send the value to the CPU
-				} else {
-					char *sharedValue = malloc(4);
-					sprintf(sharedValue, "%04d", setup.SHARED_VALUES[sharedIndex]);
-					send(laCPU->clientID, sharedValue, 4, 0); // send the value to the CPU
-					free(sharedValue);
-				}
-				free(theShared);
-				break;
-			case 6:// imprimirValor
-				log_debug(kernel_log, "Receving a value to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
-				recv(laCPU->clientID, tmp_buff, 4, 0);
-				size_t nameSize = (size_t) atoi(tmp_buff);
-				char *theName = malloc(nameSize);
-				recv(laCPU->clientID, theName, nameSize, 0);
-				recv(laCPU->clientID, tmp_buff, 4, 0);
-				char *value2console = malloc(1+4+nameSize+4);
-				log_debug(kernel_log, "Console %d will print the variable %s with value %d.", laCPU->pid, theName, tmp_buff);
-				asprintf(&value2console, "%d%04d%s%04d", 1, nameSize, theName, tmp_buff);//1+nameSize+name+value
-				send(laCPU->pid, value2console, (9+nameSize), 0); // send the value to the console
-				free(theName);
-				free(value2console);
-				break;
-			case 7:// imprimirTexto
-				log_debug(kernel_log, "Receving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
-				recv(laCPU->clientID, tmp_buff, 4, 0);
-				size_t txtSize = (size_t) atoi(tmp_buff);
-				char *theTXT = malloc(txtSize);
-				recv(laCPU->clientID, theTXT, txtSize, 0);
-				log_debug(kernel_log, "Console %d will print the text %s.", laCPU->pid, theTXT);
-				char *txt2console = malloc(1+4+txtSize);
-				asprintf(&txt2console, "%d%04d%s", 2, txtSize, theTXT);
-				send(laCPU->pid, txt2console, (5+txtSize), 0); // send the text to the console
-				free(theTXT);
-				free(txt2console);
-				break;
-			default:
-				log_error(kernel_log,"Caso no contemplado. CPU dijo: %s",cpu_protocol);
+				case 1:// Quantum end
+				case 2:// Program END
+					log_debug(kernel_log, "Receving a PCB");
+					t_pcb *incomingPCB = recvPCB(laCPU->clientID);
+					if (laCPU->status == EXIT || incomingPCB->status==EXIT){
+						list_add(PCB_EXIT, incomingPCB);
+					} else {
+						list_add(PCB_READY, incomingPCB);
+					}
+					restoreCPU(laCPU);
+					break;
+				case 3:// IO
+					log_debug(kernel_log, "Receving an Input/Output request + a PCB");
+					t_io *io_op = malloc(sizeof(t_io));
+					io_op->pid = laCPU->pid;
+					recv(laCPU->clientID, tmp_buff, 4, 0); // size of the io_name
+					recv(laCPU->clientID, io_op->io_name, (size_t) atoi(tmp_buff), 0);
+					recv(laCPU->clientID, io_op->io_units, 4, 0);
+					io_op->io_index = getIOindex(io_op->io_name);
+					t_pcb *blockedPCB = recvPCB(laCPU->clientID);
+					if (io_op->io_index < 0 || laCPU->status == EXIT) {
+						log_error(kernel_log, "AnSisOp program request an unplugged device or the console has been closed. #VamoACalmarno");
+						list_add(PCB_EXIT,blockedPCB);
+					} else {
+						pthread_mutex_lock(&mut_io_list);
+						list_add(solicitudes_io[io_op->io_index], io_op);
+						pthread_mutex_unlock(&mut_io_list);
+						list_add(PCB_BLOCKED,incomingPCB);
+					}
+					restoreCPU(laCPU);
+					break;
+				case 4:// semaforo
+					log_debug(kernel_log, "Receving a semaphore operation from CPU %d", laCPU->clientID);
+					if (wait_coordination(laCPU->clientID) == 1){
+						log_debug(kernel_log, "Semaphore operation successfully handled.");
+					}
+					break;
+				case 5:// var compartida
+					log_debug(kernel_log, "Receving a shared var operation from CPU %d", laCPU->clientID);
+					recv(laCPU->clientID, tmp_buff, 1, 0);
+					if (strncmp(tmp_buff, "1",1) == 0) setValue = 1;
+					recv(laCPU->clientID, tmp_buff, 4, 0);
+					size_t varNameSize = (size_t) atoi(tmp_buff);
+					char *theShared = malloc(varNameSize);
+					recv(laCPU->clientID, theShared, varNameSize, 0);
+					int sharedIndex = getSharedIndex(theShared);
+					if (setValue == 1) {
+						recv(laCPU->clientID, tmp_buff, 4, 0);//recv & set the value
+						int theVal = atoi(tmp_buff);
+						setup.SHARED_VALUES[sharedIndex] = theVal;
+					} else {
+						char *sharedValue = malloc(4);
+						sprintf(sharedValue, "%04d", setup.SHARED_VALUES[sharedIndex]);
+						send(laCPU->clientID, sharedValue, 4, 0); // send the value to the CPU
+						free(sharedValue);
+					}
+					free(theShared);
+					break;
+				case 6:// imprimirValor
+					log_debug(kernel_log, "Receving a value to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
+					recv(laCPU->clientID, tmp_buff, 4, 0);
+					size_t nameSize = (size_t) atoi(tmp_buff);
+					char *theName = malloc(nameSize);
+					recv(laCPU->clientID, theName, nameSize, 0);
+					recv(laCPU->clientID, tmp_buff, 4, 0);
+					char *value2console = malloc(1+4+nameSize+4);
+					log_debug(kernel_log, "Console %d will print the variable %s with value %d.", laCPU->pid, theName, tmp_buff);
+					sprintf(value2console, "%d%04d%s%s", 1, (int) nameSize, theName, tmp_buff);//1+nameSize+name+value
+					send(laCPU->pid, value2console, (9+nameSize), 0); // send the value to the console
+					free(theName);
+					free(value2console);
+					break;
+				case 7:// imprimirTexto
+					log_debug(kernel_log, "Receving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
+					recv(laCPU->clientID, tmp_buff, 4, 0);
+					size_t txtSize = (size_t) atoi(tmp_buff);
+					char *theTXT = malloc(txtSize);
+					recv(laCPU->clientID, theTXT, txtSize, 0);
+					log_debug(kernel_log, "Console %d will print the text %s.", laCPU->pid, theTXT);
+					char *txt2console = malloc(1+4+txtSize);
+					sprintf(txt2console, "%d%04d%s", 2, (int) txtSize, theTXT);
+					send(laCPU->pid, txt2console, (5+txtSize), 0); // send the text to the console
+					free(theTXT);
+					free(txt2console);
+					break;
+				default:
+					log_error(kernel_log,"Caso no contemplado. CPU dijo: %s",cpu_protocol);
 			}
+			RoundRobinReport();
 			call_handlers();
 		} else {
 			log_info(kernel_log,"CPU %d has closed the connection.", laCPU->clientID);
@@ -394,7 +409,7 @@ void check_CPU_FD_ISSET(void *cpu){
 			bool getCPUIndex(void *nbr){
 				t_Client *unCliente = nbr;
 				bool matchea = (laCPU->clientID == unCliente->clientID);
-				if (matchea){
+				if (matchea && laCPU->pid > 0){
 					end_program(laCPU->pid, true, false);
 				}
 				return matchea;
@@ -463,6 +478,7 @@ int control_clients(){
 		list_iterate(cpus_executing,check_CPU_FD_ISSET);
 		if ((newConsole=accept_new_client("console", &consoleServer, &allSockets, consolas_conectadas)) > 1){
 			accept_new_PCB(newConsole);
+			RoundRobinReport();
 		}
 		newCPU=accept_new_client("CPU", &cpuServer, &allSockets, cpus_conectadas);
 		if(newCPU>0) log_info(kernel_log,"New CPU accepted with ID %d",newCPU);
@@ -554,17 +570,19 @@ void round_robin(){
 	laCPU->status = EXECUTING;
 	laCPU->pid = tuPCB->pid;
 	serialize_pcb(tuPCB, &pcb_buffer, &pcb_buffer_size);
-	tmp_buffer = malloc((size_t) tmp_buffer_size+pcb_buffer_size);
-    sprintf(tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
-//	asprintf(&tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
-//    tmp_buffer = realloc(tmp_buffer , (size_t) tmp_buffer_size + pcb_buffer_size);
-	serialize_data(pcb_buffer, (size_t ) pcb_buffer_size, &tmp_buffer, &tmp_buffer_size );
+	//tmp_buffer = malloc((size_t) tmp_buffer_size+pcb_buffer_size);
+	tmp_buffer = malloc((size_t) tmp_buffer_size);
+	//TODO revisar esto
+	sprintf(tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
+	//asprintf(&tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
+	//tmp_buffer = realloc(tmp_buffer , (size_t) tmp_buffer_size + pcb_buffer_size);
+	serialize_data(pcb_buffer, (size_t ) pcb_buffer_size, &tmp_buffer, &tmp_buffer_size);
 	log_info(kernel_log,"Submitting to CPU %d the PID %d.", laCPU->clientID, tuPCB->pid);
 	send(laCPU->clientID, tmp_buffer, (size_t) tmp_buffer_size, 0);
-    list_add(cpus_executing,laCPU);
+	list_add(cpus_executing,laCPU);
 	free(tmp_buffer);
-    free(pcb_buffer);
-    free(tuPCB);
+	free(pcb_buffer);
+	free(tuPCB);
 }
 
 void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen) { /* Search everywhere for the PID and kill it ! */
@@ -681,12 +699,15 @@ void call_handlers() {
 	}
 	if (list_size(PCB_BLOCKED) > 0) process_io();
 	while (list_size(cpus_conectadas) > 0 && list_size(PCB_READY) > 0 ) round_robin();
-//	log_info(kernel_log, "Round Robin report:");
-//	int nBLOCKED = list_size(PCB_BLOCKED);
-//	int nEXIT = list_size(PCB_EXIT);
-//	int nEXEC = list_size(cpus_executing);
-//	int nREADY = list_size(PCB_READY);
-//	int nNEW = list_size(consolas_conectadas) - nREADY - nEXEC - nBLOCKED - nEXIT;
-//	log_info(kernel_log, "NEW=%d, READY=%d, EXECUTING=%d, BLOCKED=%d, EXIT=%d: %d.", nNEW, nREADY, nEXEC, nBLOCKED, nEXIT);
+}
+
+void RoundRobinReport(){
+	log_info(kernel_log, "Round Robin report:");
+	int nBLOCKED = list_size(PCB_BLOCKED);
+	int nEXIT = list_size(PCB_EXIT);
+	int nEXEC = list_size(cpus_executing);
+	int nREADY = list_size(PCB_READY);
+	int nNEW = list_size(consolas_conectadas) - nREADY - nEXEC - nBLOCKED - nEXIT;
+	log_info(kernel_log, "NEW=%d, READY=%d, EXECUTING=%d, BLOCKED=%d, EXIT=%d.", nNEW, nREADY, nEXEC, nBLOCKED, nEXIT);
 }
 // C'est tout
