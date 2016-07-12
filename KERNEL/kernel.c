@@ -371,33 +371,34 @@ void check_CPU_FD_ISSET(void *cpu){
 					}
 					free(theShared);
 					break;
-				case 6:// imprimirValor
-					log_debug(kernel_log, "Receving a value to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
-					recv(laCPU->clientID, tmp_buff, 4, 0);
-					size_t nameSize = (size_t) atoi(tmp_buff);
-					char *theName = malloc(nameSize);
-					recv(laCPU->clientID, theName, nameSize, 0);
-					recv(laCPU->clientID, tmp_buff, 4, 0);
-					char *value2console = malloc(1+4+nameSize+4);
-					log_debug(kernel_log, "Console %d will print the variable %s with value %d.", laCPU->pid, theName, tmp_buff);
-					sprintf(value2console, "%d%04d%s%s", 1, (int) nameSize, theName, tmp_buff);//1+nameSize+name+value
-					send(laCPU->pid, value2console, (9+nameSize), 0); // send the value to the console
-					free(theName);
-					free(value2console);
-					break;
-				case 7:// imprimirTexto
-					log_debug(kernel_log, "Receving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
-					recv(laCPU->clientID, tmp_buff, 4, 0);
-					size_t txtSize = (size_t) atoi(tmp_buff);
-					char *theTXT = malloc(txtSize);
-					recv(laCPU->clientID, theTXT, txtSize, 0);
-					log_debug(kernel_log, "Console %d will print the text %s.", laCPU->pid, theTXT);
-					char *txt2console = malloc(1+4+txtSize);
-					sprintf(txt2console, "%d%04d%s", 2, (int) txtSize, theTXT);
-					send(laCPU->pid, txt2console, (5+txtSize), 0); // send the text to the console
-					free(theTXT);
-					free(txt2console);
-					break;
+                case 6:// imprimirValor
+                    log_debug(kernel_log, "Receving a value to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
+                    recv(laCPU->clientID, tmp_buff, 4, 0);
+//				size_t nameSize = (size_t) atoi(tmp_buff);
+//				char *theName = malloc(nameSize);
+//				recv(laCPU->clientID, theName, nameSize, 0);
+//				recv(laCPU->clientID, tmp_buff, 4, 0);
+//				char *value2console = malloc(1+4+nameSize+4);
+//				log_debug(kernel_log, "Console %d will print the variable %s with value %d.", laCPU->pid, theName, tmp_buff);
+                    log_debug(kernel_log, "Console %d will print the value %d.", laCPU->pid, atoi(tmp_buff));
+                    void * value2console = NULL;
+                    asprintf(&value2console, "%d%04d", 1, atoi(tmp_buff));//1+nameSize+name+value
+                    send(laCPU->pid, value2console, 5, 0); // send the value to the console
+                    free(value2console);
+                    break;
+                case 7:// imprimirTexto
+                    log_debug(kernel_log, "Receving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
+                    recv(laCPU->clientID, tmp_buff, 4, 0);
+                    size_t txtSize = (size_t) atoi(tmp_buff);
+                    char *theTXT = malloc(txtSize);
+                    recv(laCPU->clientID, theTXT, txtSize, 0);
+                    log_debug(kernel_log, "Console %d will print the text %s.", laCPU->pid, theTXT);
+                    void *txt2console = NULL;
+                    asprintf(&txt2console, "%d%04d%s", 2, txtSize, theTXT);
+                    send(laCPU->pid, txt2console, (5+txtSize), 0); // send the text to the console
+                    free(theTXT);
+                    free(txt2console);
+                    break;
 				default:
 					log_error(kernel_log,"Caso no contemplado. CPU dijo: %s",cpu_protocol);
 			}
