@@ -375,6 +375,7 @@ void check_CPU_FD_ISSET(void *cpu){
 				case 6:// imprimirValor
 					log_debug(kernel_log, "Receving a value to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
 					recv(laCPU->clientID, tmp_buff, 4, 0);
+					/*
 					size_t nameSize = (size_t) atoi(tmp_buff);
 					char *theName = malloc(nameSize);
 					recv(laCPU->clientID, theName, nameSize, 0);
@@ -383,8 +384,11 @@ void check_CPU_FD_ISSET(void *cpu){
 					log_debug(kernel_log, "Console %d will print the variable %s with value %d.", laCPU->pid, theName, tmp_buff);
 					sprintf(value2console, "%d%04d%s%s", 1, (int) nameSize, theName, tmp_buff);//1+nameSize+name+value
 					send(laCPU->pid, value2console, (9+nameSize), 0); // send the value to the console
-					free(theName);
-					free(value2console);
+					 */
+					log_debug(kernel_log, "Console %d will print the value %d.", laCPU->pid, atoi(tmp_buff));
+					send(laCPU->pid, tmp_buff, 4, 0); // send the value to the console
+					//free(theName);
+					//free(value2console);
 					break;
 				case 7:// imprimirTexto
 					log_debug(kernel_log, "Receving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
@@ -640,6 +644,7 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen) { /* Search 
 	if (pcb_found == true) {
 		sprintf(buffer, "%d%04d", 2, pid);
 		send(clientUMC, buffer, 5, 0);
+		log_info(kernel_log, "Program %d has been terminated", pid);
 	}
 	if (consoleStillOpen) send(pid, "0", 1, 0); // send exit code to console
 	close(pid); // close console socket
