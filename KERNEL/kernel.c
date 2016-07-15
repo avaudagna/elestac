@@ -10,6 +10,8 @@ gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
  o la posta:
 gcc -I/usr/include/commons -o ansisop -I/usr/include/socket-commons console.c ./socketCommons/socketCommons.c -L/usr/lib -lcommons
 */
+#include <parser/metadata_program.h>
+#include <libs/pcb.h>
 #include "kernel.h"
 #include "libs/pcb_tests.h"
 
@@ -24,6 +26,7 @@ t_list  *PCB_READY, *PCB_BLOCKED, *PCB_EXIT;
 t_list  *consolas_conectadas, *cpus_conectadas, *cpus_executing;
 t_list **solicitudes_io;
 fd_set 	 allSockets;
+void * losDatosGlobales = NULL;
 /* END OF GLOBAL STUFF I NEED EVERYWHERE */
 
 int main (int argc, char **argv){
@@ -94,37 +97,40 @@ int start_kernel(int argc, char* configFile){
 	return 0;
 }
 
-void* sem_wait_thread(void *p){
-	char* cosas = (char*) p;
-	char* semIndexChar = malloc(4);
-	strncpy(semIndexChar, cosas, 4);
-	char* miIDChar = malloc(4);
-	strcpy(miIDChar,&cosas[3]);
+void* sem_wait_thread(void *cpuData){
+	void* semIndexChar = calloc(1, 4);
+    void* miIDChar = calloc(1, 4);
+    strncpy(miIDChar, cpuData, 4);
+    strncpy(semIndexChar, cpuData+4, 4);
 	int semIndex = atoi(semIndexChar);
-	int miID = atoi(miIDChar);
-	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %s started.", setup.SEM_IDS[semIndex], miID);
+    int miID = atoi(miIDChar);
+    free(semIndexChar);
+    free(miIDChar);
+	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started.", setup.SEM_IDS[semIndex], miID);
 	sem_wait(&semaforo_ansisop[semIndex]);
 	send(miID, "0", 1, 0);
-	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %s finished.", setup.SEM_IDS[semIndex], miID);
+	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished.", setup.SEM_IDS[semIndex], miID);
+    free(cpuData);
+    pthread_exit(0);
 }
 
 int wait_coordination(int cpuID) {
-	char *tmp_buff = malloc(4);
+	char *tmp_buff = calloc(1, 4);
 	recv(cpuID, tmp_buff, 1, 0);
 	bool semWait=false;
 	if (strncmp(tmp_buff, "0", 1) == 0) semWait=true;
 	recv(cpuID, tmp_buff, 4, 0);
 	size_t SEM_ID_Size = (size_t) atoi(tmp_buff);
-	char *SEM_ID = malloc(SEM_ID_Size);
+	char *SEM_ID = calloc(1, SEM_ID_Size);
 	recv(cpuID, SEM_ID, SEM_ID_Size, 0);
 	int semIndex = getSEMindex(SEM_ID);
 	if(semWait) {
-		void * losDatos = malloc(8);
-		sprintf(losDatos, "%04d%04d", cpuID, semIndex);
+		losDatosGlobales = malloc(8);
+		sprintf(losDatosGlobales, "%04d%04d", cpuID, semIndex);
 		pthread_t sem_thread;
-		pthread_create(&sem_thread, NULL, sem_wait_thread, &losDatos);
+		pthread_create(&sem_thread, NULL, sem_wait_thread, losDatosGlobales);
 	} else {
-		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %s.", setup.SEM_IDS[semIndex], cpuID);
+		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d.", setup.SEM_IDS[semIndex], cpuID);
 		sem_post(&semaforo_ansisop[semIndex]);
 	}
 	free(tmp_buff);
@@ -357,7 +363,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					if (strncmp(tmp_buff, "1",1) == 0) setValue = 1;
 					recv(laCPU->clientID, tmp_buff, 4, 0);
 					size_t varNameSize = (size_t) atoi(tmp_buff);
-					char *theShared = malloc(varNameSize);
+					char *theShared = calloc(1, varNameSize);
 					recv(laCPU->clientID, theShared, varNameSize, 0);
 					int sharedIndex = getSharedIndex(theShared);
 					if (setValue == 1) {
@@ -365,7 +371,7 @@ void check_CPU_FD_ISSET(void *cpu){
 						int theVal = atoi(tmp_buff);
 						setup.SHARED_VALUES[sharedIndex] = theVal;
 					} else {
-						char *sharedValue = malloc(4);
+						char *sharedValue = calloc(1, 4);
 						sprintf(sharedValue, "%04d", setup.SHARED_VALUES[sharedIndex]);
 						send(laCPU->clientID, sharedValue, 4, 0); // send the value to the CPU
 						free(sharedValue);
@@ -385,8 +391,11 @@ void check_CPU_FD_ISSET(void *cpu){
 					sprintf(value2console, "%d%04d%s%s", 1, (int) nameSize, theName, tmp_buff);//1+nameSize+name+value
 					send(laCPU->pid, value2console, (9+nameSize), 0); // send the value to the console
 					 */
+                    void * text2Console = calloc(1, sizeof(int) + 1);
+                    sprintf(text2Console, "1%04d", atoi(tmp_buff));
 					log_debug(kernel_log, "Console %d will print the value %d.", laCPU->pid, atoi(tmp_buff));
-					send(laCPU->pid, tmp_buff, 4, 0); // send the value to the console
+					send(laCPU->pid, text2Console, 5, 0); // send the value to the console
+                    free(text2Console);
 					//free(theName);
 					//free(value2console);
 					break;
@@ -554,7 +563,9 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 		newPCB->instrucciones_size= metadata->instrucciones_size;
 		newPCB->instrucciones_serializado = metadata->instrucciones_serializado;
 		newPCB->etiquetas_size = metadata->etiquetas_size;
-		newPCB->etiquetas = metadata->etiquetas;
+        newPCB->etiquetas = calloc(1, metadata->etiquetas_size);
+		memcpy(newPCB->etiquetas, metadata->etiquetas, metadata->etiquetas_size);
+        free(metadata);
 		list_add(PCB_READY, newPCB);
 		log_info(kernel_log, "The program with PID=%04d is now READY (%d).", newPCB->pid, newPCB->status);
 	} else {
@@ -576,7 +587,7 @@ void round_robin(){
 	laCPU->pid = tuPCB->pid;
 	serialize_pcb(tuPCB, &pcb_buffer, &pcb_buffer_size);
 	//tmp_buffer = malloc((size_t) tmp_buffer_size+pcb_buffer_size);
-	tmp_buffer = malloc((size_t) tmp_buffer_size);
+	tmp_buffer = calloc(1, (size_t) tmp_buffer_size);
 	//TODO revisar esto
 	sprintf(tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
 	//asprintf(&tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
@@ -587,6 +598,7 @@ void round_robin(){
 	list_add(cpus_executing,laCPU);
 	free(tmp_buffer);
 	free(pcb_buffer);
+    free(tuPCB->etiquetas);
 	free(tuPCB);
 }
 
