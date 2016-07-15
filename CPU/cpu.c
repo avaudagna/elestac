@@ -297,6 +297,7 @@ int get_execution_line(void ** instruction_line) {
             actual_pcb->instrucciones_serializado + actual_pcb->program_counter);
     get_instruction_line(instruction_addresses_list, instruction_line);
     strip_string(*instruction_line);
+    log_info(cpu_log, "Next execution line: %s", *instruction_line);
     return SUCCESS;
 }
 
@@ -348,7 +349,6 @@ int get_pcb() {
         return ERROR;
     }
 
-    //Success!!
     //Deserializo el PCB que recibo
     actual_pcb = (t_pcb *) calloc(1,sizeof(t_pcb));
     int  last_buffer_index = 0;
