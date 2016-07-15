@@ -143,12 +143,12 @@ void* do_work(void *p) {
 	log_info(kernel_log, "do_work: Starting the device %s with a sleep of %s milliseconds.", setup.IO_IDS[miID], setup.IO_SLEEP[miID]);
 	while(1){
 		sem_wait(&semaforo_io[miID]);
-		log_info(kernel_log, "A new I/O request arrived at %s", setup.IO_IDS[miID]);
 		pthread_mutex_lock(&mut_io_list);
 		io_op = list_remove(solicitudes_io[miID], 0);
 		pthread_mutex_unlock(&mut_io_list);
 		if (io_op != NULL){
-			log_info(kernel_log,"%s will perform %s operations.", setup.IO_IDS[miID], io_op->io_units);
+            log_info(kernel_log, "A new I/O request arrived at %s", setup.IO_IDS[miID]);
+			log_info(kernel_log,"%s will perform %d operations.", setup.IO_IDS[miID], atoi(io_op->io_units));
 			int processing_io = atoi(setup.IO_SLEEP[miID]) * atoi(io_op->io_units) * 1000;
 			usleep((useconds_t) processing_io);
 			bool match_PCB(void *pcb){
@@ -336,7 +336,9 @@ void check_CPU_FD_ISSET(void *cpu){
 					t_io *io_op = malloc(sizeof(t_io));
 					io_op->pid = laCPU->pid;
 					recv(laCPU->clientID, tmp_buff, 4, 0); // size of the io_name
+					io_op->io_name = calloc(1,atoi(tmp_buff));
 					recv(laCPU->clientID, io_op->io_name, (size_t) atoi(tmp_buff), 0);
+                    io_op->io_units = calloc(1,4);
 					recv(laCPU->clientID, io_op->io_units, 4, 0);
 					io_op->io_index = getIOindex(io_op->io_name);
 					t_pcb *blockedPCB = recvPCB(laCPU->clientID);
