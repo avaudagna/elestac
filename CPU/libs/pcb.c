@@ -52,7 +52,7 @@ void deserialize_pcb(t_pcb **pcb, void *serialized_data, int *serialized_data_in
 
 void deserialize_etiquetas(char **etiquetas, size_t etiquetas_size, void *serialized_data, int *serialized_data_index) {
     *etiquetas = calloc(1, etiquetas_size);
-    deserialize_data(etiquetas, etiquetas_size, serialized_data, serialized_data_index);
+    deserialize_data(*etiquetas, etiquetas_size, serialized_data, serialized_data_index);
 }
 
 
