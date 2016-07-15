@@ -34,7 +34,8 @@
 #define IDENTIFICADOR_OPERACION 99
 #define HANDSHAKE 0
 #define SOLICITUD_NUEVO_PROCESO 1
-#define FINALIZAR_PROCESO 2
+#define FINALIZAR_PROCESO 3
+#define PEDIR_PAGINA_SWAP 2
 #define EXIT (-1)
 
 /* COMUNICACION/OPERACIONES CON CPU */
@@ -1652,7 +1653,7 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 	void *	contenidoPagina;
 	int 	__pid;
 
-	sprintf(buffer, "2%04d%04d", *pid_actual, nroPagina);    // PIDO PAGINA
+	sprintf(buffer, "%d%04d%04d", PEDIR_PAGINA_SWAP,  *pid_actual, nroPagina);    // PIDO PAGINA
     printf("Sending request to SWAP : %s \n",buffer);
 
 	// while(recv(swap) > 0 :
