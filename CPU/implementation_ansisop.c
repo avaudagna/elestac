@@ -220,50 +220,39 @@ void asignar(t_posicion direccion_variable, t_valor_variable valor) {
 t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
     //5 + 0 + nameSize + name (1+1+4+nameSize bytes)
     char* buffer = NULL;
-    char *value = malloc(4);
+    int value = 0;
 
     int buffer_size = sizeof(char) * 2 + 4 + strlen(variable);
     asprintf(&buffer, "%d%d%04d%s", atoi(SHARED_VAR_ID), atoi(GET_VAR), strlen(variable), variable);
     if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
-        log_error(cpu_log, "get value of %s failed", variable);
+        log_error(cpu_log, "send of obtener variable compartida of %s failed", variable);
         return ERROR;
     }
-
-    recv(kernelSocketClient, value, 4,  0);
-
     free(buffer);
-    free(value);
-
-    return (int) atoi(value);
+    buffer = calloc(1, sizeof(int));
+    if(recv(kernelSocketClient, buffer, 4,  0) < 0) {
+        log_error(cpu_log, "recv of obtener variable compartida failed");
+        return ERROR;
+    }
+    value = atoi(buffer);
+    log_info(cpu_log, "recv value %d of obtener variable %s", value, variable);
+    free(buffer);
+    return value;
 
 }
 
 t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor){
     //5 + 1 + nameSize + name + value (1+1+4+nameSize+4 bytes)
-
     char* buffer = NULL;
-    char *kernel_reply = calloc(2, sizeof(char));
-
     int buffer_size = sizeof(char) * 2 + 8 + strlen(variable);
     asprintf(&buffer, "%d%d%04d%s%04d", atoi(SHARED_VAR_ID), atoi(SET_VAR), strlen(variable), variable, valor);
     if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
         log_error(cpu_log, "set value of %s failed", variable);
         return ERROR;
     }
-
-    if( recv(kernelSocketClient , kernel_reply , sizeof(char) , 0) < 0) {
-        log_error(cpu_log, "Kernel response recv failed");
-        return ERROR;
-    }
-    if(!strcmp(kernel_reply, "1")) {
-        log_error(cpu_log, "No se pudo asignar el valor %d a la variable %s", valor, variable);
-        return ERROR;
-    }else if(!strcmp(kernel_reply, "0")){
-        return valor;
-    }
+    log_info(cpu_log, "asignarValorCompartida of %s with value %d was successful", variable, valor);
     free(buffer);
-    free(kernel_reply);
-
+    return valor;
 }
 
 void irAlLabel(t_nombre_etiqueta etiqueta) {
