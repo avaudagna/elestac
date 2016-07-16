@@ -144,26 +144,28 @@ void* do_work(void *p) {
 	while(esTrue){
 		sem_wait(&semaforo_io[miID]);
 		t_io *io_op;
-		pthread_mutex_lock(&mut_io_list);
-		io_op = list_remove(solicitudes_io[miID], 0);
-		pthread_mutex_unlock(&mut_io_list);
-		if (io_op->pid > 0){
-			log_info(kernel_log,"%s will perform %d operations.", setup.IO_IDS[miID], atoi(io_op->io_units));
-			int processing_io = atoi(setup.IO_SLEEP[miID]) * atoi(io_op->io_units) * 1000;
-			usleep((useconds_t) processing_io);
-			bool match_PCB(void *pcb){
-				t_pcb *unPCB = pcb;
-				bool matchea = (io_op->pid==unPCB->pid);
-				return matchea;
+		if(list_size(solicitudes_io[miID]) > 0){
+			pthread_mutex_lock(&mut_io_list);
+			io_op = list_remove(solicitudes_io[miID], 0);
+			pthread_mutex_unlock(&mut_io_list);
+			if (io_op->pid > 0){
+				log_info(kernel_log,"%s will perform %d operations.", setup.IO_IDS[miID], atoi(io_op->io_units));
+				int processing_io = atoi(setup.IO_SLEEP[miID]) * atoi(io_op->io_units) * 1000;
+				usleep((useconds_t) processing_io);
+				bool match_PCB(void *pcb){
+					t_pcb *unPCB = pcb;
+					bool matchea = (io_op->pid==unPCB->pid);
+					return matchea;
+				}
+				t_pcb *elPCB;
+				elPCB = list_remove_by_condition(PCB_BLOCKED, match_PCB);
+				if (elPCB->pid > 0){
+					elPCB->status = READY;
+					list_add(PCB_READY, elPCB);
+				} // Else -> The PCB was killed by end_program while performing I/O
+				log_info(kernel_log, "do_work: Finished an io operation on device %s requested by PID %d.", setup.IO_IDS[miID], io_op->pid);
+				free(io_op);
 			}
-			t_pcb *elPCB;
-			elPCB = list_remove_by_condition(PCB_BLOCKED, match_PCB);
-			if (elPCB->pid > 0){
-				elPCB->status = READY;
-				list_add(PCB_READY, elPCB);
-			} // Else -> The PCB was killed by end_program while performing I/O
-			log_info(kernel_log, "do_work: Finished an io operation on device %s requested by PID %d.", setup.IO_IDS[miID], io_op->pid);
-			free(io_op);
 		}
 	}
 }
@@ -478,13 +480,13 @@ int control_clients(){
 			}
 		}
 		if(list_size(consolas_conectadas) > 0){
-			list_iterate(consolas_conectadas,check_CONSOLE_FD_ISSET);
+			list_iterate(consolas_conectadas, check_CONSOLE_FD_ISSET);
 		}
 		if(list_size(cpus_conectadas) > 0){
-			list_iterate(cpus_conectadas,check_CPU_FD_ISSET);
+			list_iterate(cpus_conectadas, check_CPU_FD_ISSET);
 		}
 		if(list_size(cpus_executing) > 0){
-			list_iterate(cpus_executing,check_CPU_FD_ISSET);
+			list_iterate(cpus_executing, check_CPU_FD_ISSET);
 		}
 		if ((newConsole=accept_new_client("console", &consoleServer, &allSockets, consolas_conectadas)) > 1){
 			accept_new_PCB(newConsole);
