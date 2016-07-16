@@ -11,7 +11,6 @@ gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
 gcc -I/usr/include/commons -o ansisop -I/usr/include/socket-commons console.c ./socketCommons/socketCommons.c -L/usr/lib -lcommons
 */
 #include <parser/metadata_program.h>
-#include <libs/pcb.h>
 #include "kernel.h"
 #include "libs/pcb_tests.h"
 
@@ -245,19 +244,20 @@ void *requestPages2UMC(void* request_buffer){
 	deserialize_data(PID, sizeof(int), request_buffer, &deserialize_index);
 	deserialize_data(&ansisopLen, sizeof(int), request_buffer, &deserialize_index);
 	code = malloc((size_t) ansisopLen);
-	deserialize_data(code, (size_t) ansisopLen, request_buffer, &deserialize_index);
+	deserialize_data(code, ansisopLen, request_buffer, &deserialize_index);
 	deserialize_data(&clientUMC, sizeof(int), request_buffer, &deserialize_index);
-	char buffer_4[4];
+	char* buffer;
+	char *buffer_4 = calloc(1,5);
 	int bufferLen=1+4+4+4+ansisopLen; //1+PID+req_pages+size+code
 	sprintf(buffer_4, "%04d", (ansisopLen/setup.PAGE_SIZE)+1);
 	log_info(kernel_log, "Requesting %s pages to UMC.", buffer_4);
-	char* buffer = calloc(1, (size_t) 8+4+ansisopLen);
-	sprintf(buffer, "%d%04d%s%04d%s", 1,*(int*)PID,buffer_4, ansisopLen,code);
+	asprintf(&buffer, "%d%04d%s%04d%s", 1,*(int*)PID,buffer_4, ansisopLen,code);
 	send(clientUMC, buffer, (size_t) bufferLen, 0);
 	recv(clientUMC, buffer_4, 4, 0);
 	log_info(kernel_log, "UMC replied.");
 	int code_pages = atoi(buffer_4);
 	free(buffer);
+    free(buffer_4);
 	createNewPCB(*(int*) (PID), code_pages, code);
 }
 void tratarSeniales(int senial){
