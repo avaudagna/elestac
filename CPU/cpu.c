@@ -1,8 +1,5 @@
-#include <parser/metadata_program.h>
-#include "cpu.h"
-#include "libs/pcb_tests.h"
-#include "cpu_structs.h"
 
+#include "cpu.h"
 
 //Variables globales
 t_setup * setup; // GLOBAL settings
@@ -169,6 +166,8 @@ int execute_state_machine() {
                         break;
                     case EXIT:
                         return SUCCESS;
+                    case BLOCKED:
+                        return BLOCKED;
                     default:
                         execution_state = ERROR;
                         break;
@@ -184,6 +183,7 @@ int execute_state_machine() {
                     case SUCCESS:
                         execution_state = S3_POSTPROCESS;
                         break;
+                    case BROKEN:
                     case EXIT:
                         execution_state =  S0_CHECK_EXECUTION_STATE;
                         break;
@@ -224,6 +224,9 @@ void finished_quantum_post_process() {
     if(status_check() == EXECUTING) {
         status_update(READY);
     }
+    if(status_check() == BLOCKED) {
+        return;
+    }
     send_quantum_end_notif();
 }
 
@@ -252,7 +255,7 @@ void status_update(int status) {
 }
 
 int check_execution_state() {
-    if(status_check() == EXIT){
+    if(status_check() == EXIT || status_check() == BROKEN){
         program_end_notification();
         return EXIT;
     }
