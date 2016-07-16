@@ -155,7 +155,7 @@ int umc_handshake(){
 	char handShake;
 	int tamanioTrama = sizeof(char)+sizeof(int);
 
-	void* buffer = malloc(sizeof(int));
+	void* buffer = calloc(1, sizeof(int));
 
 	//recv el identificador de operacion (espero una 'U')
 	if(recv(umcSocket, &handShake, sizeof(char),0)<= 0){
@@ -474,7 +474,7 @@ void umc_leer(){
 void umc_escribir(){
 	int SIZE_TRAMA = 5;
 
-	char* buffer = malloc(sizeof(int));
+	char* buffer = calloc(1, sizeof(int));
 
 	int pid;
 	int numeroPagina;
@@ -487,7 +487,7 @@ void umc_escribir(){
 	pid = atoi(buffer);
 
 	free(buffer);
-	buffer = malloc(sizeof(int));
+	buffer = calloc(1, sizeof(int));
 
 	//Recibo el numero pagina
 	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
@@ -496,7 +496,7 @@ void umc_escribir(){
 	numeroPagina = atoi(buffer);
 
 	free(buffer);
-	buffer = malloc(sizeof(char) * TAMANIO_PAGINA);
+	buffer = calloc(1, sizeof(char) * TAMANIO_PAGINA);
 
 	//Recibimos el codigo
 	if(recv(umcSocket, buffer, sizeof(char)*TAMANIO_PAGINA, 0)<= 0)
@@ -510,7 +510,7 @@ void umc_escribir(){
 	if(resultadoRequest > -1){ //ENVIAMOS A UMC 1+cantPaginasLibres
 		char* respuesta;
 
-		respuesta = malloc(sizeof(char)*SIZE_TRAMA);
+		respuesta = calloc(1, sizeof(char)*SIZE_TRAMA);
 		sprintf(respuesta,"%d%04d", 1, paginas_CantidadPaginasLibres());
 
 		if(send(umcSocket,(void *) respuesta, (size_t) SIZE_TRAMA,0) == -1)
