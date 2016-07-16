@@ -357,7 +357,7 @@ int get_pcb() {
     deserialize_pcb(&actual_pcb, actual_kernel_data->serialized_pcb, &last_buffer_index);
 
     //Inicializo si tengo que
-    if (queue_peek(actual_pcb->stack_index)== NULL) {
+    if (get_last_entry(actual_pcb->stack_index)== NULL) {
         actual_pcb->stack_index = queue_create();
         t_stack_entry * first_empty_entry = calloc(1, sizeof(t_stack_entry));
         queue_push(actual_pcb->stack_index, first_empty_entry);

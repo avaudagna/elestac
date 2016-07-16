@@ -64,7 +64,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
     actual_pcb->stack_pointer += nueva_variable->tamanio;
 
     free(direccion_espectante);
-    t_stack_entry *last_entry = (t_stack_entry *) queue_peek(actual_stack_index);
+    t_stack_entry *last_entry = get_last_entry(actual_stack_index);
     add_var( &last_entry, nueva_variable);
 
     //7) y retornamos la t_posicion asociada
@@ -119,7 +119,7 @@ t_posicion obtenerPosicionVariable(t_nombre_variable variable) {
     logical_addr * direccion_logica = NULL;
 	int i = 0;
     //1) Obtener el stack index actual
-    t_stack_entry* current_stack_index = (t_stack_entry*) queue_peek(actual_pcb->stack_index);
+    t_stack_entry* current_stack_index = get_last_entry(actual_pcb->stack_index);
     //2) Obtener puntero a las variables
     t_var* indice_variable = current_stack_index->vars;
 
@@ -256,7 +256,7 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
 }
 
 void irAlLabel(t_nombre_etiqueta etiqueta) {
-    actual_pcb->program_counter = metadata_buscar_etiqueta(etiqueta, actual_pcb->etiquetas, (const t_size) actual_pcb->etiquetas_size);
+    actual_pcb->program_counter = metadata_buscar_etiqueta(etiqueta, actual_pcb->etiquetas, (t_size) actual_pcb->etiquetas_size) - 1;
 }
 
 
@@ -264,15 +264,17 @@ void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar) {
     t_ret_var * ret_var_addr = calloc(1, sizeof(t_ret_var));
     //1) Obtengo la direccion a donde apunta la variable de retorno
     ret_var_addr = armar_direccion_logica_variable(donde_retornar, setup->PAGE_SIZE);
-    t_stack * stack_index = actual_pcb->stack_index;
+    t_stack_entry * actual_stack_entry = get_last_entry(actual_pcb->stack_index);
     //2) Creo la nueva entrada del stack
     t_stack_entry* new_stack_entry = create_new_stack_entry();
     //3) Guardo la posicion de PC actual como retpos de la nueva entrada
+    new_stack_entry->pos = actual_stack_entry->pos + 1;
     new_stack_entry->ret_pos = actual_pcb->program_counter;
     //4) Agrego la retvar a la entrada
     add_ret_var(&new_stack_entry, ret_var_addr);
     //5) Agrego la strack entry a la queue de stack
     queue_push(actual_pcb->stack_index, new_stack_entry);
+//    (t_stack_entry*) list_get(actual_pcb->stack_index->elements, 1)
     //6) Asigno el PC a la etiqueta objetivo
     irAlLabel(etiqueta);
 }
@@ -296,13 +298,13 @@ void retornar(t_valor_variable retorno) {
     //1) Obtengo el stack index
     t_stack * actual_stack_index = actual_pcb->stack_index;
     //2) Obtengo la entrada actual
-    t_stack_entry *last_entry = (t_stack_entry *) queue_peek(actual_stack_index);
+    t_stack_entry *last_entry = get_last_entry(actual_stack_index);
     //3) Actualizo el PC a la posicion de retorno de la entrada actual
     actual_pcb->program_counter = last_entry->ret_pos;
     //4) Asigno el valor de retorno de la entrada actual a la variable de retorno
     asignar(obtener_t_posicion(last_entry->ret_vars), retorno);
     //5) Libero la ultima entrada del indice de stack
-    queue_pop(actual_stack_index);
+    free(pop_stack(actual_stack_index));
 }
 
 t_posicion  obtener_t_posicion(logical_addr *address) {
