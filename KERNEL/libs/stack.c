@@ -1,4 +1,5 @@
-
+#include <commons/collections/queue.h>
+#include <commons/collections/list.h>
 #include "stack.h"
 
 /*
@@ -16,7 +17,7 @@ t_stack_entry * stack_entry_create(void) {
  */
 int add_ret_var(t_stack_entry ** stack_entry, t_ret_var *ret_var) {
     void * aux_buffer = NULL;
-    aux_buffer = realloc(*stack_entry, ((*stack_entry)->cant_ret_vars + 1)* sizeof(t_ret_var));
+    aux_buffer = realloc((*stack_entry)->ret_vars, ((*stack_entry)->cant_ret_vars + 1)* sizeof(t_ret_var));
     if(aux_buffer == NULL) {
         return ERROR;
     }
@@ -37,7 +38,7 @@ int add_ret_var(t_stack_entry ** stack_entry, t_ret_var *ret_var) {
  */
 int add_arg(t_stack_entry ** stack_entry, t_arg *arg) {
     void * aux_buffer = NULL;
-    aux_buffer = realloc(*stack_entry, ((*stack_entry)->cant_args + 1)* sizeof(t_arg));
+    aux_buffer = realloc((*stack_entry)->args, ((*stack_entry)->cant_args + 1)* sizeof(t_arg));
     if(aux_buffer == NULL) {
         return ERROR;
     }
@@ -136,24 +137,24 @@ void serialize_stack_entry(t_stack_entry *entry, void **buffer, int *buffer_size
     serialize_data(&entry->cant_args, sizeof(int), buffer, buffer_size);
     //serialize_data(&entry->args, (size_t) sizeof(t_arg)*entry->cant_args, buffer, buffer_size);
     for(i = 0; i < entry->cant_args; i++) {
-        serialize_data(&(entry->args+i)->page_number, sizeof(int), buffer, buffer_size);
-        serialize_data(&(entry->args+i)->offset, sizeof(int), buffer, buffer_size);
-        serialize_data(&(entry->args+i)->tamanio, sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->args+i)->page_number, (size_t) sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->args+i)->offset, (size_t) sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->args+i)->tamanio, (size_t) sizeof(int), buffer, buffer_size);
     }
     serialize_data(&entry->cant_vars, sizeof(int), buffer, buffer_size);
     //serialize_data(&entry->vars, (size_t) sizeof(t_var)*entry->cant_vars, buffer, buffer_size);
     for(i = 0; i < entry->cant_vars; i++) {
-        serialize_data(&(entry->vars+i)->var_id, sizeof(char), buffer, buffer_size);
-        serialize_data(&(entry->vars+i)->page_number, sizeof(int), buffer, buffer_size);
-        serialize_data(&(entry->vars+i)->offset, sizeof(int), buffer, buffer_size);
-        serialize_data(&(entry->vars+i)->tamanio, sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->vars+i)->var_id, (size_t) sizeof(char), buffer, buffer_size);
+        serialize_data(&(entry->vars+i)->page_number, (size_t) sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->vars+i)->offset, (size_t) sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->vars+i)->tamanio, (size_t) sizeof(int), buffer, buffer_size);
     }
     serialize_data(&entry->cant_ret_vars, sizeof(int), buffer, buffer_size);
     //serialize_data(&entry->ret_vars, (size_t) sizeof(t_ret_var)*entry->cant_vars, buffer, buffer_size);
     for(i = 0; i < entry->cant_ret_vars; i++) {
-        serialize_data(&(entry->ret_vars+i)->page_number, sizeof(int), buffer, buffer_size);
-        serialize_data(&(entry->ret_vars+i)->offset,  sizeof(int), buffer, buffer_size);
-        serialize_data(&(entry->ret_vars+i)->tamanio, sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->ret_vars+i)->page_number, (size_t) sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->ret_vars+i)->offset, (size_t) sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->ret_vars+i)->tamanio, (size_t) sizeof(int), buffer, buffer_size);
     }
     serialize_data(&entry->ret_pos, sizeof(int), buffer, buffer_size);
 }
@@ -184,9 +185,14 @@ void deserialize_stack(t_stack **stack, void **serialized_data, int *serialized_
 t_stack_entry *create_new_stack_entry() {
     t_stack_entry *stack_entry;
     stack_entry = calloc(1, sizeof(t_stack_entry));
-    stack_entry->args = calloc(1, sizeof(t_arg));
-    stack_entry->vars = calloc(1, sizeof(t_var));
-    stack_entry->ret_vars = calloc(1, sizeof(t_ret_var));
+//    stack_entry->args = calloc(1, sizeof(t_arg));
+//    stack_entry->vars = calloc(1, sizeof(t_var));
+//    stack_entry->ret_vars = calloc(1, sizeof(t_ret_var));
+    stack_entry->pos = -1;
+    stack_entry->cant_args = 0;
+    stack_entry->cant_vars = 0;
+    stack_entry->cant_ret_vars = 0;
+    stack_entry->ret_pos = 0;
     return stack_entry;
 }
 
@@ -260,5 +266,13 @@ void deserialize_ret_vars(t_stack_entry **entry, void **serialized_data, int *se
             add_ret_var(entry, aux_ret_var);
         }
     }
+}
+
+t_stack_entry* get_last_entry (t_stack * stack_index) {
+    return (t_stack_entry*) list_get(stack_index->elements, stack_index->elements->elements_count-1);
+}
+
+t_stack_entry* pop_stack (t_stack* stack_index) {
+    return list_remove(stack_index->elements, stack_index->elements->elements_count-1);
 }
 

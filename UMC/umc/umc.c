@@ -1,5 +1,9 @@
 /*
  UMC -> SE COMUNICA CON SWAP , RECIBE CONEXIONES CON CPU Y NUCLEO
+
+ --leak-check=full --show-leak-kinds=all
+
+
  */
 /*INCLUDES*/
 #include <stdio.h>
@@ -132,6 +136,8 @@ PAGINA * obtenerPaginaDeTablaDePaginas(t_list *headerTablaPaginas, int nroPagina
 
 #define BUSCANDO_VICTIMA 0
 
+#define FINALIZAR_PROCESO_KERNEL 2
+
 // Funciones para operar con el swap
 void init_Swap(void);
 void handShake_Swap(void);
@@ -163,6 +169,7 @@ pthread_rwlock_t 	*semListaPids = NULL,
 					*semMemPrin	  = NULL,
 				    *semRetardo	  = NULL,
 					*semClockPtrs = NULL;
+pthread_mutex_t * semSwap = NULL;
 
 
 
@@ -300,6 +307,9 @@ void setFifoPagsModif(void *clockpagina);
 
 void mensajesInit();
 
+void imprimirTlb(void *entradaTlb);
+
+
 int main(int argc , char **argv){
 
 	if(argc != 2){
@@ -369,13 +379,17 @@ void init_Semaforos(void){
     semTLB = malloc(sizeof(pthread_rwlock_t));
     semRetardo = malloc(sizeof(pthread_rwlock_t));
     semClockPtrs = malloc(sizeof(pthread_rwlock_t));
+	semSwap = malloc(sizeof(pthread_mutex_t));
+
+
 
 	if (( pthread_rwlock_init(semMemPrin,NULL))  ||
 		(pthread_rwlock_init(semFifosxPid,NULL)) ||
 		(pthread_rwlock_init(semListaPids,NULL)) ||
 		(pthread_rwlock_init(semTLB,NULL))		 ||
 		(pthread_rwlock_init(semRetardo,NULL))	 ||
-		(pthread_rwlock_init(semClockPtrs,NULL))){
+		(pthread_rwlock_init(semClockPtrs,NULL)) ||
+		(pthread_mutex_init(semSwap,NULL))) {
 		perror("\n Hubo un problema con la creacion de los semaforos. Finalizando Modulo UMC. \n");
 		exit(1);
 	}
@@ -670,7 +684,7 @@ void atenderKernel(int * socketBuff){
 				procesoSolicitudNuevoProceso(socketBuff);
 			estado = IDENTIFICADOR_OPERACION;
 			break;
-		case FINALIZAR_PROCESO:	// 2
+		case FINALIZAR_PROCESO_KERNEL:	// 2
 				retardo();
 				finalizarProceso(socketBuff);
 			estado = IDENTIFICADOR_OPERACION;
@@ -845,9 +859,11 @@ void dividirEnPaginas(int pid_aux, int paginasDeCodigo, char codigo[], int code_
 			memcpy((void * )&trama[size_trama - umcGlobalParameters.marcosSize],aux_code,umcGlobalParameters.marcosSize);
 
 			// envio al swap la pagina
+			pthread_mutex_lock(semSwap);	// Solo un hilo a la vez manda paginas y espera la actualizacion de cant pags disponibles
 			enviarPaginaAlSwap(trama, size_trama);
 			// swap me responde dandome el OKEY y actualizandome con la cantidad_de_paginas_libres que le queda
 			swapUpdate();
+			pthread_mutex_unlock(semSwap);
 			page_node = (PAGINA *)malloc (sizeof(PAGINA));
 			page_node->nroPagina=nroDePagina;
 			page_node->modificado=0;
@@ -889,8 +905,10 @@ void enviarPaginasDeStackAlSwap(int _pid, int nroDePaginaInicial) {
         //trama = realloc(trama, strlen(trama) + umcGlobalParameters.marcosSize);
 //		enviarPaginaAlSwap(trama,umcGlobalParameters.marcosSize + ( sizeof(_pid) * 2 ) ) ;
         //mando una pagina con basura
+		pthread_mutex_lock(semSwap);
 		enviarPaginaAlSwap(trama2, sizeof(char) + sizeof(int) + sizeof(int) + umcGlobalParameters.marcosSize);
 		swapUpdate();
+		pthread_mutex_unlock(semSwap);
 		indexarPaginasDeStack(_pid,nroPaginaActual);
         free(trama);
         free(trama2);
@@ -904,9 +922,6 @@ void enviarPaginaAlSwap(char *trama, int size_trama){
 		perror("send");
 		exit(1);
 	}
-
-
-
 }
 
 void agregarPagina(int pid, PAGINA *pagina_aux) {
@@ -1113,7 +1128,7 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 		resolverEnMP(socketBuff,temp,_offset,_tamanio);	// lo hago asi para poder reutilizar resolverEnMP , que al fin y al cabo es lo que se termina haciendo
 		actualizarTlb(pid_actual,temp);
 		free(temp);
-		printf("[ TLB HIT ]\n");
+		printf("\n[ TLB HIT ]");
 
 	}
 	else {	// No esta en TLB o no se usa TLB
@@ -1139,7 +1154,7 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 					}
 					else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo
 						//algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
-						printf("[ PAGE TABLE MISS ]: Aplicando Algoritmo %s \n",umcGlobalParameters.algoritmo);
+						printf("\n[ PAGE FAULT ]: Aplicando Algoritmo %s \n",umcGlobalParameters.algoritmo);
 						punteroAlgoritmo(pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina,&marcoVictima);
 						actualizarTlb(pid_actual,aux);
 						resolverEnMP(socketBuff, aux, _offset, _tamanio);
@@ -1147,14 +1162,14 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 				}else{		// hay marcos disponibles
 
 					if  ( cantPagDisponiblesxPID(pid_actual) > 0){ // SI EL PROCESO TIENE MARGEN PARA ALMACENAR MAS PAGINAS EN MEMORIA
-						printf("[ PAGE TABLE MISS ]: el proceso tiene disponible marcos en memoria\n");
+						printf("\n[ PAGE FAULT ]: el proceso tiene disponible marcos en memoria\n");
 						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, tamanioContenidoPagina);
 						actualizarTlb(pid_actual,aux);
                         resolverEnMP(socketBuff, aux, _offset, _tamanio);
 					}
 					else{	// el proceso llego a la maxima cantidad de marcos proceso
 						//algoritmoClock(*pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina);
-						printf("[ PAGE TABLE MISS ]: Aplicando Algoritmo %s \n",umcGlobalParameters.algoritmo);
+						printf("\n[ PAGE FAULT ]: Aplicando Algoritmo %s \n",umcGlobalParameters.algoritmo);
 						punteroAlgoritmo(pid_actual,_pagina,tamanioContenidoPagina,contenidoPagina,&marcoVictima);
 						resolverEnMP(socketBuff, aux, _offset, _tamanio);
 						actualizarTlb(pid_actual,aux);
@@ -1165,7 +1180,7 @@ void pedidoBytes(int *socketBuff, int *pid_actual){
 				resolverEnMP(socketBuff, aux, _offset, _tamanio); // pagina en memoria principal , se la mando de una al CPU :)
 				actualizarTlb(pid_actual,aux);
 				setBitDeUso(pid_actual,_pagina,1);
-				printf("[ PAGE TABLE HIT ]\n");
+				printf("\n[ PAGE TABLE HIT ]");
 			}
 		}
 	}
@@ -1397,7 +1412,6 @@ void algoritmoClock(int *pPid, int numPagNueva, int tamanioContenidoPagina, void
 
 	if (pagina_victima->modificado == 1) {    // pagina modificada, enviarla a swap antes de reemplazarla
 		PedidoPaginaASwap(*pPid,pagina_victima->nroPagina,ESCRITURA);
-        swapUpdate();
         setBitModificado(*pPid,pagina_victima->nroPagina,0);
     }
 	// Actualizaciones sobre la tabla de paginas ( actualizo campo nro de marco y bit de presencia )
@@ -1513,8 +1527,8 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, int tamanioContenidoPa
 
 	if (pagina_victima->modificado == 1)  {   // pagina modificada, enviarla a swap antes de reemplazarla
 		PedidoPaginaASwap(*pPid,pagina_victima->nroPagina,ESCRITURA);
-        swapUpdate();
-    }
+		setBitModificado(*pPid,pagina_victima->nroPagina,0);
+	}
 	// Actualizaciones sobre la tabla de paginas ( actualizo campo nro de marco y bit de presencia )
 	pagina_nueva = obtenerPagina(*pPid,numPagNueva);
 	pagina_nueva->nroDeMarco = pagina_victima->nroDeMarco ;
@@ -1561,7 +1575,10 @@ void PedidoPaginaASwap(int pid, int pagina, int operacion) {
 	pthread_rwlock_wrlock(semMemPrin);
 	memcpy((void * )&trama[9],vectorMarcos[pag->nroDeMarco].comienzoMarco,umcGlobalParameters.marcosSize);
 	pthread_rwlock_unlock(semMemPrin);
+	pthread_mutex_lock(semSwap);
 	enviarPaginaAlSwap(trama,trama_size);
+	swapUpdate();
+	pthread_mutex_unlock(semSwap);
 }
 
 static t_link_element* list_get_element(t_list* self, int index) {
@@ -1654,10 +1671,11 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 	int 	__pid;
 
 	sprintf(buffer, "%d%04d%04d", PEDIR_PAGINA_SWAP,  *pid_actual, nroPagina);    // PIDO PAGINA
-    printf("Sending request to SWAP : %s \n",buffer);
+    printf("\n[%04d]->Sending request to SWAP : %s \n",*pid_actual,buffer);
 
 	// while(recv(swap) > 0 :
 
+	pthread_mutex_lock(semSwap);	// La idea es que solo 1 hilo a la vez utilice el socket
 	if (send(socketClienteSwap, buffer, 9, 0) <= 0)
 		perror("send");
 
@@ -1670,7 +1688,7 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 
 
 
-    printf("SWAP answer pid : %d ",__pid);
+    printf("\n[%04d]->SWAP answer pid : %d ",*pid_actual,__pid);
 
 	if (__pid == *pid_actual) {    // valido que la pagina que me respondio swap se corresponda a la que pedi
 
@@ -1679,10 +1697,16 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 		if ((*tamanioContenidoPagina = recv(socketClienteSwap, contenidoPagina, umcGlobalParameters.marcosSize, 0)) <= 0)
 			perror("recv");
 
-        //printf(", content : %s\n", (char*) contenidoPagina);
+		if(*tamanioContenidoPagina == umcGlobalParameters.marcosSize){
 
-		return contenidoPagina;
+			pthread_mutex_unlock(semSwap);
+			//printf(", content : %s\n", (char*) contenidoPagina);
+			return contenidoPagina;
+		}
+
+
 	}
+	pthread_mutex_unlock(semSwap);
 	return NULL;
 }
 
@@ -2190,10 +2214,13 @@ void finalizarProceso(int *socketBuff){
 
 	pPid = atoi(buffer);
 
+	printf("\n Eliminando PID[%d] de Memoria.\n",pPid);
+
 	asprintf(&trama,"%d%04d",FINALIZAR_PROCESO,pPid);
-
+	pthread_mutex_lock(semSwap);
 	enviarPaginaAlSwap(trama,strlen(trama));		// Elimnarlo en SWAP
-
+	swapUpdate();
+	pthread_mutex_unlock(semSwap);
 		limpiarPidDeTLB(pPid);							// Elimino PID de la TLB
 
 	fifo = obtenerHeaderFifoxPid(pPid);
@@ -2294,7 +2321,24 @@ void dump(void){
 	}
 	list_iterate(headerListaDePids,imprimirTablaDePaginas);
 
+	if( headerTLB->head == NULL){
+		printf("\n *** TLB Vacia *** \n");
+	}
+	else{
+		printf("\n **************** TLB ****************\n");
+		printf("| PID | Pagina | Marco | Contador-LRU |");
+		list_iterate(headerTLB,imprimirTlb);
+	}
+	printf("\n");
 	imprimirTablaDePaginasEnArchivo();
+}
+
+void imprimirTlb(void *entradaTlb) {
+
+	printf("\n|%3d%7d%9d%12d      |", ((TLB*) entradaTlb)->pid,
+		                              ((TLB*) entradaTlb)->nroPagina,
+		                              ((TLB*) entradaTlb)->nroDeMarco,
+		                              ((TLB*) entradaTlb)->contadorLRU);
 }
 
 
@@ -2337,9 +2381,25 @@ void imprimirTablaDePaginasEnArchivo(void) {
 		i++;
 		recorredor = recorredor->next;
 	}
+
+	// Imprimo TLB en Archivo
+	if ( umcGlobalParameters.entradasTLB > 0 && headerTLB->head != NULL) {
+		fprintf(fp,"\n **************** TLB ****************\n");
+		fprintf(fp,"| PID | Pagina | Marco | Contador-LRU |");
+		t_link_element *entradaTlb = headerTLB->head;
+		while(entradaTlb != NULL) {
+			printf("\n|%3d%7d%9d%12d      |", ((TLB *) entradaTlb->data)->pid,
+				   ((TLB *) entradaTlb->data)->nroPagina,
+				   ((TLB *) entradaTlb->data)->nroDeMarco,
+				   ((TLB *) entradaTlb->data)->contadorLRU);
+			entradaTlb = entradaTlb->next;
+		}
+
+	}
 	fclose(fp);
 
 }
+
 
 
 void imprimirTablaDePaginas ( void *aux){

@@ -166,9 +166,9 @@ int printEtiquetas(char *etiquetas, char *buffer, int cant_etiquetas) {
     int indice = 0;
     for (indice = 0; indice < cant_etiquetas; indice++)
     {
-        //printf("etiquetas: %c=%c", etiquetas[indice], buffer[indice]);
-        //printf("etiquetas: %c", *(etiquetas+indice));
-        printf("etiquetas\n");
+        printf("etiquetas: %c=%c", *(etiquetas+indice), *(buffer+indice));
+//        printf("etiquetas: %c", *(etiquetas+indice));
+//        printf("etiquetas\n");
     }
     return indice;
 }
