@@ -2039,7 +2039,7 @@ void limpiarPidDeTLB(int pPid) {
 	int index = 0;
 	pthread_rwlock_rdlock(semTLB);
 	aux = headerTLB->head;
-	
+
 // recorro toda la lista , cuando encuentro uno correspondiente a ese pid , lo saco
 	while(aux != NULL){
 		if ( ((TLB *)aux->data)->pid == pPid ) {
@@ -2092,6 +2092,9 @@ bool hayEspacioEnTlb(int *indice) {
 
 
 void actualizarTlb(int *pPid,PAGINA * pPagina){
+
+	if(umcGlobalParameters.entradasTLB==0)
+		return;
 
 	int ind_aux = 0;
 	t_link_element *aux  = NULL;

@@ -318,7 +318,7 @@ void check_CPU_FD_ISSET(void *cpu){
 	char* tmp_buff = malloc(4);
 	int setValue = 0;
 	t_Client* laCPU = (t_Client*) cpu;
-	if (FD_ISSET(laCPU->clientID, &allSockets)) {
+	if (laCPU != NULL && FD_ISSET(laCPU->clientID, &allSockets)) {
 		log_debug(kernel_log,"CPU %d has something to say.", laCPU->clientID);
 		if (recv(laCPU->clientID, cpu_protocol, 1, MSG_DONTWAIT) > 0){
 			switch (atoi(cpu_protocol)) {
@@ -427,7 +427,6 @@ void check_CPU_FD_ISSET(void *cpu){
 	}
 	free(cpu_protocol);
 	free(tmp_buff);
-	call_handlers();
 }
 
 void destroy_PCB(void *pcb){
