@@ -47,7 +47,12 @@ void deserialize_pcb(t_pcb **pcb, void *serialized_data, int *serialized_data_in
     deserialize_data(&(*pcb)->instrucciones_size, sizeof(int), serialized_data, serialized_data_index);
     deserialize_instrucciones(&(*pcb)->instrucciones_serializado, (*pcb)->instrucciones_size, serialized_data, serialized_data_index);
     deserialize_data(&(*pcb)->etiquetas_size, sizeof(int), serialized_data, serialized_data_index);
-    deserialize_data(&(*pcb)->etiquetas, (size_t) (*pcb)->etiquetas_size, serialized_data, serialized_data_index);
+    deserialize_etiquetas(&(*pcb)->etiquetas, (size_t) (*pcb)->etiquetas_size, serialized_data, serialized_data_index);
+}
+
+void deserialize_etiquetas(char **etiquetas, size_t etiquetas_size, void *serialized_data, int *serialized_data_index) {
+    *etiquetas = calloc(1, etiquetas_size);
+    deserialize_data(*etiquetas, etiquetas_size, serialized_data, serialized_data_index);
 }
 
 

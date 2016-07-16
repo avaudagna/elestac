@@ -1,0 +1,7 @@
+#!/usr/bin/ansisop
+begin
+	variables a,b,c
+	a=3
+	b=5
+	c= a+b
+end

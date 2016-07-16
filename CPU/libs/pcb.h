@@ -28,6 +28,7 @@ void deserialize_instrucciones(t_intructions **intructions, int instrucciones_si
 void serialize_instrucciones(t_intructions *instrucciones, int instrucciones_size, void **pVoid, int *pInt);
 
 void serialize_t_instructions(t_intructions *intructions, void **buffer, int *buffer_size);
+void deserialize_etiquetas(char **etiquetas, size_t etiquetas_size, void *serialized_data, int *serialized_data_index);
 
 
 #endif //SERIALIZATION_PCB_H

@@ -1,11 +1,8 @@
 #include<stdio.h> //printf
 #include<string.h>    //strlen
 #include<sys/socket.h>    //socket
-#include<arpa/inet.h> //inet_addr
 #include "socketCommons/socketCommons.h"
 #include <signal.h>
-#include <unistd.h>
-#include <errno.h>
 #include <commons/config.h>
 #include <commons/log.h>
 
@@ -21,29 +18,31 @@ t_log *console_log;
 
 int main(int argc, char *argv[]) {
 	signal(SIGINT, tratarSeniales);
+
 	console_log = log_create("console.log", "Elestac-CONSOLE", true, LOG_LEVEL_TRACE);
 
-	if (loadConfig("/usr/share/ansisop/console.config") < 0){
-		log_error(console_log, "No se encontró el archivo de configuración");
-		return -1;
-	}
 
 	int kernelSocketClient;
-	char *kernel_reply = malloc(4);
+	char *kernel_reply = calloc(1, 4);
 	//create kernel client
-	if (argc != 2) {
-		puts("usage: console file");
+	if (argc != 3) {
+		puts("usage: console console.config ansisopFile");
 		return -1;
 	}
 
-	int retorno = getClientSocket(&kernelSocketClient, setup.IP_KERNEL, setup.PUERTO_KERNEL);
+    if (loadConfig(argv[1]) < 0){
+        log_error(console_log, "No se encontró el archivo de configuración");
+        return -1;
+    }
 
-	log_info(console_log, "Se cargó el setup con IP y puerto del kernel");
+	getClientSocket(&kernelSocketClient, setup.IP_KERNEL, setup.PUERTO_KERNEL);
+
+	log_info(console_log, "Se cargó el setup con IP %s y puerto %d de KERNEL", setup.IP_KERNEL, setup.PUERTO_KERNEL);
 	/*le voy a mandar al kernel un 0 para iniciar el handshake + sizeMsj en 4B + (el código como viene),
 	y me va a devolver el client_id (un número) que me represente con el cual él me conoce*/
 
 	FILE *fp;
-	fp = fopen(argv[1], "r");
+	fp = fopen(argv[2], "r");
 	if (!fp) {
 		log_error(console_log, "No se puedo abrir el ansisop.");
 		exit(1);
@@ -58,13 +57,13 @@ int main(int argc, char *argv[]) {
 	fgets(hash_bang, 100, fp);
 	sz = sz - strlen(hash_bang) - 1;
 
-	char *prog = (char *) malloc(sz);
+	char *prog = (char *) calloc(1, sz);
 
 	fread(prog, sz + 1, 1, fp);
 	fclose(fp);
 
 	int sizeMsj = strlen("0") + 5 + (int) sz;
-	char *mensaje = (char *) malloc(sizeMsj);
+	char *mensaje = (char *) calloc(1, sizeMsj);
 
 	char buffer[20];
 	sprintf(buffer, "%04d", (int) sz);
@@ -84,55 +83,61 @@ int main(int argc, char *argv[]) {
 	} else if (!strcmp(kernel_reply, "0000")) {
 		log_error(console_log, "Kernel contesto: %s.No hay espacio en memoria para ejecutar el programa", kernel_reply);
 	} else {
-		log_info(console_log, "El pid de la consola es %s. Se esta ejecutando el programa.", kernel_reply);
+		log_info(console_log, "El pid de la consola es %d. Se esta ejecutando el programa.", atoi(kernel_reply));
 	}
+    free(kernel_reply);
 
-	char *valor = malloc(4);
-	char textSize[4];
-	int textLen;
+	void *kernelBuffer = NULL;
+    int valor = 0;
+    int textLen = 0;
 	bool continua = true;
-
+    void *kernel_operation = NULL;
 	while (continua) {
-		if (recv(kernelSocketClient, kernel_reply, 1, 0) > 0) {
-			log_info(console_log, "Kernel dijo: %s . Ejecutar protocolo correspondiente", kernel_reply);
-			switch (atoi(kernel_reply)) {
+        kernel_operation = calloc(1, 1);
+		if (recv(kernelSocketClient, kernel_operation, 1, 0) > 0) {
+			log_info(console_log, "Kernel dijo: %d", atoi(kernel_operation));
+			switch (atoi(kernel_operation)) {
 				case 0:// Program END
 					continua = false;
 					log_info(console_log, "Vamo a recontra calmarno. El programa finalizó correctamente");
 					break;
 				case 1:// Print value
-					//recibo 8 bytes -> 4 sizeof(variable) + variable + 4 valor_variable
-
-					recv(kernelSocketClient, textSize, 4, 0);
-					textLen = atoi(textSize);
-					char *var = malloc(textLen);
-
-					recv(kernelSocketClient, var, textLen, 0);
-					recv(kernelSocketClient, valor, 4, 0);
-					log_info(console_log, "El valor de la variable %s es: %s", var, valor);
-					free(var);
+					//recibo 4 bytes -> valor_variable
+                    kernelBuffer = calloc(1,4);
+					recv(kernelSocketClient, kernelBuffer, 4, 0);
+                    valor = atoi(kernelBuffer);
+					log_info(console_log, "El valor de la variable es: %d", valor);
+					free(kernelBuffer);
 					break;
 
 				case 2:// Print text
 					//recibo 4 del tamaño + texto
-
-					recv(kernelSocketClient, textSize, 4, 0);
-					textLen = atoi(textSize);
-					recv(kernelSocketClient, kernel_reply, textLen, 0);
-					log_info(console_log, "%s.", kernel_reply);
+                    kernelBuffer = calloc(1,4);
+					recv(kernelSocketClient, kernelBuffer, 4, 0);
+					textLen = atoi(kernelBuffer);
+                    free(kernelBuffer);
+                    if(textLen > 0) {
+                        kernelBuffer = calloc(1, textLen);
+                        recv(kernelSocketClient, kernelBuffer, textLen, 0);
+                        log_info(console_log, "%s.", kernelBuffer);
+                    } else {
+                        log_error(console_log, "Se recibio un tamanio de texto invalido");
+                    }
+                    free(kernelBuffer);
 					break;
 			}
-		}
+		} else {
+            continua = false;
+            log_error(console_log, "El programa finalizo repentinamente");
+        }
 	}
 
-	free(valor);
-	free(kernel_reply);
+	free(kernel_operation);
 	close(kernelSocketClient);
 	log_info(console_log, "Se cerro la conexion con el kernel");
 	puts("Terminated console.");
 	log_destroy(console_log);
 	return 0;
-
 }
 
 int loadConfig(char* configFile){
@@ -155,11 +160,9 @@ void tratarSeniales(int senial) {
 	switch (senial) {
 	case SIGINT:
 		// Detecta Ctrl+C y evita el cierre.
-		printf(
-				"Esto acabará con el sistema. Presione Ctrl+C una vez más para confirmar.\n\n");
+		printf("Esto acabará con el sistema. Presione Ctrl+C una vez más para confirmar.\n\n");
 		signal(SIGINT, SIG_DFL); // solo controlo una vez.
 		break;
 	}
-
 }
 

@@ -3,20 +3,20 @@ begin
 	a = 5
 	sumar6 &a
 	
-	io Impresora 30
+	io HDD1 30
 	
 	b = 5
 	sumarYRestar &b
 	
 #Verificar separacion de parametros
 	d <- restar a b
-	io Impresora 20
+	io HDD1 20
 	print d
 #d deberia ser 0
 	
-	io Disco 2
-	io Coso 13
-	
+	io HDD1 2
+	io LPT1 13
+
 end
 
 function sumarYRestar
@@ -27,12 +27,12 @@ end
 
 funcion restar3
 	*$0 = *$0 - 3
-	io Scanner 20
+	io HDD1 20
 end
 
 function sumar6
 	*$0 = 6 + *$0
-	io Scanner 10
+	io LPT1 10
 end
 
 function restar

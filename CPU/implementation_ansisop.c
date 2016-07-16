@@ -13,7 +13,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
     t_stack* actual_stack_index = actual_pcb->stack_index;
 
     //2) Obtengo la primera posicion libre del stack
-    t_posicion actual_stack_pointer = (t_posicion) actual_pcb->stack_pointer * setup->PAGE_SIZE;
+    t_posicion actual_stack_pointer = (t_posicion) actual_pcb->stack_pointer;
 
     //3) Armamos la logical address requerida
     logical_addr* direccion_espectante = armar_direccion_logica_variable(actual_stack_pointer, setup->PAGE_SIZE);
@@ -43,7 +43,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
             return ERROR;
         }
         if(strncmp(umc_response_buffer, string_itoa(UMC_OK_RESPONSE), sizeof(char)) != 0) {
-            log_error(cpu_log, "PAGE FAULT");
+            log_error(cpu_log, "STACK OVERFLOW");
             return ERROR;
         }
 
@@ -64,7 +64,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
     actual_pcb->stack_pointer += nueva_variable->tamanio;
 
     free(direccion_espectante);
-    t_stack_entry *last_entry = (t_stack_entry *) queue_peek(actual_stack_index);
+    t_stack_entry *last_entry = get_last_entry(actual_stack_index);
     add_var( &last_entry, nueva_variable);
 
     //7) y retornamos la t_posicion asociada
@@ -119,7 +119,7 @@ t_posicion obtenerPosicionVariable(t_nombre_variable variable) {
     logical_addr * direccion_logica = NULL;
 	int i = 0;
     //1) Obtener el stack index actual
-    t_stack_entry* current_stack_index = (t_stack_entry*) queue_peek(actual_pcb->stack_index);
+    t_stack_entry* current_stack_index = get_last_entry(actual_pcb->stack_index);
     //2) Obtener puntero a las variables
     t_var* indice_variable = current_stack_index->vars;
 
@@ -220,54 +220,43 @@ void asignar(t_posicion direccion_variable, t_valor_variable valor) {
 t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
     //5 + 0 + nameSize + name (1+1+4+nameSize bytes)
     char* buffer = NULL;
-    char *value = malloc(4);
+    int value = 0;
 
     int buffer_size = sizeof(char) * 2 + 4 + strlen(variable);
-    asprintf(&buffer, "%d%d%04d%s", SHARED_VAR_ID, GET_VAR, strlen(variable), variable);
+    asprintf(&buffer, "%d%d%04d%s", atoi(SHARED_VAR_ID), atoi(GET_VAR), strlen(variable), variable);
     if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
-        log_error(cpu_log, "get value of %s failed", variable);
+        log_error(cpu_log, "send of obtener variable compartida of %s failed", variable);
         return ERROR;
     }
-
-    recv(kernelSocketClient, value, 4,  0);
-
     free(buffer);
-    free(value);
-
-    return (int) atoi(value);
+    buffer = calloc(1, sizeof(int));
+    if(recv(kernelSocketClient, buffer, 4,  0) < 0) {
+        log_error(cpu_log, "recv of obtener variable compartida failed");
+        return ERROR;
+    }
+    value = atoi(buffer);
+    log_info(cpu_log, "recv value %d of obtener variable %s", value, variable);
+    free(buffer);
+    return value;
 
 }
 
 t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor){
     //5 + 1 + nameSize + name + value (1+1+4+nameSize+4 bytes)
-
     char* buffer = NULL;
-    char *kernel_reply = malloc(1);
-
     int buffer_size = sizeof(char) * 2 + 8 + strlen(variable);
-    asprintf(&buffer, "%d%d%04d%s%04d", SHARED_VAR_ID, SET_VAR, strlen(variable), variable, valor);
+    asprintf(&buffer, "%d%d%04d%s%04d", atoi(SHARED_VAR_ID), atoi(SET_VAR), strlen(variable), variable, valor);
     if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
         log_error(cpu_log, "set value of %s failed", variable);
         return ERROR;
     }
-
-    if( recv(kernelSocketClient , kernel_reply , sizeof(char) , 0) < 0) {
-        log_error(cpu_log, "Kernel response recv failed");
-        return ERROR;
-    }
-    if(!strcmp(kernel_reply, "1")) {
-        log_error(cpu_log, "No se pudo asignar el valor %d a la variable %s", valor, variable);
-        return ERROR;
-    }else if(!strcmp(kernel_reply, "0")){
-        return valor;
-    }
+    log_info(cpu_log, "asignarValorCompartida of %s with value %d was successful", variable, valor);
     free(buffer);
-    free(kernel_reply);
-
+    return valor;
 }
 
 void irAlLabel(t_nombre_etiqueta etiqueta) {
-    actual_pcb->program_counter = metadata_buscar_etiqueta(etiqueta, actual_pcb->etiquetas, (const t_size) actual_pcb->etiquetas_size);
+    actual_pcb->program_counter = metadata_buscar_etiqueta(etiqueta, actual_pcb->etiquetas, (t_size) actual_pcb->etiquetas_size) - 1;
 }
 
 
@@ -275,15 +264,17 @@ void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar) {
     t_ret_var * ret_var_addr = calloc(1, sizeof(t_ret_var));
     //1) Obtengo la direccion a donde apunta la variable de retorno
     ret_var_addr = armar_direccion_logica_variable(donde_retornar, setup->PAGE_SIZE);
-    t_stack * stack_index = actual_pcb->stack_index;
+    t_stack_entry * actual_stack_entry = get_last_entry(actual_pcb->stack_index);
     //2) Creo la nueva entrada del stack
     t_stack_entry* new_stack_entry = create_new_stack_entry();
     //3) Guardo la posicion de PC actual como retpos de la nueva entrada
+    new_stack_entry->pos = actual_stack_entry->pos + 1;
     new_stack_entry->ret_pos = actual_pcb->program_counter;
     //4) Agrego la retvar a la entrada
     add_ret_var(&new_stack_entry, ret_var_addr);
     //5) Agrego la strack entry a la queue de stack
     queue_push(actual_pcb->stack_index, new_stack_entry);
+//    (t_stack_entry*) list_get(actual_pcb->stack_index->elements, 1)
     //6) Asigno el PC a la etiqueta objetivo
     irAlLabel(etiqueta);
 }
@@ -307,56 +298,42 @@ void retornar(t_valor_variable retorno) {
     //1) Obtengo el stack index
     t_stack * actual_stack_index = actual_pcb->stack_index;
     //2) Obtengo la entrada actual
-    t_stack_entry *last_entry = (t_stack_entry *) queue_peek(actual_stack_index);
+    t_stack_entry *last_entry = get_last_entry(actual_stack_index);
     //3) Actualizo el PC a la posicion de retorno de la entrada actual
     actual_pcb->program_counter = last_entry->ret_pos;
     //4) Asigno el valor de retorno de la entrada actual a la variable de retorno
     asignar(obtener_t_posicion(last_entry->ret_vars), retorno);
     //5) Libero la ultima entrada del indice de stack
-    queue_pop(actual_stack_index);
+    free(pop_stack(actual_stack_index));
 }
 
 t_posicion  obtener_t_posicion(logical_addr *address) {
     return (t_posicion) address->page_number * setup->PAGE_SIZE + address->offset;
 }
 void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
-
     //cambio el estado del pcb
     actual_pcb->status = BLOCKED;
-
-    //NO VA MÁS serialize_pcb(actual_pcb, &buffer, &buffer_len);
     //3+ ioNameSize + ioName + io_units (1+4+ioNameSize+4 bytes)
-
     char* mensaje = NULL;
-    char* buffer = NULL;
-
-    int sizeMsj = sizeof(char) + sizeof(dispositivo) + 8;
+    int sizeMsj = sizeof(char) + strlen(dispositivo) + sizeof(int) * 2;
     //Armo paquete de I/O operation
-    asprintf(&buffer, "%d%04d", atoi(ENTRADA_SALIDA_ID), strlen(dispositivo));
-    strcpy(mensaje, buffer);
-    strcat(mensaje, dispositivo);
-    asprintf(&buffer, "%04d", tiempo);
-    strcat(mensaje, buffer);
-
-    free(buffer);
-
+    asprintf(&mensaje, "%d%04d%s%04d", atoi(ENTRADA_SALIDA_ID), strlen(dispositivo), dispositivo, tiempo);
     //Envio el paquete a KERNEL
     if(send(kernelSocketClient, mensaje, (size_t) sizeMsj, 0) < 0) {
         log_error(cpu_log, "entrada salida of dispositivo %s %d time send to KERNEL failed", dispositivo, tiempo);
     }
-
     free(mensaje);
-
 }
 
 void imprimir(t_valor_variable valor) {
     char* buffer = NULL;
     int buffer_size = sizeof(char) + sizeof(int);
-    asprintf(&buffer, "%d%04d", IMPRIMIR_ID, valor);
+    asprintf(&buffer, "%d%04d", atoi(IMPRIMIR_ID), valor);
     if(send(kernelSocketClient, buffer, (size_t) buffer_size, 0) < 0) {
         log_error(cpu_log, "imprimir value %d send to KERNEL failed", valor);
         return ;
     }
+    log_info(cpu_log, "imprimir value %d sent to KERNEL");
     free(buffer);
 }
 
@@ -364,19 +341,20 @@ void imprimirTexto(char* texto) {
 
     char* buffer = NULL;
     int texto_len = (int) strlen(texto);
-    asprintf(&buffer, "%d%04d%s", IMPRIMIR_TEXTO_ID, texto_len, texto);
+    asprintf(&buffer, "%d%04d%s", atoi(IMPRIMIR_TEXTO_ID), texto_len, texto);
     int buffer_size = (int) strlen(buffer);
 
     if(send(kernelSocketClient, buffer, (t_size) buffer_size, 0) < 0) {
-        log_error(cpu_log, "imprimirTexto send failed");
+        log_error(cpu_log, "imprimirTexto with texto : %s , send failed", texto);
         return;
     }
+    log_info(cpu_log, "imprimirTexto with texto : %s , sent to KERNEL", texto);
     free(buffer);
 }
 void la_wait (t_nombre_semaforo identificador_semaforo){
     char* buffer = NULL;
     int buffer_size = sizeof(char) * 2 + 4 + strlen(identificador_semaforo);
-    asprintf(&buffer, "%d%d%04d%s", SEMAPHORE_ID, WAIT_ID, strlen(identificador_semaforo), identificador_semaforo);
+    asprintf(&buffer, "%d%d%04d%s", atoi(SEMAPHORE_ID), atoi(WAIT_ID), strlen(identificador_semaforo), identificador_semaforo);
 
     if(send(kernelSocketClient, buffer, (t_size) buffer_size, 0) < 0) {
         log_error(cpu_log, "wait(%s) failed", identificador_semaforo);
@@ -393,7 +371,7 @@ void la_wait (t_nombre_semaforo identificador_semaforo){
 void la_signal (t_nombre_semaforo identificador_semaforo){
     char* buffer = NULL;
     int buffer_size = sizeof(char) * 2 + 4 + strlen(identificador_semaforo);
-    asprintf(&buffer, "%d%d%04d%s", SEMAPHORE_ID, SIGNAL_ID, strlen(identificador_semaforo), identificador_semaforo);
+    asprintf(&buffer, "%d%d%04d%s", atoi(SEMAPHORE_ID), atoi(SIGNAL_ID), strlen(identificador_semaforo), identificador_semaforo);
 
     if(send(kernelSocketClient, buffer, (t_size) buffer_size, 0) < 0) {
         log_error(cpu_log, "signal(%s) failed", identificador_semaforo);

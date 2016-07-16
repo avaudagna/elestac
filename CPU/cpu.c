@@ -1,6 +1,7 @@
 #include <parser/metadata_program.h>
 #include "cpu.h"
 #include "libs/pcb_tests.h"
+#include "cpu_structs.h"
 
 
 //Variables globales
@@ -9,23 +10,22 @@ t_log* cpu_log;
 int umcSocketClient = 0, kernelSocketClient = 0;
 t_kernel_data * actual_kernel_data;
 t_pcb * actual_pcb;
+int LAST_QUANTUM_FLAG = 0;
 
 AnSISOP_funciones funciones_generales_ansisop = {
         .AnSISOP_definirVariable		= definirVariable,
         .AnSISOP_obtenerPosicionVariable= obtenerPosicionVariable,
         .AnSISOP_dereferenciar			= dereferenciar,
         .AnSISOP_asignar				= asignar,
-        .AnSISOP_irAlLabel              = (void*) irAlLabel,
-        .AnSISOP_imprimir				= (void*) imprimir,
-        .AnSISOP_imprimirTexto			= (void*) imprimirTexto,
+        .AnSISOP_irAlLabel              = irAlLabel,
+        .AnSISOP_imprimir				= imprimir,
+        .AnSISOP_imprimirTexto			= imprimirTexto,
         .AnSISOP_entradaSalida          = entradaSalida,
         .AnSISOP_llamarConRetorno       = llamarConRetorno,
         .AnSISOP_retornar               = retornar,
         .AnSISOP_llamarSinRetorno       = llamarSinRetorno,
         .AnSISOP_obtenerValorCompartida = obtenerValorCompartida,
         .AnSISOP_asignarValorCompartida = asignarValorCompartida,
-        .AnSISOP_imprimir               = imprimir,
-        .AnSISOP_imprimirTexto          = imprimirTexto,
 };
 
 AnSISOP_kernel funciones_kernel_ansisop = {
@@ -114,7 +114,7 @@ int cpu_state_machine() {
     while(state != ERROR) {
         switch(state) {
             case S0_FIRST_COMS:
-                if (kernel_first_com() == SUCCESS && umc_first_com() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; }
+                if ( umc_first_com() == SUCCESS && kernel_first_com() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; }
                 break;
             case S1_GET_PCB:
                 if (get_pcb() == SUCCESS) { state = S2_CHANGE_ACTIVE_PROCESS; } else { state = ERROR; }
@@ -147,6 +147,7 @@ int return_pcb() {
         log_error(cpu_log, "Send serialized_buffer_length to KERNEL failed");
         return ERROR;
     }
+    log_info(cpu_log, "Pcb Size to send : %d", serialized_buffer_index);
     if( send(kernelSocketClient , serialized_pcb, (size_t) serialized_buffer_index, 0) < 0) {
         log_error(cpu_log, "Send serialized_pcb to KERNEL failed");
         return ERROR;
@@ -205,8 +206,12 @@ int execute_state_machine() {
 }
 
 int post_process_operations() {
-    log_info(cpu_log, "Starting delay of : %d seconds", actual_kernel_data->QSleep/1000);
-    usleep((u_int32_t) actual_kernel_data->QSleep * 1000);
+    log_info(cpu_log, "Starting delay of : %d seconds", actual_kernel_data->QSleep);
+    sleep(actual_kernel_data->QSleep);
+    if(LAST_QUANTUM_FLAG) {
+        //Signal for exiting CPU was sent
+        return EXIT;
+    }
     actual_kernel_data->Q--;
     log_info(cpu_log, "Remaining Quantum : %d", actual_kernel_data->Q);
     actual_pcb->program_counter++;
@@ -216,6 +221,9 @@ int post_process_operations() {
 
 void finished_quantum_post_process() {
     log_info(cpu_log, "=== Finished Quantum ===");
+    if(status_check() == EXECUTING) {
+        status_update(READY);
+    }
     send_quantum_end_notif();
 }
 
@@ -244,10 +252,12 @@ void status_update(int status) {
 }
 
 int check_execution_state() {
-    //TODO: Also check for IO and blocked state
-
     if(status_check() == EXIT){
         program_end_notification();
+        return EXIT;
+    }
+    if(status_check() == BLOCKED) {
+        //Just return PCB
         return EXIT;
     }
     return SUCCESS;
@@ -268,17 +278,19 @@ void program_end_notification() {
 enum_queue status_check() {
     switch (actual_pcb->status) {
         case READY:
-            actual_pcb->status = EXECUTING;
-            break;
+            return READY;
         case BLOCKED:
             //check if io has finished
             //and waste Q
-            break;
+//            return BLOCKED;
+            return BLOCKED;
         case EXECUTING:
-        default:
-            break;
+            return EXECUTING;
         case EXIT:
             return EXIT;
+        default:
+            break;
+
     }
 }
 
@@ -288,6 +300,7 @@ int get_execution_line(void ** instruction_line) {
             actual_pcb->instrucciones_serializado + actual_pcb->program_counter);
     get_instruction_line(instruction_addresses_list, instruction_line);
     strip_string(*instruction_line);
+    log_info(cpu_log, "Next execution line: %s", *instruction_line);
     return SUCCESS;
 }
 
@@ -298,7 +311,7 @@ int umc_first_com() {
         return ERROR;
     }
     //Recv hanshake operation response
-    char operation[2];
+    char operation[2] = "";
     if( recv(umcSocketClient , operation, sizeof(char) , 0) <= 0) {
         log_error(cpu_log, "Recv UMC bad operation");
         return ERROR;
@@ -339,24 +352,23 @@ int get_pcb() {
         return ERROR;
     }
 
-    //Success!!
     //Deserializo el PCB que recibo
     actual_pcb = (t_pcb *) calloc(1,sizeof(t_pcb));
     int  last_buffer_index = 0;
     deserialize_pcb(&actual_pcb, actual_kernel_data->serialized_pcb, &last_buffer_index);
 
     //Inicializo si tengo que
-    if (queue_peek(actual_pcb->stack_index)== NULL) {
+    if (get_last_entry(actual_pcb->stack_index)== NULL) {
         actual_pcb->stack_index = queue_create();
         t_stack_entry * first_empty_entry = calloc(1, sizeof(t_stack_entry));
         queue_push(actual_pcb->stack_index, first_empty_entry);
     }
+    status_update(EXECUTING);
     return SUCCESS;
 }
 
 int kernel_first_com() {
     char kernel_handshake[2] = KERNEL_HANDSHAKE;
-    char kernel_operation [2] = "";
 
     if( send(kernelSocketClient, kernel_handshake, 1, 0) < 0) {
         log_error(cpu_log, "Error sending handshake to KERNEL");
@@ -364,15 +376,6 @@ int kernel_first_com() {
     }
     log_info(cpu_log, "Sent handshake :''%s'' to KERNEL", kernel_handshake);
 
-    printf(" .:: Waiting for Kernel handshake response ::.\n");
-    if( recv(kernelSocketClient , kernel_operation , sizeof(char) , 0) < 0) {
-        log_error(cpu_log, "KERNEL handshake response receive failed");
-        return ERROR;
-    }
-    if(strncmp(kernel_operation, "1", sizeof(char)) != 0) {
-        log_error(cpu_log, "Wrong KERNEL handshake response received");
-        return ERROR;
-    }
     return SUCCESS;
 }
 
@@ -440,10 +443,23 @@ int request_address_data(void ** buffer, logical_addr *address) {
 
 int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
     void * buffer = calloc(1,sizeof(int));
+    char kernel_operation [2] = "";
     if(buffer == NULL) {
         log_error(cpu_log, "recibir pcb buffer mem alloc failed");
         return ERROR;
     }
+
+    printf(" .:: Waiting PCB from Kernel ::.\n");
+    if( recv(kernelSocketClient , kernel_operation , sizeof(char) , 0) < 0) {
+        log_error(cpu_log, "KERNEL handshake response receive failed");
+        return ERROR;
+    }
+    if( strcmp(kernel_operation, "1") != 0 ) {
+        log_error(cpu_log, "Wrong KERNEL handshake response received");
+        return ERROR;
+    }
+
+    //Quantum data
     if( recv(kernelSocketClient , buffer , sizeof(int) , 0) < 0) {
         log_error(cpu_log, "Q recv failed");
         return ERROR;
@@ -462,7 +478,6 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
         log_error(cpu_log, "pcb_size recv failed");
         return ERROR;
     }
-
     kernel_data_buffer->pcb_size = atoi(buffer);
     log_info(cpu_log, "pcb_size: %d", kernel_data_buffer->pcb_size);
 
@@ -479,7 +494,11 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
     return SUCCESS;
 }
 
-t_list* armarDireccionesLogicasList(t_intructions *actual_instruction) {
+t_list* armarDireccionesLogicasList(t_intructions *original_instruction) {
+
+    t_intructions* actual_instruction = calloc(1, sizeof(t_intructions));
+    actual_instruction->start = original_instruction->start;
+    actual_instruction->offset = original_instruction->offset;
 
     t_list *address_list = list_create();
     logical_addr *addr = (logical_addr*) calloc(1,sizeof(logical_addr));
@@ -512,6 +531,7 @@ t_list* armarDireccionesLogicasList(t_intructions *actual_instruction) {
         actual_instruction->offset = actual_instruction->offset - addr->tamanio;
         list_add(address_list, addr);
     }
+    free(actual_instruction);
     return address_list;
 }
 

@@ -34,17 +34,18 @@ char* bitMap;
 t_bitarray* bitArrayStruct;
 int SWAP_BLOCKSIZE;
 t_log* LOG_SWAP;
+int TAMANIO_PAGINA;
 
 struct InformacionPagina {
-   int pid;
-   int pageNumber;
-   int positionInSWAP;
-   int bitMapPosition;
+	int pid;
+	int pageNumber;
+	int positionInSWAP;
+	int bitMapPosition;
 };
 
 typedef struct NodoControlCodigo {
-    struct InformacionPagina * infoPagina;
-    struct NodoControlCodigo * next;
+	struct InformacionPagina * infoPagina;
+	struct NodoControlCodigo * next;
 } controlCodigo_t;
 
 struct NodoControlCodigo* headControlCodigo = NULL;
@@ -57,11 +58,10 @@ char* package;
 //CONFIG
 char* IP_SWAP;
 char* PUERTO_SWAP;
-char* NOMBRE_SWAP;
-char* PATH_SWAP;
+char* SWAP_DATA;
 int CANTIDAD_PAGINAS;
-int TAMANIO_PAGINA;
 int RETARDO_COMPACTACION;
+int RETARDO_ACCESO;
 
 /**********************
  *
@@ -132,14 +132,14 @@ int main(int argc , char **argv) {
 	log_info(LOG_SWAP, ".:: INITIALIZING SWAP ::.");
 	if(!init_Config(argv[1])){
 		log_error(LOG_SWAP, "Config file can not be loaded");
-    	return -1;
-    }
+		return -1;
+	}
 
-    puts("");
+	puts("");
 
-    init_Server();
+	init_Server();
 
-    close_SwapProcess();
+	close_SwapProcess();
 
 	return 0;
 }
@@ -157,7 +157,7 @@ int umc_handshake(){
 
 	void* buffer = malloc(sizeof(int));
 
-    //recv el identificador de operacion (espero una 'U')
+	//recv el identificador de operacion (espero una 'U')
 	if(recv(umcSocket, &handShake, sizeof(char),0)<= 0){
 		free(buffer);
 		return -1;
@@ -165,13 +165,13 @@ int umc_handshake(){
 
 	if(handShake == 'U'){ //El handshake es correcto
 
-        //recv el tamanio de pagina
-        if(recv(umcSocket, buffer,sizeof(int),0)<= 0){
-            free(buffer);
-            return -1;
-        }
+		//recv el tamanio de pagina
+		if(recv(umcSocket, buffer,sizeof(int),0)<= 0){
+			free(buffer);
+			return -1;
+		}
 
-        TAMANIO_PAGINA = atoi(buffer);
+		TAMANIO_PAGINA = atoi(buffer);
 
 		init_BitMap();
 
@@ -185,7 +185,7 @@ int umc_handshake(){
 			return handshakeOK;
 		}
 
-        free(respuesta);
+		free(respuesta);
 
 		log_info(LOG_SWAP, "Handshake with UMC succesfully done. Page size received: %d", TAMANIO_PAGINA);
 		handshakeOK = 1;
@@ -208,6 +208,10 @@ int umc_handshake(){
 
 char* request_Lectura(int pid, int numeroPagina){
 	log_info(LOG_SWAP, "[REQUEST] Page requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
+
+	//Aplicamos el retardo de acceso
+	usleep(RETARDO_ACCESO);
+
 	char* paginaObtenida = NULL;
 	paginaObtenida = swap_ObtenerPagina(pid, numeroPagina);
 
@@ -223,6 +227,9 @@ char* request_Lectura(int pid, int numeroPagina){
 
 int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
 	log_info(LOG_SWAP, "[REQUEST] Page writing requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
+
+	//Aplicamos el retardo de acceso
+	usleep(RETARDO_ACCESO);
 
 	char* paginaObtenida = NULL;
 	paginaObtenida = swap_ObtenerPagina(pid, numeroPagina);
@@ -288,7 +295,7 @@ int request_FinalizacionPrograma(int pid){
  **********************/
 int init_Config(char * config_file_path){
 	//ARCHIVO DE CONFIGURACION
-    char* keys[6] = {"IP_SWAP", "PUERTO_ESCUCHA", "NOMBRE_SWAP", "PATH_SWAP", "CANTIDAD_PAGINAS", "RETARDO_COMPACTACION"};
+	char* keys[6] = {"IP_SWAP", "PUERTO_ESCUCHA", "SWAP_DATA", "CANTIDAD_PAGINAS", "RETARDO_COMPACTACION", "RETARDO_ACCESO"};
 
 	log_info(LOG_SWAP, "Reading configuration File");
 
@@ -315,23 +322,23 @@ int init_Config(char * config_file_path){
 						break;
 
 					case 2:
-						NOMBRE_SWAP = config_get_string_value(punteroAStruct,keys[i]);
-						log_info(LOG_SWAP, "%s --> %s", keys[i], NOMBRE_SWAP);
+						SWAP_DATA = config_get_string_value(punteroAStruct,keys[i]);
+						log_info(LOG_SWAP, "%s --> %s", keys[i], SWAP_DATA);
 						break;
 
 					case 3:
-						PATH_SWAP = config_get_string_value(punteroAStruct,keys[i]);
-						log_info(LOG_SWAP, "%s --> %s", keys[i], PATH_SWAP);
-						break;
-
-					case 4:
 						CANTIDAD_PAGINAS = config_get_int_value(punteroAStruct,keys[i]);
 						log_info(LOG_SWAP, "%s --> %d", keys[i], CANTIDAD_PAGINAS);
 						break;
 
-					case 5:
+					case 4:
 						RETARDO_COMPACTACION = config_get_int_value(punteroAStruct,keys[i]);
 						log_info(LOG_SWAP, "%s --> %d", keys[i], RETARDO_COMPACTACION);
+						break;
+
+					case 5:
+						RETARDO_ACCESO = config_get_int_value(punteroAStruct,keys[i]);
+						log_info(LOG_SWAP, "%s --> %d", keys[i], RETARDO_ACCESO);
 						break;
 				}
 
@@ -360,48 +367,48 @@ void init_Server(){
 	int operacion = 0;
 
 
-    if(umc_handshake() != 1){
+	if(umc_handshake() != 1){
 		log_error(LOG_SWAP, "Bad UMC hanshake");
-    	close_SwapProcess();
+		close_SwapProcess();
 	}
 
-    while(1){
+	while(1){
 		log_info(LOG_SWAP, "Waiting for UMC request");
 
 		buffer = malloc(sizeof(char));
-        if(recv(umcSocket,buffer,sizeof(char),0) <= 0){
-            free(buffer);
-            close(umcSocket);
-            close(swapSocket);
+		if(recv(umcSocket,buffer,sizeof(char),0) <= 0){
+			free(buffer);
+			close(umcSocket);
+			close(swapSocket);
 
-            return;
-        }
+			return;
+		}
 
-        /****************************
+		/****************************
          * Leo el codigo de operacion
          * y convierto el char a int
          ****************************/
-        operacion = atoi(buffer);
-        free(buffer);
+		operacion = atoi(buffer);
+		free(buffer);
 
-        switch (operacion) {
-            case ESCRIBIR: //pid(int), numeroPagina(int), codigo (undefined)
-                umc_escribir();
+		switch (operacion) {
+			case ESCRIBIR: //pid(int), numeroPagina(int), codigo (undefined)
+				umc_escribir();
 
-                break;
-            case LECTURA: //pid(int), numeroPagina(int)
-                umc_leer();
+				break;
+			case LECTURA: //pid(int), numeroPagina(int)
+				umc_leer();
 
-                break;
-            case FINALIZARPROG: //pid(int)
-                umc_finalizarPrograma();
+				break;
+			case FINALIZARPROG: //pid(int)
+				umc_finalizarPrograma();
 
-                break;
-            default:
-                log_warning(LOG_SWAP, "Request code unknown: %d \n", operacion);
-                break;
-        }
-    }
+				break;
+			default:
+				log_warning(LOG_SWAP, "Request code unknown: %d \n", operacion);
+				break;
+		}
+	}
 //        else { //volvemos a tratar de hacer el hand
 //			handshakeOK = umc_handshake();
 //
@@ -412,7 +419,7 @@ void init_Server(){
 //
 //		}
 
-	}
+}
 
 
 void umc_leer(){
@@ -446,7 +453,8 @@ void umc_leer(){
 
 	if(resultadoRequest != NULL){ //ENVIAMOS A UMC 1+cantPaginasLibres
 		void* respuesta = calloc(1, sizeof(int) + TAMANIO_PAGINA);
-		sprintf(respuesta,"%04d%s",pid, resultadoRequest);
+		sprintf(respuesta,"%04d",pid);
+		memcpy(respuesta+4, resultadoRequest, TAMANIO_PAGINA);
 
 		if(send(umcSocket, respuesta, sizeof(int) + TAMANIO_PAGINA,0) == -1)
 			excepcionAlHablarConUMC();
@@ -503,9 +511,9 @@ void umc_escribir(){
 		char* respuesta;
 
 		respuesta = malloc(sizeof(char)*SIZE_TRAMA);
-		sprintf(respuesta,"1%04d", paginas_CantidadPaginasLibres());
+		sprintf(respuesta,"%d%04d", 1, paginas_CantidadPaginasLibres());
 
-		if(send(umcSocket,(void *) respuesta, SIZE_TRAMA,0) == -1)
+		if(send(umcSocket,(void *) respuesta, (size_t) SIZE_TRAMA,0) == -1)
 			excepcionAlHablarConUMC();
 
 		free(respuesta);
@@ -526,23 +534,23 @@ void umc_finalizarPrograma(){
 	char* buffer = malloc(sizeof(int));
 
 	//Recibo el PID
-	if(recv(umcSocket, buffer, 1, 0)<= 0)
+	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
 		excepcionAlHablarConUMC();
 
-	char aux;
+/*	char aux;
 	memcpy(&aux,buffer,1);
-	//free(buffer);
-	pid = aux - '0';
+*/	//free(buffer);
+	pid = atoi(buffer);
 
 	free(buffer);
-	buffer = malloc(sizeof(int));
+//	buffer = malloc(sizeof(int));
 
 	//Hacemos el request
 	int resultadoRequest = request_FinalizacionPrograma(pid);
 
 	if(resultadoRequest > 0){ //ENVIAMOS A UMC 1+cantPaginasLibres
 		char* respuesta = malloc(sizeof(char)*SIZE_TRAMA);
-		sprintf(respuesta,"1%d", paginas_CantidadPaginasLibres());
+		sprintf(respuesta,"%d%04d", 1, paginas_CantidadPaginasLibres());
 
 		if(send(umcSocket,(void *) respuesta, SIZE_TRAMA,0) == -1)
 			excepcionAlHablarConUMC();
@@ -550,17 +558,31 @@ void umc_finalizarPrograma(){
 		free(respuesta);
 
 	} else { //ENVIAMOS ERROR A UMC
-		char error[1] = {'E'};
+	/*	char error[1] = {'E'};
 		if(send(umcSocket,(void *) error, 1,0) == -1)
 			excepcionAlHablarConUMC();
-
+	*/
 	}
 
-	free(buffer);
+//	free(buffer);
 }
 
 int init_SwapFile(){
 	log_info(LOG_SWAP, ".:: CREATING SWAP FILE ::.");
+
+	//Obtengo el path absoluto del archivo .swap
+	ABSOLUTE_PATH_SWAP = string_new();
+
+	char cwd[1024];
+	getcwd(cwd, sizeof(cwd));
+
+	string_append(&ABSOLUTE_PATH_SWAP,cwd);
+
+	char* separar = string_new();
+	string_append(&separar, "/");
+
+	string_append(&ABSOLUTE_PATH_SWAP, separar);
+	string_append(&ABSOLUTE_PATH_SWAP,SWAP_DATA);
 
 	char* comandoCrearSwap = string_new();
 
@@ -568,19 +590,10 @@ int init_SwapFile(){
 	string_append(&comandoCrearSwap, "dd");
 
 	//Utilizo el archivo zero que nos va a dar tantos NULL como necesite
-	string_append(&comandoCrearSwap, " if=/dev/zero");
+	string_append(&comandoCrearSwap, " if=/dev/zero of=");
 
 	//El archivo de destino es mi swap a crear
-	string_append(&comandoCrearSwap, " of=");
-	if(PATH_SWAP != NULL)
-		string_append(&comandoCrearSwap, PATH_SWAP);
-	else
-		string_append(&comandoCrearSwap, "/home/utnso/");
-
-	if(NOMBRE_SWAP != NULL)
-		string_append(&comandoCrearSwap, NOMBRE_SWAP);
-	else
-		string_append(&comandoCrearSwap, "pruebaSWAP");
+	string_append(&comandoCrearSwap, ABSOLUTE_PATH_SWAP);
 
 	//Especifico el BLOCKSIZE, que seria el total de mi swap
 	SWAP_BLOCKSIZE = TAMANIO_PAGINA*CANTIDAD_PAGINAS;
@@ -599,14 +612,9 @@ int init_SwapFile(){
 		free(comandoCrearSwap);
 		return 0;
 	}else{
-		log_info(LOG_SWAP, "SWAP file has been successfully created");
+		log_info(LOG_SWAP, "SWAP file has been successfully created in: %s", ABSOLUTE_PATH_SWAP);
 		free(comandoCrearSwap);
 	}
-
-	//Obtengo el path absoluto del archivo .swap
-	ABSOLUTE_PATH_SWAP = string_new();
-	string_append(&ABSOLUTE_PATH_SWAP,PATH_SWAP);
-	string_append(&ABSOLUTE_PATH_SWAP,NOMBRE_SWAP);
 
 	//Creamos puntero al archivo swap
 	FILE* swapFile = fopen(ABSOLUTE_PATH_SWAP,"rb");
@@ -654,8 +662,7 @@ void close_SwapProcess(){
 	//CONFIG
 	free(IP_SWAP);
 	free(PUERTO_SWAP);
-	free(NOMBRE_SWAP);
-	free(PATH_SWAP);
+	free(SWAP_DATA);
 
 	//Eliminamos la lista con todos sus modulos
 	listaControl_EliminarLista();
@@ -719,7 +726,7 @@ int swap_EspacioDisponible(int cantPaginasNecesarias){
 				totalLibres++;
 
 				if(lugaresParciales == cantPaginasNecesarias){
- 					return primerEspacio; //Hay lugar disponible y continuo ;)
+					return primerEspacio; //Hay lugar disponible y continuo ;)
 				}
 			}
 
@@ -759,11 +766,8 @@ int swap_Compactar(){
 
 	puts("\n .:: BEGINING DEFRAGMETATION ::. \n");
 
-	int i = 0;
-	for (i = 0; i < 10001; i++){
-		usleep(RETARDO_COMPACTACION);
-		printf("\r\e[?25l Loading... %d", i/100);
-	}
+	//Aplicamos el retardo
+	usleep(RETARDO_COMPACTACION);
 
 	int espacioActual, espacioLibre = 0;
 	while(bitarray_test_bit(bitArrayStruct, espacioLibre)){ //Encontramos el primer espacio libre
@@ -912,12 +916,12 @@ char* paginas_LeerPagina(int posicion){
 
 	fseek(fp,posicion,SEEK_SET);
 
-	char* contenidoObtenido = malloc(TAMANIO_PAGINA*sizeof(char)); //CUIDADO ACA
+	char* contenidoObtenido = calloc(1,TAMANIO_PAGINA*sizeof(char)); //CUIDADO ACA
 
 	//Leemos, si es distinto al count, fallo
-
 	if(fread(contenidoObtenido,TAMANIO_PAGINA,1,fp) != 1){
 		log_warning(LOG_SWAP, "Page couldn't be readed");
+		free(contenidoObtenido);
 		return NULL;
 	}
 
@@ -1146,12 +1150,12 @@ char obtenerPrimerChar(void* buffer){
 }
 
 int mod (int a, int b){
-   int ret = a % b;
+	int ret = a % b;
 
-   if(ret < 0)
-	   ret+=b;
+	if(ret < 0)
+		ret+=b;
 
-   return ret;
+	return ret;
 }
 
 void excepcionAlHablarConUMC(){

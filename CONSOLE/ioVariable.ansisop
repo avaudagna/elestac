@@ -1,10 +1,10 @@
 begin
 	variables o, g, t
 	o = 13
-	io Coso 35
+	io HDD1 35
 	g = o * 4
-	io Impresora g
+	io LPT1 g
 	t = g - 45 
-	io Scanner t
+	io HDD1 t
 	print t
 end
