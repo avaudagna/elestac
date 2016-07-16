@@ -511,9 +511,9 @@ void umc_escribir(){
 		char* respuesta;
 
 		respuesta = malloc(sizeof(char)*SIZE_TRAMA);
-		sprintf(respuesta,"1%04d", paginas_CantidadPaginasLibres());
+		sprintf(respuesta,"%d%04d", 1, paginas_CantidadPaginasLibres());
 
-		if(send(umcSocket,(void *) respuesta, SIZE_TRAMA,0) == -1)
+		if(send(umcSocket,(void *) respuesta, (size_t) SIZE_TRAMA,0) == -1)
 			excepcionAlHablarConUMC();
 
 		free(respuesta);
@@ -534,23 +534,23 @@ void umc_finalizarPrograma(){
 	char* buffer = malloc(sizeof(int));
 
 	//Recibo el PID
-	if(recv(umcSocket, buffer, 1, 0)<= 0)
+	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
 		excepcionAlHablarConUMC();
 
-	char aux;
+/*	char aux;
 	memcpy(&aux,buffer,1);
-	//free(buffer);
-	pid = aux - '0';
+*/	//free(buffer);
+	pid = atoi(buffer);
 
 	free(buffer);
-	buffer = malloc(sizeof(int));
+//	buffer = malloc(sizeof(int));
 
 	//Hacemos el request
 	int resultadoRequest = request_FinalizacionPrograma(pid);
 
 	if(resultadoRequest > 0){ //ENVIAMOS A UMC 1+cantPaginasLibres
 		char* respuesta = malloc(sizeof(char)*SIZE_TRAMA);
-		sprintf(respuesta,"1%d", paginas_CantidadPaginasLibres());
+		sprintf(respuesta,"%d%04d", 1, paginas_CantidadPaginasLibres());
 
 		if(send(umcSocket,(void *) respuesta, SIZE_TRAMA,0) == -1)
 			excepcionAlHablarConUMC();
@@ -564,7 +564,7 @@ void umc_finalizarPrograma(){
 
 	}
 
-	free(buffer);
+//	free(buffer);
 }
 
 int init_SwapFile(){
