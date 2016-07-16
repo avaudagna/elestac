@@ -18,7 +18,7 @@ void testOldPCBvsNewPCB(t_pcb *newPCB, t_pcb *incomingPCB) {
     printInstructions(newPCB->instrucciones_serializado, newPCB->instrucciones_size, incomingPCB->instrucciones_serializado);
     printf("etiquetas_size: %d=%d\n", newPCB->etiquetas_size, incomingPCB->etiquetas_size);
     assert(newPCB->etiquetas_size == incomingPCB->etiquetas_size);
-    printEtiquetas(newPCB->etiquetas, incomingPCB->etiquetas,  incomingPCB->etiquetas_size);
+    printEtiquetas(newPCB->etiquetas, incomingPCB->etiquetas);
     assert(memcmp(newPCB->etiquetas, incomingPCB->etiquetas,incomingPCB->etiquetas_size) == 0);
 }
 void printSerializedPcb(void *pcb_buffer) {
@@ -84,8 +84,7 @@ void testSerializedPCB(t_pcb *newPCB, void *pcb_buffer) {
     printf("etiquetas_size: %d=%d\n", newPCB->etiquetas_size, *(int*)(pcb_buffer+auxIndex));
     assert(newPCB->etiquetas_size == *(int*)(pcb_buffer+auxIndex));
     auxIndex+=sizeof(int);
-
-    auxIndex+=printEtiquetas(newPCB->etiquetas, (char*)(pcb_buffer+auxIndex),  newPCB->etiquetas_size);
+    printEtiquetas(newPCB->etiquetas, (char*)(pcb_buffer+auxIndex));
     auxIndex+=newPCB->etiquetas_size;
     assert(memcmp(newPCB->etiquetas, (char*)(pcb_buffer+auxIndex),  newPCB->etiquetas_size) == 0);
 }
@@ -155,22 +154,13 @@ int printBufferEtiquetas(char *buffer, int cant_etiquetas) {
     int indice = 0;
     for (indice = 0; indice < cant_etiquetas; indice++)
     {
-        //printf("etiquetas: %c=%c", etiquetas[indice], buffer[indice]);
-        //printf("etiquetas: %c", *(etiquetas+indice));
-        printf("etiquetas\n");
+        printf("%s\n", buffer);
     }
     return indice;
 }
 
-int printEtiquetas(char *etiquetas, char *buffer, int cant_etiquetas) {
-    int indice = 0;
-    for (indice = 0; indice < cant_etiquetas; indice++)
-    {
-        printf("etiquetas: %c=%c", *(etiquetas+indice), *(buffer+indice));
-//        printf("etiquetas: %c", *(etiquetas+indice));
-//        printf("etiquetas\n");
-    }
-    return indice;
+void printEtiquetas(char *etiquetas, char *buffer) {
+    printf("%s = %s\n", etiquetas, buffer);
 }
 
 int printBufferInstructions(int cant_instrucciones, void *buffer) {

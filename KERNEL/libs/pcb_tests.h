@@ -18,7 +18,7 @@ int printStackValuesVsBuffer(t_stack *stack, void *buffer);
 void printStackEntryVsBuffer(t_stack_entry *entry, void *buffer, int *buffer_index);
 
 int printInstructions(t_intructions *serializado, int size, void *pVoid);
-int printEtiquetas(char *etiquetas, char *buffer, int cant_etiquetas);
+void printEtiquetas(char *etiquetas, char *buffer);
 void print_instrucciones_size ();
 
 void printStackValuesVsStruct(t_stack *index, t_stack *stack_index);
