@@ -210,7 +210,7 @@ char* request_Lectura(int pid, int numeroPagina){
 	log_info(LOG_SWAP, "[REQUEST] Page requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
 
 	//Aplicamos el retardo de acceso
-	sleep(RETARDO_ACCESO);
+	usleep(RETARDO_ACCESO);
 
 	char* paginaObtenida = NULL;
 	paginaObtenida = swap_ObtenerPagina(pid, numeroPagina);
@@ -229,7 +229,7 @@ int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
 	log_info(LOG_SWAP, "[REQUEST] Page writing requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
 
 	//Aplicamos el retardo de acceso
-	sleep(RETARDO_ACCESO);
+	usleep(RETARDO_ACCESO);
 
 	char* paginaObtenida = NULL;
 	paginaObtenida = swap_ObtenerPagina(pid, numeroPagina);
@@ -558,10 +558,10 @@ void umc_finalizarPrograma(){
 		free(respuesta);
 
 	} else { //ENVIAMOS ERROR A UMC
-		char error[1] = {'E'};
+	/*	char error[1] = {'E'};
 		if(send(umcSocket,(void *) error, 1,0) == -1)
 			excepcionAlHablarConUMC();
-
+	*/
 	}
 
 //	free(buffer);
@@ -767,7 +767,7 @@ int swap_Compactar(){
 	puts("\n .:: BEGINING DEFRAGMETATION ::. \n");
 
 	//Aplicamos el retardo
-	sleep(RETARDO_COMPACTACION);
+	usleep(RETARDO_COMPACTACION);
 
 	int espacioActual, espacioLibre = 0;
 	while(bitarray_test_bit(bitArrayStruct, espacioLibre)){ //Encontramos el primer espacio libre
