@@ -1475,7 +1475,7 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, int tamanioContenidoPa
 		if(!estado){
 			//pthread_rwlock_rdlock(semFifosxPid);
 			recorredor = list_get_nodo(fifoPID,0);	// vuelvo a recorrer desde el comienzo
-			for (i=0;i<(punteroPIDClock->indice);i++,recorredor=recorredor->next){
+			for (i=0;i<=(punteroPIDClock->indice);i++,recorredor=recorredor->next){
 				if(((CLOCK_PAGINA*) recorredor->data)->bitDeUso == 0 && ((CLOCK_PAGINA*) recorredor->data)->bitDeModificado == 0 ) {    // Encontre Pagina Victima
 					pthread_rwlock_unlock(semFifosxPid);
 					estado = true;
@@ -1507,7 +1507,7 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, int tamanioContenidoPa
 		pthread_rwlock_rdlock(semFifosxPid);
 		recorredor = fifoPID->head;
 		pthread_rwlock_unlock(semFifosxPid);
-		for (i=0;i<(punteroPIDClock->indice);i++,recorredor=recorredor->next){
+		for (i=0;i<=(punteroPIDClock->indice);i++,recorredor=recorredor->next){
 			if(((CLOCK_PAGINA*) recorredor->data)->bitDeUso == 0 && ((CLOCK_PAGINA*) recorredor->data)->bitDeModificado == 1 ) {    // Encontre Pagina Victima
 				estado = true;
 				pthread_rwlock_unlock(semFifosxPid);
