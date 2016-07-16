@@ -315,7 +315,7 @@ void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
     actual_pcb->status = BLOCKED;
     //3+ ioNameSize + ioName + io_units (1+4+ioNameSize+4 bytes)
     char* mensaje = NULL;
-    int sizeMsj = sizeof(char) + sizeof(int) * 3;
+    int sizeMsj = sizeof(char) + strlen(dispositivo) + sizeof(int) * 2;
     //Armo paquete de I/O operation
     asprintf(&mensaje, "%d%04d%s%04d", atoi(ENTRADA_SALIDA_ID), strlen(dispositivo), dispositivo, tiempo);
     //Envio el paquete a KERNEL
