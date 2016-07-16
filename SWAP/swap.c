@@ -177,7 +177,7 @@ int umc_handshake(){
 
 		//Armo la trama a responder char[]: S+cantPaginasLibres
 		int SIZE_TRAMA = 5;
-		char* respuesta = malloc(SIZE_TRAMA);
+		char* respuesta = calloc(1,SIZE_TRAMA);
 		sprintf(respuesta,"S%04d", paginas_CantidadPaginasLibres());
 
 		if(send(umcSocket,(void *) respuesta, SIZE_TRAMA,0) == -1){
@@ -375,7 +375,7 @@ void init_Server(){
 	while(1){
 		log_info(LOG_SWAP, "Waiting for UMC request");
 
-		buffer = malloc(sizeof(char));
+		buffer = calloc(1,sizeof(char));
 		if(recv(umcSocket,buffer,sizeof(char),0) <= 0){
 			free(buffer);
 			close(umcSocket);
@@ -426,7 +426,7 @@ void umc_leer(){
 	int pid;
 	int numeroPagina;
 
-	char* buffer = malloc(sizeof(int));
+	char* buffer = calloc(1,sizeof(int));
 
 	//Recibo el PID
 	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
@@ -436,7 +436,7 @@ void umc_leer(){
 	pid = atoi(buffer);
 
 	free(buffer);
-	buffer = malloc(sizeof(int));
+	buffer = calloc(1,sizeof(int));
 
 	//Recibo el numero pagina
 	if(recv(umcSocket, buffer, sizeof(buffer), 0)<= 0)
@@ -446,7 +446,7 @@ void umc_leer(){
 	numeroPagina = atoi(buffer);
 
 	free(buffer);
-	buffer = malloc(sizeof(char) * TAMANIO_PAGINA);
+	buffer = calloc(1,sizeof(char) * TAMANIO_PAGINA);
 
 	//Hacemos el request
 	char* resultadoRequest = request_Lectura(pid, numeroPagina);
@@ -478,7 +478,7 @@ void umc_escribir(){
 
 	int pid;
 	int numeroPagina;
-	char* codigo = malloc(sizeof(char) * TAMANIO_PAGINA);
+	char* codigo = calloc(1,sizeof(char) * TAMANIO_PAGINA);
 
 	//Recibo el PID
 	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
@@ -531,7 +531,7 @@ void umc_escribir(){
 
 void umc_finalizarPrograma(){
 	int pid, SIZE_TRAMA = 5;
-	char* buffer = malloc(sizeof(int));
+	char* buffer = calloc(1,sizeof(int));
 
 	//Recibo el PID
 	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
@@ -543,13 +543,13 @@ void umc_finalizarPrograma(){
 	pid = atoi(buffer);
 
 	free(buffer);
-//	buffer = malloc(sizeof(int));
+//	buffer = calloc(1,sizeof(int));
 
 	//Hacemos el request
 	int resultadoRequest = request_FinalizacionPrograma(pid);
 
 	if(resultadoRequest > 0){ //ENVIAMOS A UMC 1+cantPaginasLibres
-		char* respuesta = malloc(sizeof(char)*SIZE_TRAMA);
+		char* respuesta = calloc(1,sizeof(char)*SIZE_TRAMA);
 		sprintf(respuesta,"%d%04d", 1, paginas_CantidadPaginasLibres());
 
 		if(send(umcSocket,(void *) respuesta, SIZE_TRAMA,0) == -1)
@@ -632,7 +632,7 @@ int init_SwapFile(){
 
 int init_BitMap(){
 	//Creamos y limpiamos el BitMap
-	bitMap = malloc(sizeof(char)*CANTIDAD_PAGINAS);
+	bitMap = calloc(1,sizeof(char)*CANTIDAD_PAGINAS);
 	bitArrayStruct = bitarray_create(bitMap,CANTIDAD_PAGINAS/8);
 
 	int i; //Inicializamos todos los bits en cero (vacio)
@@ -952,12 +952,12 @@ int paginas_CantidadPaginasLibres(){
  *************************/
 int listaControl_IniciarLista(struct InformacionPagina infoBloque){
 	//Inicializamos la estructura de control de codigos
-	headControlCodigo = malloc(sizeof(controlCodigo_t));
+	headControlCodigo = calloc(1,sizeof(controlCodigo_t));
 
 	if(headControlCodigo == NULL)
 		return -1;
 
-	headControlCodigo->infoPagina = malloc(sizeof(struct InformacionPagina));
+	headControlCodigo->infoPagina = calloc(1,sizeof(struct InformacionPagina));
 
 	headControlCodigo->infoPagina->pid = infoBloque.pid;
 	headControlCodigo->infoPagina->pageNumber = infoBloque.pageNumber;
@@ -988,8 +988,8 @@ void listaControl_AgregarNodo(int pid, int pageNumber, int positionInSWAP, int b
 			current = current->next;
 		}
 
-		current->next = malloc(sizeof(controlCodigo_t));
-		current->next->infoPagina = malloc(sizeof(struct InformacionPagina));
+		current->next = calloc(1,sizeof(controlCodigo_t));
+		current->next->infoPagina = calloc(1,sizeof(struct InformacionPagina));
 
 		current->next->infoPagina->pid = pid;
 		current->next->infoPagina->pageNumber = pageNumber;

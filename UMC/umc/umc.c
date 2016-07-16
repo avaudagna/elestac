@@ -361,7 +361,7 @@ void init_Parameters(char *configFile){
 
 void init_MemoriaPrincipal(void){
 	int i=0;
-	memoriaPrincipal = malloc(umcGlobalParameters.marcosSize * umcGlobalParameters.marcos);	// inicializo memoria principal
+	memoriaPrincipal = calloc(1,umcGlobalParameters.marcosSize * umcGlobalParameters.marcos);	// inicializo memoria principal
 	vectorMarcos = (MARCO *) malloc (sizeof(MARCO) * umcGlobalParameters.marcos) ;
 
 	for(i=0;i<umcGlobalParameters.marcos;i++){
@@ -373,13 +373,13 @@ void init_MemoriaPrincipal(void){
 
 void init_Semaforos(void){
 
-	semMemPrin = malloc(sizeof(pthread_rwlock_t));
-    semFifosxPid = malloc(sizeof(pthread_rwlock_t));
-    semListaPids = malloc(sizeof(pthread_rwlock_t));
-    semTLB = malloc(sizeof(pthread_rwlock_t));
-    semRetardo = malloc(sizeof(pthread_rwlock_t));
-    semClockPtrs = malloc(sizeof(pthread_rwlock_t));
-	semSwap = malloc(sizeof(pthread_mutex_t));
+	semMemPrin = calloc(1,sizeof(pthread_rwlock_t));
+    semFifosxPid = calloc(1,sizeof(pthread_rwlock_t));
+    semListaPids = calloc(1,sizeof(pthread_rwlock_t));
+    semTLB = calloc(1,sizeof(pthread_rwlock_t));
+    semRetardo = calloc(1,sizeof(pthread_rwlock_t));
+    semClockPtrs = calloc(1,sizeof(pthread_rwlock_t));
+	semSwap = calloc(1,sizeof(pthread_mutex_t));
 
 
 
@@ -789,7 +789,7 @@ void recibirYAlmacenarNuevoProceso(int * socketBuff,int cantidadPaginasSolicitad
 	PIDPAGINAS *nuevo_pid = NULL;
 	char buffer[4];
 
-	nuevo_pid = (PIDPAGINAS *)malloc(sizeof(PIDPAGINAS));
+	nuevo_pid = (PIDPAGINAS *)calloc(1,sizeof(PIDPAGINAS));
 
 	nuevo_pid->cantPagEnMP=0;
 	nuevo_pid->pid = pid_aux;
@@ -836,7 +836,7 @@ void dividirEnPaginas(int pid_aux, int paginasDeCodigo, char codigo[], int code_
 
 	for ( i=0,j=0; i < paginasDeCodigo ; i++ , nroDePagina++ , j+=umcGlobalParameters.marcosSize ){
 		char* trama = calloc(1, (size_t) size_trama);
-		aux_code = (char * ) malloc((size_t) umcGlobalParameters.marcosSize);
+		aux_code = (char * ) calloc(1,(size_t) umcGlobalParameters.marcosSize);
 		if ( nroDePagina < (paginasDeCodigo - 1) ){
 			memcpy((void * )aux_code, &codigo[j], (size_t) umcGlobalParameters.marcosSize);
 
@@ -893,7 +893,7 @@ void enviarPaginasDeStackAlSwap(int _pid, int nroDePaginaInicial) {
 
 	// trama de escritura a swap : 1+pid+nroDePagina+aux_code
 	for(i =0 ,nroPaginaActual=nroDePaginaInicial; i<stack_size; i++, nroPaginaActual++) {
-		trama = malloc(9);
+		trama = calloc(1,9);
         sprintf(trama, "%d%04d%04d", 1, _pid, nroPaginaActual);
         trama2 = calloc(1, (size_t) (9 + umcGlobalParameters.marcosSize));
         memcpy(trama2,trama,9);
@@ -1057,13 +1057,13 @@ void handShake_Swap(void){
 			exit(1);
 		}
 	// SWAP me responde 1+CANTIDAD_DE_PAGINAS_LIBRES ( 1 byte + 4 de cantidad de paginas libres )
-	package = (char *) malloc(sizeof(char) * SIZE_HANDSHAKE_SWAP) ;
+	package = (char *) calloc(1,sizeof(char) * SIZE_HANDSHAKE_SWAP) ;
 	if ( recv(socketClienteSwap, (void*) package, SIZE_HANDSHAKE_SWAP, 0) > 0 ){
 
 		if ( package[0] == 'S'){
 			//  paginasLibresEnSwap = los 4 bytes que quedan
 			char *aux=NULL;
-			aux = (char *) malloc(4);
+			aux = (char *) calloc(1,4);
 			memcpy(aux,package+1,4);
 			paginasLibresEnSwap = atoi(aux);
 			//printf("\nSe ejecuto correctamente el handshake");
@@ -1227,7 +1227,7 @@ void almacenarBytes(int *socketBuff, int *pid_actual) {
 	// levanto bytes a almacenar
 
 	bytesAlmacenar = malloc (_tamanio);
-	temp = (PAGINA *) malloc(sizeof(PAGINA));
+	temp = (PAGINA *) calloc(1,sizeof(PAGINA));
 	temp->nroPagina = _pagina;
 
 	if(recv(*socketBuff, (void*) bytesAlmacenar, _tamanio, 0) <= 0 )
@@ -1565,7 +1565,7 @@ void PedidoPaginaASwap(int pid, int pagina, int operacion) {
 	pag = obtenerPagina(pid,pagina);
 	int trama_size = umcGlobalParameters.marcosSize +((sizeof(int)) * 2)+ 1;
 
-	trama = (char *) malloc(trama_size);
+	trama = (char *) calloc(1,trama_size);
 
 	/*
 	if (operacion == ESCRITURA){
@@ -1697,7 +1697,7 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 
 	if (__pid == *pid_actual) {    // valido que la pagina que me respondio swap se corresponda a la que pedi
 
-		contenidoPagina = (void *) malloc(sizeof(umcGlobalParameters.marcosSize));
+		contenidoPagina = (void *) calloc(1,sizeof(umcGlobalParameters.marcosSize));
 
 		if ((*tamanioContenidoPagina = recv(socketClienteSwap, contenidoPagina, umcGlobalParameters.marcosSize, 0)) <= 0)
 			perror("recv");
@@ -1761,7 +1761,7 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 	CLOCK_PID * pid_clock  = NULL;
 	FIFO_INDICE *nuevoPidFifoIndice = NULL;
 
-	pagina = (CLOCK_PAGINA *) malloc(sizeof(CLOCK_PAGINA));
+	pagina = (CLOCK_PAGINA *) calloc(1,sizeof(CLOCK_PAGINA));
 	pagina->bitDeModificado = 0;
 	pagina->bitDeUso = 1;
 	pagina->nroPagina = pPagina;
@@ -2066,7 +2066,7 @@ void reemplazarPaginaTLB(int pPid, PAGINA *pPagina, int indice) {
 
 	TLB * aux = NULL;
 
-	aux = (TLB *) malloc(sizeof(TLB));
+	aux = (TLB *) calloc(1,sizeof(TLB));
 	aux->pid=pPid;
 	aux->nroPagina=pPagina->nroPagina;
 	aux->nroDeMarco = pPagina->nroDeMarco;
@@ -2125,7 +2125,7 @@ void agregarPaginaTLB(int pPid, PAGINA *pPagina, int ind_aux) {
 
 	TLB * aux = NULL;
 
-	aux = (TLB *) malloc(sizeof(TLB));
+	aux = (TLB *) calloc(1,sizeof(TLB));
 	aux->pid=pPid;
 	aux->nroPagina=pPagina->nroPagina;
 	aux->nroDeMarco = pPagina->nroDeMarco;
@@ -2209,7 +2209,7 @@ void actualizarContadoresLRU(int pid , int pagina){
 void finalizarProceso(int *socketBuff){
 	// recibo pid
 	char 			buffer[4],
-		 			*trama 				= malloc(5);
+		 			*trama 				= calloc(1,5);
 	int 			pPid 				= 0,
 					index 				= 0;
 	t_list 			*fifo 				= NULL,
