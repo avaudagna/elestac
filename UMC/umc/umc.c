@@ -1498,7 +1498,9 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, int tamanioContenidoPa
 				break;
 			}
 			else{
+                pthread_rwlock_unlock(semFifosxPid);
 				setBitDeUso(pPid,((CLOCK_PAGINA*) recorredor->data)->nroPagina,0);
+                pthread_rwlock_rdlock(semFifosxPid);
 			}
 		}
 		// ¿ Se encontro alguna victima en la primer recorrida de la 2da vuelta ?
@@ -1514,7 +1516,9 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, int tamanioContenidoPa
 				break;
 			}
 			else{
+                pthread_rwlock_unlock(semFifosxPid);
 				setBitDeUso(pPid,((CLOCK_PAGINA*) recorredor->data)->nroPagina,0);		// voy actualizando el bit de uso
+                pthread_rwlock_rdlock(semFifosxPid);
 			}
 		}
 
