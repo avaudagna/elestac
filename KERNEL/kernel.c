@@ -249,7 +249,7 @@ void *requestPages2UMC(void* request_buffer){
 	int bufferLen=1+4+4+4+ansisopLen; //1+PID+req_pages+size+code
 	sprintf(buffer_4, "%04d", (ansisopLen/setup.PAGE_SIZE)+1);
 	log_info(kernel_log, "Requesting %s pages to UMC.", buffer_4);
-	char* buffer = malloc((size_t) 8+4+ansisopLen);
+	char* buffer = calloc(1, (size_t) 8+4+ansisopLen);
 	sprintf(buffer, "%d%04d%s%04d%s", 1,*(int*)PID,buffer_4, ansisopLen,code);
 	send(clientUMC, buffer, (size_t) bufferLen, 0);
 	recv(clientUMC, buffer_4, 4, 0);
@@ -284,14 +284,14 @@ void add2FD_SET(void *client){
 }
 
 t_pcb * recvPCB(int cpuID){
-	char* tmp_buff = malloc(sizeof(int));
+	char* tmp_buff = calloc(1, sizeof(int));
 	int pcb_size;
 	recv(cpuID, tmp_buff, (size_t) sizeof(int), 0);
 	pcb_size = *(int*) tmp_buff;
-	void *pcb_serializado = malloc((size_t) pcb_size);
+	void *pcb_serializado = calloc(1, (size_t) pcb_size);
 	recv(cpuID, pcb_serializado, (size_t) pcb_size, 0);
 	int pcb_serializado_cursor = 0;
-	t_pcb* incomingPCB = malloc(sizeof(t_pcb));
+	t_pcb* incomingPCB = calloc(1, sizeof(t_pcb));
 	deserialize_pcb(&incomingPCB, pcb_serializado, &pcb_serializado_cursor);
 	//testSerializedPCB(incomingPCB, pcb_serializado);
 	free(tmp_buff);
