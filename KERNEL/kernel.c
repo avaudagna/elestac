@@ -105,10 +105,10 @@ void* sem_wait_thread(void *cpuData){
     int miID = atoi(miIDChar);
     free(semIndexChar);
     free(miIDChar);
-	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started.", setup.SEM_IDS[semIndex], miID);
+	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started.", setup.SEM_ID[semIndex], miID);
 	sem_wait(&semaforo_ansisop[semIndex]);
 	send(miID, "0", 1, 0);
-	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished.", setup.SEM_IDS[semIndex], miID);
+	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished.", setup.SEM_ID[semIndex], miID);
     free(cpuData);
     pthread_exit(0);
 }
@@ -129,7 +129,7 @@ int wait_coordination(int cpuID) {
 		pthread_t sem_thread;
 		pthread_create(&sem_thread, NULL, sem_wait_thread, losDatosGlobales);
 	} else {
-		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d.", setup.SEM_IDS[semIndex], cpuID);
+		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d.", setup.SEM_ID[semIndex], cpuID);
 		sem_post(&semaforo_ansisop[semIndex]);
 	}
 	free(tmp_buff);
@@ -139,7 +139,7 @@ void* do_work(void *p) {
 	int tmp = *((int *) p);
 	int miID = tmp;
 	bool esTrue = true;
-	log_info(kernel_log, "do_work: Starting the device %s with a sleep of %s milliseconds.", setup.IO_IDS[miID], setup.IO_SLEEP[miID]);
+	log_info(kernel_log, "do_work: Starting the device %s with a sleep of %s milliseconds.", setup.IO_ID[miID], setup.IO_SLEEP[miID]);
 	while(esTrue){
 		sem_wait(&semaforo_io[miID]);
 		t_io *io_op;
@@ -148,7 +148,7 @@ void* do_work(void *p) {
 			io_op = list_remove(solicitudes_io[miID], 0);
 			pthread_mutex_unlock(&mut_io_list);
 			if (io_op->pid > 0){
-				log_info(kernel_log,"%s will perform %d operations.", setup.IO_IDS[miID], atoi(io_op->io_units));
+				log_info(kernel_log,"%s will perform %d operations.", setup.IO_ID[miID], atoi(io_op->io_units));
 				int processing_io = atoi(setup.IO_SLEEP[miID]) * atoi(io_op->io_units) * 1000;
 				usleep((useconds_t) processing_io);
 				bool match_PCB(void *pcb){
@@ -162,7 +162,7 @@ void* do_work(void *p) {
 					elPCB->status = READY;
 					list_add(PCB_READY, elPCB);
 				} // Else -> The PCB was killed by end_program while performing I/O
-				log_info(kernel_log, "do_work: Finished an io operation on device %s requested by PID %d.", setup.IO_IDS[miID], io_op->pid);
+				log_info(kernel_log, "do_work: Finished an io operation on device %s requested by PID %d.", setup.IO_ID[miID], io_op->pid);
 				free(io_op);
 			}
 		}
@@ -181,9 +181,9 @@ int loadConfig(char* configFile){
 		setup.PUERTO_CPU = config_get_int_value(config,"PUERTO_CPU");
 		setup.QUANTUM = config_get_int_value(config,"QUANTUM");
 		setup.QUANTUM_SLEEP = config_get_int_value(config,"QUANTUM_SLEEP");
-		setup.IO_IDS = config_get_array_value(config,"IO_IDS");
+		setup.IO_ID = config_get_array_value(config,"IO_ID");
 		setup.IO_SLEEP = config_get_array_value(config,"IO_SLEEP");
-		counter=0; while(setup.IO_IDS[counter]) counter++;
+		counter=0; while(setup.IO_ID[counter]) counter++;
 		setup.IO_COUNT = counter;
 		solicitudes_io = realloc(solicitudes_io, counter * sizeof(t_list));
 		semaforo_io = realloc(semaforo_io, counter * sizeof(sem_t));
@@ -195,9 +195,9 @@ int loadConfig(char* configFile){
 			thread_id[i]=i;
 			pthread_create(&io_device[i],NULL,do_work, &thread_id[i]);
 		}
-		setup.SEM_IDS=config_get_array_value(config,"SEM_IDS");
+		setup.SEM_ID=config_get_array_value(config,"SEM_ID");
 		setup.SEM_INIT=config_get_array_value(config,"SEM_INIT");
-		counter=0; while (setup.SEM_IDS[counter]) counter++;
+		counter=0; while (setup.SEM_ID[counter]) counter++;
 		semaforo_ansisop = realloc(semaforo_ansisop, counter * sizeof(sem_t));
 		for (i = 0; i < counter; i++) {
 			initValue = (uint) atoi(setup.SEM_INIT[i]);
@@ -326,7 +326,7 @@ void check_CPU_FD_ISSET(void *cpu){
 				case 2:// Program END
 					log_debug(kernel_log, "Receving a PCB");
 					t_pcb* incomingPCB = recvPCB(laCPU->clientID);
-					if (laCPU->status == EXIT || incomingPCB->status==EXIT){
+					if (laCPU->status == EXIT || incomingPCB->status==EXIT || incomingPCB->status == BROKEN){
 						list_add(PCB_EXIT, incomingPCB);
 					} else {
 						list_add(PCB_READY, incomingPCB);
@@ -674,7 +674,7 @@ void process_io() {
 int getIOindex(char *io_name) {
 	int i;
 	for (i = 0; i < setup.IO_COUNT; i++) {
-		if (strcmp(setup.IO_IDS[i],io_name) == 0) {
+		if (strcmp(setup.IO_ID[i],io_name) == 0) {
 			return i;
 		}
 	}
@@ -683,8 +683,8 @@ int getIOindex(char *io_name) {
 
 int getSEMindex(char *sem_id) {
 	int i=0;
-	while(setup.SEM_IDS){
-		if (strcmp(setup.SEM_IDS[i],sem_id) == 0) {
+	while(setup.SEM_ID){
+		if (strcmp(setup.SEM_ID[i],sem_id) == 0) {
 			return i;
 		}
 		i++;
