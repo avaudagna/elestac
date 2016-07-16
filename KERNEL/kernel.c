@@ -336,7 +336,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					t_io *io_op = malloc(sizeof(t_io));
 					io_op->pid = laCPU->pid;
 					recv(laCPU->clientID, tmp_buff, 4, 0); // size of the io_name
-					io_op->io_name = calloc(1,atoi(tmp_buff));
+					io_op->io_name = calloc(1, atoi(tmp_buff));
 					io_op->io_units = calloc(1,4);
 					recv(laCPU->clientID, io_op->io_name, (size_t) atoi(tmp_buff), 0);
 					recv(laCPU->clientID, io_op->io_units, 4, 0);
@@ -349,7 +349,7 @@ void check_CPU_FD_ISSET(void *cpu){
 						pthread_mutex_lock(&mut_io_list);
 						list_add(solicitudes_io[io_op->io_index], io_op);
 						pthread_mutex_unlock(&mut_io_list);
-						list_add(PCB_BLOCKED,incomingPCB);
+						list_add(PCB_BLOCKED, blockedPCB);
 					}
 					restoreCPU(laCPU);
 					break;
@@ -383,23 +383,11 @@ void check_CPU_FD_ISSET(void *cpu){
 				case 6:// imprimirValor
 					log_debug(kernel_log, "Receving a value to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
 					recv(laCPU->clientID, tmp_buff, 4, 0);
-					/*
-					size_t nameSize = (size_t) atoi(tmp_buff);
-					char *theName = malloc(nameSize);
-					recv(laCPU->clientID, theName, nameSize, 0);
-					recv(laCPU->clientID, tmp_buff, 4, 0);
-					char *value2console = malloc(1+4+nameSize+4);
-					log_debug(kernel_log, "Console %d will print the variable %s with value %d.", laCPU->pid, theName, tmp_buff);
-					sprintf(value2console, "%d%04d%s%s", 1, (int) nameSize, theName, tmp_buff);//1+nameSize+name+value
-					send(laCPU->pid, value2console, (9+nameSize), 0); // send the value to the console
-					 */
                     void * text2Console = calloc(1, sizeof(int) + 1);
                     sprintf(text2Console, "1%04d", atoi(tmp_buff));
 					log_debug(kernel_log, "Console %d will print the value %d.", laCPU->pid, atoi(tmp_buff));
 					send(laCPU->pid, text2Console, 5, 0); // send the value to the console
                     free(text2Console);
-					//free(theName);
-					//free(value2console);
 					break;
 				case 7:// imprimirTexto
 					log_debug(kernel_log, "Receving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
