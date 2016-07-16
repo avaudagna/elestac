@@ -139,14 +139,15 @@ int wait_coordination(int cpuID) {
 void* do_work(void *p) {
 	int tmp = *((int *) p);
 	int miID = tmp;
-	t_io *io_op;
+	bool esTrue = true;
 	log_info(kernel_log, "do_work: Starting the device %s with a sleep of %s milliseconds.", setup.IO_IDS[miID], setup.IO_SLEEP[miID]);
-	while(1){
+	while(esTrue){
 		sem_wait(&semaforo_io[miID]);
+		t_io *io_op;
 		pthread_mutex_lock(&mut_io_list);
 		io_op = list_remove(solicitudes_io[miID], 0);
 		pthread_mutex_unlock(&mut_io_list);
-		if (io_op != NULL){
+		if (io_op->pid > 0){
 			log_info(kernel_log,"%s will perform %d operations.", setup.IO_IDS[miID], atoi(io_op->io_units));
 			int processing_io = atoi(setup.IO_SLEEP[miID]) * atoi(io_op->io_units) * 1000;
 			usleep((useconds_t) processing_io);
@@ -157,7 +158,7 @@ void* do_work(void *p) {
 			}
 			t_pcb *elPCB;
 			elPCB = list_remove_by_condition(PCB_BLOCKED, match_PCB);
-			if (elPCB != NULL ){
+			if (elPCB->pid > 0){
 				elPCB->status = READY;
 				list_add(PCB_READY, elPCB);
 			} // Else -> The PCB was killed by end_program while performing I/O
@@ -336,8 +337,8 @@ void check_CPU_FD_ISSET(void *cpu){
 					io_op->pid = laCPU->pid;
 					recv(laCPU->clientID, tmp_buff, 4, 0); // size of the io_name
 					io_op->io_name = calloc(1,atoi(tmp_buff));
+					io_op->io_units = calloc(1,4);
 					recv(laCPU->clientID, io_op->io_name, (size_t) atoi(tmp_buff), 0);
-                    io_op->io_units = calloc(1,4);
 					recv(laCPU->clientID, io_op->io_units, 4, 0);
 					io_op->io_index = getIOindex(io_op->io_name);
 					t_pcb *blockedPCB = recvPCB(laCPU->clientID);
