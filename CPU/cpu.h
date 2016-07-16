@@ -26,6 +26,8 @@
 #include "implementation_ansisop.h"
 
 #include "cpu_structs.h"
+#include <parser/metadata_program.h>
+#include "libs/pcb_tests.h"
 
 #define KERNEL_HANDSHAKE "0"
 #define UMC_HANDSHAKE "1"

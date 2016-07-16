@@ -1,8 +1,4 @@
-#include <parser/metadata_program.h>
 #include "implementation_ansisop.h"
-#include "libs/stack.h"
-#include "libs/pcb.h"
-#include "cpu_structs.h"
 
 static const int CONTENIDO_VARIABLE = 20;
 static const int POSICION_MEMORIA = 0x10;
@@ -76,14 +72,8 @@ t_posicion definirVariable(t_nombre_variable variable) {
 void stack_overflow_exit() {
     log_info(cpu_log, "=== STACK OVERFLOW EXIT ===");
     status_update(BROKEN);
-    program_end_notification();
-    return_pcb();
-    syster_call();
 }
 
-void syster_call() {
-    exit(1);
-}
 
 t_posicion get_t_posicion(const t_var *variable) {
     return (t_posicion) (variable->page_number * setup->PAGE_SIZE) + variable->offset;
@@ -325,7 +315,7 @@ t_posicion  obtener_t_posicion(logical_addr *address) {
 }
 void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
     //cambio el estado del pcb
-    actual_pcb->status = BLOCKED;
+    status_update(BLOCKED);
     //3+ ioNameSize + ioName + io_units (1+4+ioNameSize+4 bytes)
     char* mensaje = NULL;
     int sizeMsj = sizeof(char) + strlen(dispositivo) + sizeof(int) * 2;

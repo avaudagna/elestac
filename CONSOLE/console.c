@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
 	strcat(mensaje, buffer);
 	strcat(mensaje, prog);
 	send(kernelSocketClient, mensaje, sizeMsj, 0);
-	log_info(console_log, "El tamanio del programa es %s, y se envio al kernel: %s", buffer, mensaje);
+	printf("El tamanio del programa es %s, y se envio al kernel: %s", buffer, mensaje);
 
 	free(prog);
 	free(mensaje);
