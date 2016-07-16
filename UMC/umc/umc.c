@@ -1665,8 +1665,8 @@ bool consultarTLB(int *pPid, int pagina, int *indice) {
 void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tamanioContenidoPagina) {
 
 	// Le pido al swap la pagina : 3+pid+nroPagina
-	char 	buffer[9],
-			buff_pid[4];
+    char * buffer = calloc(1, 9);
+    char * buff_pid = calloc(1, sizeof(int));
 	void *	contenidoPagina;
 	int 	__pid;
 
@@ -1679,12 +1679,14 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 	if (send(socketClienteSwap, buffer, 9, 0) <= 0)
 		perror("send");
 
+    free(buffer);
 	// respuesta swap : pid+PAGINA
 
 	if (recv(socketClienteSwap, (void *) buff_pid, 4, 0) <= 0)    // SWAP ME DEVUELVE LA PAGINA
 		perror("recv");
 
 	__pid = atoi(buff_pid);
+    free(buff_pid);
 
 
 
