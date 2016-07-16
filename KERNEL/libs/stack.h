@@ -54,5 +54,7 @@ int add_arg(t_stack_entry ** stack_entry, t_arg *arg);
 
 
 t_stack_entry * stack_entry_create(void);
+t_stack_entry* get_last_entry (t_stack * stack_index);
+t_stack_entry* pop_stack (t_stack* stack_index);
 
 #endif //SERIALIZATION_STACK_H

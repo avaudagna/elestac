@@ -55,6 +55,7 @@ void deserialize_etiquetas(char **etiquetas, size_t etiquetas_size, void *serial
     deserialize_data(*etiquetas, etiquetas_size, serialized_data, serialized_data_index);
 }
 
+
 void serialize_t_instructions(t_intructions *intructions, void **buffer, int *buffer_size) {
     serialize_data(&intructions->start, sizeof(t_puntero_instruccion), buffer, buffer_size);
     serialize_data(&intructions->offset, sizeof(t_size), buffer, buffer_size);
