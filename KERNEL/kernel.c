@@ -147,7 +147,6 @@ void* do_work(void *p) {
 		io_op = list_remove(solicitudes_io[miID], 0);
 		pthread_mutex_unlock(&mut_io_list);
 		if (io_op != NULL){
-            log_info(kernel_log, "A new I/O request arrived at %s", setup.IO_IDS[miID]);
 			log_info(kernel_log,"%s will perform %d operations.", setup.IO_IDS[miID], atoi(io_op->io_units));
 			int processing_io = atoi(setup.IO_SLEEP[miID]) * atoi(io_op->io_units) * 1000;
 			usleep((useconds_t) processing_io);
@@ -489,9 +488,15 @@ int control_clients(){
 				}
 			}
 		}
-		list_iterate(consolas_conectadas,check_CONSOLE_FD_ISSET);
-		list_iterate(cpus_conectadas,check_CPU_FD_ISSET);
-		list_iterate(cpus_executing,check_CPU_FD_ISSET);
+		if(list_size(consolas_conectadas) > 0){
+			list_iterate(consolas_conectadas,check_CONSOLE_FD_ISSET);
+		}
+		if(list_size(cpus_conectadas) > 0){
+			list_iterate(cpus_conectadas,check_CPU_FD_ISSET);
+		}
+		if(list_size(cpus_executing) > 0){
+			list_iterate(cpus_executing,check_CPU_FD_ISSET);
+		}
 		if ((newConsole=accept_new_client("console", &consoleServer, &allSockets, consolas_conectadas)) > 1){
 			accept_new_PCB(newConsole);
 			RoundRobinReport();
