@@ -309,33 +309,18 @@ t_posicion  obtener_t_posicion(logical_addr *address) {
     return (t_posicion) address->page_number * setup->PAGE_SIZE + address->offset;
 }
 void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
-
     //cambio el estado del pcb
     actual_pcb->status = BLOCKED;
-
-    //NO VA MÁS serialize_pcb(actual_pcb, &buffer, &buffer_len);
     //3+ ioNameSize + ioName + io_units (1+4+ioNameSize+4 bytes)
-
     char* mensaje = NULL;
-    char* buffer = NULL;
-
-    int sizeMsj = sizeof(char) + sizeof(dispositivo) + 8;
+    int sizeMsj = sizeof(char) + sizeof(int) * 3;
     //Armo paquete de I/O operation
-    asprintf(&buffer, "%d%04d", atoi(ENTRADA_SALIDA_ID), strlen(dispositivo));
-    strcpy(mensaje, buffer);
-    strcat(mensaje, dispositivo);
-    asprintf(&buffer, "%04d", tiempo);
-    strcat(mensaje, buffer);
-
-    free(buffer);
-
+    asprintf(&mensaje, "%d%04d%s%04d", atoi(ENTRADA_SALIDA_ID), strlen(dispositivo), dispositivo, tiempo);
     //Envio el paquete a KERNEL
     if(send(kernelSocketClient, mensaje, (size_t) sizeMsj, 0) < 0) {
         log_error(cpu_log, "entrada salida of dispositivo %s %d time send to KERNEL failed", dispositivo, tiempo);
     }
-
     free(mensaje);
-
 }
 
 void imprimir(t_valor_variable valor) {
