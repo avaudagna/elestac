@@ -707,11 +707,12 @@ void atenderKernel(int * socketBuff){
 
 int identificarOperacion(int * socketBuff){
 	int package;
-	//char* buffer = calloc(1, 2);
-	char buffer[2];
-	while(recv(*socketBuff, (void*) buffer, 1, 0) < 0 );	// levanto byte que indica que tipo de operacion se va a llevar a cabo
-	package=atoi((const char *) buffer);
-	//free(buffer);
+	void * buffer = calloc(1, 2);
+//	void * buffer = calloc(1, 1);
+	while(recv(*socketBuff, buffer, 1, 0) < 0 );	// levanto byte que indica que tipo de operacion se va a llevar a cabo
+	*(char*)(buffer+1) = '\0';
+    package=atoi((const char *) buffer);
+	free(buffer);
 	return package;
 }
 
