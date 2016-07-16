@@ -72,11 +72,11 @@ int start_kernel(int argc, char* configFile){
 			log_error(kernel_log, "Config file can not be loaded. Please, try again.");
 			return -1;
 		}else{
-			configFileName = malloc(sizeof(configFile));
+			configFileName = calloc(1,sizeof(configFile));
 			strcpy(configFileName, configFile);
 			char cwd[1024];
 			getcwd(cwd, sizeof(cwd));
-			configFilePath = malloc(sizeof(cwd));
+			configFilePath = calloc(1,sizeof(cwd));
 			strcpy(configFilePath, cwd);
 		}
 		configFileFD = inotify_init();
@@ -124,7 +124,7 @@ int wait_coordination(int cpuID) {
 	recv(cpuID, SEM_ID, SEM_ID_Size, 0);
 	int semIndex = getSEMindex(SEM_ID);
 	if(semWait) {
-		losDatosGlobales = malloc(8);
+		losDatosGlobales = calloc(1,8);
 		sprintf(losDatosGlobales, "%04d%04d", cpuID, semIndex);
 		pthread_t sem_thread;
 		pthread_create(&sem_thread, NULL, sem_wait_thread, losDatosGlobales);
@@ -187,8 +187,8 @@ int loadConfig(char* configFile){
 		setup.IO_COUNT = counter;
 		solicitudes_io = realloc(solicitudes_io, counter * sizeof(t_list));
 		semaforo_io = realloc(semaforo_io, counter * sizeof(sem_t));
-		io_device = malloc(sizeof(pthread_t) * counter);
-		int *thread_id = malloc(sizeof(int) * counter);
+		io_device = calloc(1,sizeof(pthread_t) * counter);
+		int *thread_id = calloc(1,sizeof(int) * counter);
 		for (i = 0; i < counter; i++) {
 			solicitudes_io[i] = list_create();
 			sem_init(&semaforo_io[i], 0, 0);
@@ -219,8 +219,8 @@ int loadConfig(char* configFile){
 
 int connect2UMC(){
 	int clientUMC;
-	char* buffer = malloc(5);
-	char* buffer_4=malloc(4);
+	char* buffer = calloc(1,5);
+	char* buffer_4=calloc(1,4);
 	log_info(kernel_log, "Connecting to UMC on %s:%d.", setup.IP_UMC, setup.PUERTO_UMC);
 	if (getClientSocket(&clientUMC, setup.IP_UMC, setup.PUERTO_UMC)) return (-1);
 	sprintf(buffer_4, "%04d", setup.STACK_SIZE);
@@ -243,7 +243,7 @@ void *requestPages2UMC(void* request_buffer){
 	int clientUMC = 0;
 	deserialize_data(PID, sizeof(int), request_buffer, &deserialize_index);
 	deserialize_data(&ansisopLen, sizeof(int), request_buffer, &deserialize_index);
-	code = malloc((size_t) ansisopLen);
+	code = calloc(1,(size_t) ansisopLen);
 	deserialize_data(code, ansisopLen, request_buffer, &deserialize_index);
 	deserialize_data(&clientUMC, sizeof(int), request_buffer, &deserialize_index);
 	char* buffer;
@@ -315,7 +315,7 @@ void restoreCPU(t_Client *laCPU){
 
 void check_CPU_FD_ISSET(void *cpu){
 	char* cpu_protocol = calloc(1, 1);
-	char* tmp_buff = malloc(4);
+	char* tmp_buff = calloc(1,4);
 	int setValue = 0;
 	t_Client* laCPU = (t_Client*) cpu;
 	if (laCPU != NULL && FD_ISSET(laCPU->clientID, &allSockets)) {
@@ -335,7 +335,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					break;
 				case 3:// IO
 					log_debug(kernel_log, "Receving an Input/Output request + a PCB");
-					t_io *io_op = malloc(sizeof(t_io));
+					t_io *io_op = calloc(1,sizeof(t_io));
 					io_op->pid = laCPU->pid;
 					recv(laCPU->clientID, tmp_buff, 4, 0); // size of the io_name
 					io_op->io_name = calloc(1, (size_t) atoi(tmp_buff));
@@ -435,7 +435,7 @@ void destroy_PCB(void *pcb){
 }
 
 void check_CONSOLE_FD_ISSET(void *console){
-	char *buffer_4=malloc(4);
+	char *buffer_4=calloc(1,4);
 	t_Client *cliente = console;
 	if (FD_ISSET(cliente->clientID, &allSockets)) {
 		if (recv(cliente->clientID, buffer_4, 1, 0) == 0){
@@ -505,7 +505,7 @@ int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista){
 			maxSocket=aceptado;
 			if (recv(aceptado, buffer_4, 1, 0) > 0){
 				if (strncmp(buffer_4, "0",1) == 0){
-					t_Client *cliente=malloc(sizeof(t_Client));
+					t_Client *cliente=calloc(1,sizeof(t_Client));
 					cliente->clientID=aceptado;
 					cliente->pid=0;
 					cliente->status = 0;
@@ -527,7 +527,7 @@ void accept_new_PCB(int newConsole){
 	log_info(kernel_log, "NEW (0) program with PID=%04d arriving.", newConsole);
 	recv(newConsole, buffer_4, 4, 0);
 	int ansisopLen = atoi(buffer_4);
-	char *code = malloc((size_t) ansisopLen);
+	char *code = calloc(1,(size_t) ansisopLen);
 	recv(newConsole, code, (size_t) ansisopLen, 0);
 	/* Recv ansisop from console */
 	void * request_buffer = NULL;
@@ -548,7 +548,7 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 		log_info(kernel_log, "Pages of code + stack = %d.", code_pages);
 		send(newConsole,PID,4,0);
 		t_metadata_program* metadata = metadata_desde_literal(code);
-		t_pcb *newPCB = malloc(sizeof(t_pcb));
+		t_pcb *newPCB = calloc(1,sizeof(t_pcb));
 		newPCB->pid=newConsole;
 		newPCB->program_counter=metadata->instruccion_inicio;
 		newPCB->stack_pointer=code_pages * setup.PAGE_SIZE;
@@ -580,7 +580,7 @@ void round_robin(){
 	laCPU->status = EXECUTING;
 	laCPU->pid = tuPCB->pid;
 	serialize_pcb(tuPCB, &pcb_buffer, &pcb_buffer_size);
-	//tmp_buffer = malloc((size_t) tmp_buffer_size+pcb_buffer_size);
+	//tmp_buffer = calloc(1,(size_t) tmp_buffer_size+pcb_buffer_size);
 	tmp_buffer = calloc(1, (size_t) tmp_buffer_size);
 	//TODO revisar esto
 	sprintf(tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
@@ -617,7 +617,7 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen) { /* Search 
  * 4) It's new... (probably waiting for UMC to reply with requested pages)
  *      a) Puedo ignorar este caso si no cierro el socket con consola... en la próxima vuelta el PCB va a estar en PCB_READY.
  */
-	char* buffer=malloc(5);
+	char* buffer=calloc(1,5);
 	bool pcb_found = false;
 	bool match_PCB(void *pcb){
 		t_pcb *unPCB = pcb;
