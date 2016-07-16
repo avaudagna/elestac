@@ -44,7 +44,8 @@ t_posicion definirVariable(t_nombre_variable variable) {
         }
         if(strncmp(umc_response_buffer, string_itoa(UMC_OK_RESPONSE), sizeof(char)) != 0) {
             log_error(cpu_log, "STACK OVERFLOW");
-            return ERROR;
+            stack_overflow_exit();
+            return STACK_OVERFLOW;
         }
 
     }
@@ -70,6 +71,18 @@ t_posicion definirVariable(t_nombre_variable variable) {
     //7) y retornamos la t_posicion asociada
     t_posicion posicion_nueva_variable = get_t_posicion(nueva_variable);
     return posicion_nueva_variable;
+}
+
+void stack_overflow_exit() {
+    log_info(cpu_log, "=== STACK OVERFLOW EXIT ===");
+    status_update(BROKEN);
+    program_end_notification();
+    return_pcb();
+    syster_call();
+}
+
+void syster_call() {
+    exit(1);
 }
 
 t_posicion get_t_posicion(const t_var *variable) {

@@ -31,6 +31,8 @@
 #define WAIT_ID "0"
 #define SIGNAL_ID "1"
 
+#define STACK_OVERFLOW -2
+
 //UMC Interface
 #define ALMACENAMIENTO_BYTES 4
 
@@ -100,5 +102,8 @@ typedef struct {
 
     //#14
     void la_signal(t_nombre_semaforo identificador_semaforo);
+
+    void stack_overflow_exit();
+    void syster_call();
 
 #endif
