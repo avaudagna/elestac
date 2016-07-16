@@ -708,12 +708,13 @@ void atenderKernel(int * socketBuff){
 int identificarOperacion(int * socketBuff){
 
 	int package;
-	char *buffer = malloc(2);
+	char *buffer = calloc(1, 1);
 
 
 	while ( (recv(*socketBuff, (void*) (buffer), 1, 0)) < 0 );	// levanto byte que indica que tipo de operacion se va a llevar a cabo
 
 	package=atoi(buffer);
+	free(buffer);
 
 	return package;
 
@@ -2032,13 +2033,13 @@ void pedidoDePaginaInvalida(int *socketBuff) {
 //Funciones para el Manejo de TLB
 
 void limpiarPidDeTLB(int pPid) {
-
+	if(umcGlobalParameters.entradasTLB == 0)
+		return;
 	t_link_element *aux = NULL;
 	int index = 0;
-
-    pthread_rwlock_rdlock(semTLB);
+	pthread_rwlock_rdlock(semTLB);
 	aux = headerTLB->head;
-
+	
 // recorro toda la lista , cuando encuentro uno correspondiente a ese pid , lo saco
 	while(aux != NULL){
 		if ( ((TLB *)aux->data)->pid == pPid ) {
