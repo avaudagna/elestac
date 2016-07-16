@@ -1696,10 +1696,15 @@ void *pedirPaginaSwap(int *socketBuff, int *pid_actual, int nroPagina, int *tama
 
 		if ((*tamanioContenidoPagina = recv(socketClienteSwap, contenidoPagina, umcGlobalParameters.marcosSize, 0)) <= 0)
 			perror("recv");
-		pthread_mutex_unlock(semSwap);
-        //printf(", content : %s\n", (char*) contenidoPagina);
 
-		return contenidoPagina;
+		if(*tamanioContenidoPagina == umcGlobalParameters.marcosSize){
+
+			pthread_mutex_unlock(semSwap);
+			//printf(", content : %s\n", (char*) contenidoPagina);
+			return contenidoPagina;
+		}
+
+
 	}
 	pthread_mutex_unlock(semSwap);
 	return NULL;
