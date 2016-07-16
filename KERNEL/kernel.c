@@ -320,7 +320,7 @@ void check_CPU_FD_ISSET(void *cpu){
 	t_Client* laCPU = (t_Client*) cpu;
 	if (FD_ISSET(laCPU->clientID, &allSockets)) {
 		log_debug(kernel_log,"CPU %d has something to say.", laCPU->clientID);
-		if (recv(laCPU->clientID, cpu_protocol, 1, 0) > 0){
+		if (recv(laCPU->clientID, cpu_protocol, 1, MSG_DONTWAIT) > 0){
 			switch (atoi(cpu_protocol)) {
 				case 1:// Quantum end
 				case 2:// Program END
@@ -338,7 +338,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					t_io *io_op = malloc(sizeof(t_io));
 					io_op->pid = laCPU->pid;
 					recv(laCPU->clientID, tmp_buff, 4, 0); // size of the io_name
-					io_op->io_name = calloc(1, atoi(tmp_buff));
+					io_op->io_name = calloc(1, (size_t) atoi(tmp_buff));
 					io_op->io_units = calloc(1,4);
 					recv(laCPU->clientID, io_op->io_name, (size_t) atoi(tmp_buff), 0);
 					recv(laCPU->clientID, io_op->io_units, 4, 0);
@@ -395,10 +395,10 @@ void check_CPU_FD_ISSET(void *cpu){
 					log_debug(kernel_log, "Receving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
 					recv(laCPU->clientID, tmp_buff, 4, 0);
 					size_t txtSize = (size_t) atoi(tmp_buff);
-					char *theTXT = malloc(txtSize);
+					char *theTXT = calloc(1, txtSize);
 					recv(laCPU->clientID, theTXT, txtSize, 0);
 					log_debug(kernel_log, "Console %d will print the text %s.", laCPU->pid, theTXT);
-					char *txt2console = malloc(1+4+txtSize);
+					char *txt2console = calloc(1, 1+4+txtSize);
 					sprintf(txt2console, "%d%04d%s", 2, (int) txtSize, theTXT);
 					send(laCPU->pid, txt2console, (5+txtSize), 0); // send the text to the console
 					free(theTXT);
@@ -479,15 +479,12 @@ int control_clients(){
 				}
 			}
 		}
-		if(list_size(consolas_conectadas) > 0){
+		if (list_size(consolas_conectadas) > 0)
 			list_iterate(consolas_conectadas, check_CONSOLE_FD_ISSET);
-		}
-		if(list_size(cpus_conectadas) > 0){
+		if (list_size(cpus_conectadas) > 0)
 			list_iterate(cpus_conectadas, check_CPU_FD_ISSET);
-		}
-		if(list_size(cpus_executing) > 0){
+		if (list_size(cpus_executing) > 0)
 			list_iterate(cpus_executing, check_CPU_FD_ISSET);
-		}
 		if ((newConsole=accept_new_client("console", &consoleServer, &allSockets, consolas_conectadas)) > 1){
 			accept_new_PCB(newConsole);
 			RoundRobinReport();
