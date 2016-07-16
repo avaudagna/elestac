@@ -1473,9 +1473,9 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, int tamanioContenidoPa
 		}
 		// recorro desde el comienzo de la lista hasta de donde comence a recorrer anteriormente
 		if(!estado){
-			pthread_rwlock_rdlock(semFifosxPid);
+			//pthread_rwlock_rdlock(semFifosxPid);
 			recorredor = list_get_nodo(fifoPID,0);	// vuelvo a recorrer desde el comienzo
-			for (i=0;i<(punteroPIDClock->indice);i++,recorredor=recorredor->next){
+			for (i=0;i<=(punteroPIDClock->indice);i++,recorredor=recorredor->next){
 				if(((CLOCK_PAGINA*) recorredor->data)->bitDeUso == 0 && ((CLOCK_PAGINA*) recorredor->data)->bitDeModificado == 0 ) {    // Encontre Pagina Victima
 					pthread_rwlock_unlock(semFifosxPid);
 					estado = true;
@@ -1487,12 +1487,15 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, int tamanioContenidoPa
 		// ***************************** Segunda Vuelta ***************************************************
 		// recorro desde el indice hasta el final de la lista
 
+		if(estado) break;	// encontre reemplazo
+
 		recorredor = list_get_nodo(fifoPID,punteroPIDClock->indice);
-		pthread_rwlock_unlock(semFifosxPid);
+		//pthread_rwlock_unlock(semFifosxPid);
 		for (i=punteroPIDClock->indice;i<(fifoPID->elements_count) && recorredor != NULL;i++,recorredor=recorredor->next){
 			if(((CLOCK_PAGINA*) recorredor->data)->bitDeUso == 0 && ((CLOCK_PAGINA*) recorredor->data)->bitDeModificado == 1 ) {    // Encontre Pagina Victima
 				pthread_rwlock_unlock(semFifosxPid);
 				estado = true;
+				break;
 			}
 			else{
 				setBitDeUso(pPid,((CLOCK_PAGINA*) recorredor->data)->nroPagina,0);
@@ -1504,9 +1507,10 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, int tamanioContenidoPa
 		pthread_rwlock_rdlock(semFifosxPid);
 		recorredor = fifoPID->head;
 		pthread_rwlock_unlock(semFifosxPid);
-		for (i=0;i<(punteroPIDClock->indice);i++,recorredor=recorredor->next){
+		for (i=0;i<=(punteroPIDClock->indice);i++,recorredor=recorredor->next){
 			if(((CLOCK_PAGINA*) recorredor->data)->bitDeUso == 0 && ((CLOCK_PAGINA*) recorredor->data)->bitDeModificado == 1 ) {    // Encontre Pagina Victima
 				estado = true;
+				pthread_rwlock_unlock(semFifosxPid);
 				break;
 			}
 			else{

@@ -7,6 +7,7 @@
 #include "libs/pcb.h"
 #include "cpu.h"
 #include "cpu_structs.h"
+#include <parser/metadata_program.h>
 
 #define SUCCESS 1
 #define ERROR -1
@@ -104,6 +105,5 @@ typedef struct {
     void la_signal(t_nombre_semaforo identificador_semaforo);
 
     void stack_overflow_exit();
-    void syster_call();
 
 #endif
