@@ -913,12 +913,13 @@ char* paginas_LeerPagina(int posicion){
 
 	fseek(fp,posicion,SEEK_SET);
 
-	char* contenidoObtenido = malloc(TAMANIO_PAGINA*sizeof(char)); //CUIDADO ACA
+	char* contenidoObtenido = calloc(1,TAMANIO_PAGINA*sizeof(char)); //CUIDADO ACA
 
 	//Leemos, si es distinto al count, fallo
 
 	if(fread(contenidoObtenido,TAMANIO_PAGINA,1,fp) != 1){
 		log_warning(LOG_SWAP, "Page couldn't be readed");
+		free(contenidoObtenido);
 		return NULL;
 	}
 
