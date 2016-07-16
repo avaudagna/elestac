@@ -252,10 +252,12 @@ void status_update(int status) {
 }
 
 int check_execution_state() {
-    //TODO: Also check for IO and blocked state
-
     if(status_check() == EXIT){
         program_end_notification();
+        return EXIT;
+    }
+    if(status_check() == BLOCKED) {
+        //Just return PCB
         return EXIT;
     }
     return SUCCESS;
