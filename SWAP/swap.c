@@ -155,11 +155,7 @@ int umc_handshake(){
 	char handShake;
 	int tamanioTrama = sizeof(char)+sizeof(int);
 
-<<<<<<< HEAD
-	void* buffer = calloc(1, sizeof(int));
-=======
 	void* buffer = calloc(1,sizeof(int));
->>>>>>> 07c838e58dd74db2105dd31a0e596be72fc74f56
 
 	//recv el identificador de operacion (espero una 'U')
 	if(recv(umcSocket, &handShake, sizeof(char),0)<= 0){
@@ -478,11 +474,7 @@ void umc_leer(){
 void umc_escribir(){
 	int SIZE_TRAMA = 5;
 
-<<<<<<< HEAD
-	char* buffer = calloc(1, sizeof(int));
-=======
 	char* buffer = calloc(1,sizeof(int));
->>>>>>> 07c838e58dd74db2105dd31a0e596be72fc74f56
 
 	int pid;
 	int numeroPagina;
@@ -495,11 +487,7 @@ void umc_escribir(){
 	pid = atoi(buffer);
 
 	free(buffer);
-<<<<<<< HEAD
-	buffer = calloc(1, sizeof(int));
-=======
 	buffer = calloc(1,sizeof(int));
->>>>>>> 07c838e58dd74db2105dd31a0e596be72fc74f56
 
 	//Recibo el numero pagina
 	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
@@ -508,11 +496,7 @@ void umc_escribir(){
 	numeroPagina = atoi(buffer);
 
 	free(buffer);
-<<<<<<< HEAD
-	buffer = calloc(1, sizeof(char) * TAMANIO_PAGINA);
-=======
 	buffer = calloc(1,sizeof(char) * TAMANIO_PAGINA);
->>>>>>> 07c838e58dd74db2105dd31a0e596be72fc74f56
 
 	//Recibimos el codigo
 	if(recv(umcSocket, buffer, sizeof(char)*TAMANIO_PAGINA, 0)<= 0)
@@ -526,11 +510,7 @@ void umc_escribir(){
 	if(resultadoRequest > -1){ //ENVIAMOS A UMC 1+cantPaginasLibres
 		char* respuesta;
 
-<<<<<<< HEAD
-		respuesta = calloc(1, sizeof(char)*SIZE_TRAMA);
-=======
 		respuesta = calloc(1,sizeof(char)*SIZE_TRAMA);
->>>>>>> 07c838e58dd74db2105dd31a0e596be72fc74f56
 		sprintf(respuesta,"%d%04d", 1, paginas_CantidadPaginasLibres());
 
 		if(send(umcSocket,(void *) respuesta, (size_t) SIZE_TRAMA,0) == -1)
@@ -578,10 +558,10 @@ void umc_finalizarPrograma(){
 		free(respuesta);
 
 	} else { //ENVIAMOS ERROR A UMC
-	/*	char error[1] = {'E'};
-		if(send(umcSocket,(void *) error, 1,0) == -1)
-			excepcionAlHablarConUMC();
-	*/
+		/*	char error[1] = {'E'};
+            if(send(umcSocket,(void *) error, 1,0) == -1)
+                excepcionAlHablarConUMC();
+        */
 	}
 
 //	free(buffer);
