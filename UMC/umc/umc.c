@@ -1027,7 +1027,7 @@ void swapUpdate(void){
 // 1+CANTIDAD_DE_PAGINAS_LIBRES ( 5 bytes )
 	void *buffer = calloc(1,sizeof(char)+sizeof(int));
 
-	if ( recv(socketClienteSwap, buffer, sizeof(char)+sizeof(int), 0) <= 0 ||  *((char*)buffer) != 1 ){
+	if ( recv(socketClienteSwap, buffer, sizeof(char)+sizeof(int), 0) <= 0 ||  *((char*)buffer) != '1' ){
 		free(buffer);
 		perror("recv");
 		printf("\nError comunicacion con SWAP,Finalizando\n");
