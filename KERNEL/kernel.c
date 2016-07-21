@@ -1,18 +1,6 @@
 /* Kernel.c by pacevedo */
-/* Compilame asi:
-gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collections -o kernel socketCommons.c libs/stack.c libs/pcb.c libs/serialize.c kernel.c -L/usr/lib -lcommons -lparser-ansisop -pthread
- * El CPU compilalo asi:
-gcc -I/usr/include/parser -I/usr/include/commons -I/usr/include/commons/collections -o cpu implementation_ansisop.c libs/socketCommons.c libs/stack.c libs/pcb.c libs/serialize.c cpu.c -L/usr/lib -lcommons -lparser-ansisop -lm
- * La UMC compilala asi:
-gcc -I/usr/include/commons -I/usr/include/commons/collections -o umc umc.c -L/usr/lib -pthread -lcommons
- * Y la consola asi:
-gcc -o test_pablo_console socketCommons/socketCommons.c test_pablo_console.c
- o la posta:
-gcc -I/usr/include/commons -o ansisop -I/usr/include/socket-commons console.c ./socketCommons/socketCommons.c -L/usr/lib -lcommons
-*/
-#include <parser/metadata_program.h>
+#include <libs/pcb.h>
 #include "kernel.h"
-#include "libs/pcb_tests.h"
 
 /* BEGIN OF GLOBAL STUFF I NEED EVERYWHERE */
 int consoleServer, cpuServer, clientUMC, configFileFD;
@@ -25,10 +13,11 @@ t_list  *PCB_READY, *PCB_BLOCKED, *PCB_EXIT;
 t_list  *consolas_conectadas, *cpus_conectadas, *cpus_executing;
 t_list **solicitudes_io;
 fd_set 	 allSockets;
-void * losDatosGlobales = NULL;
+void* losDatosGlobales = NULL;
+int losDatosGlobales_index;
 /* END OF GLOBAL STUFF I NEED EVERYWHERE */
 
-int main (int argc, char **argv){
+int main (int argc, char* *argv){
 	kernel_log = log_create("kernel.log", "Elestac-KERNEL", true, LOG_LEVEL_TRACE);
 	PCB_READY = list_create();
 	PCB_BLOCKED = list_create();
@@ -67,27 +56,22 @@ int start_kernel(int argc, char* configFile){
 	printf("\n\t\e[31;1m===========================================\e[0m\n");
 	printf("\t.:: Vamo a calmarno que viene el Kernel ::.");
 	printf("\n\t\e[31;1m===========================================\e[0m\n\n");
-	if (argc==2){
+	if(argc==2){
 		if (loadConfig(configFile)<0) {
 			log_error(kernel_log, "Config file can not be loaded. Please, try again.");
 			return -1;
 		}else{
-			configFileName = calloc(1,sizeof(configFile));
+			configFileName = calloc(1, strlen(configFile));
 			strcpy(configFileName, configFile);
 			char cwd[1024];
 			getcwd(cwd, sizeof(cwd));
-			configFilePath = calloc(1,sizeof(cwd));
+			configFilePath = calloc(1, sizeof(cwd));
 			strcpy(configFilePath, cwd);
 		}
 		configFileFD = inotify_init();
 		configFileWatcher = inotify_add_watch(configFileFD, configFilePath, IN_MODIFY | IN_CREATE);
-	} else {
-		int i = 0;
-		for (i = 0; i < 10001; i++){
-			usleep(400);
-			printf("\r\e[?25l Loading... %d", i/100);
-		}
-		printf("\r Usage: ./kernel setup.data \n");
+	}else{
+		printf("\r Usage: ./kernel setup.conf \n");
 		log_error(kernel_log, "Config file was not provided.");
 		return -1;
 	}
@@ -96,46 +80,51 @@ int start_kernel(int argc, char* configFile){
 	return 0;
 }
 
-void* sem_wait_thread(void *cpuData){
-	void* semIndexChar = calloc(1, 4);
-    void* miIDChar = calloc(1, 4);
-    strncpy(miIDChar, cpuData, 4);
-    strncpy(semIndexChar, cpuData+4, 4);
-	int semIndex = atoi(semIndexChar);
-    int miID = atoi(miIDChar);
-    free(semIndexChar);
-    free(miIDChar);
+void* sem_wait_thread(void* cpuData){
+	int semIndex, miID;
+	int cpuData_index = 0;
+	deserialize_data(&semIndex, sizeof(int), cpuData, &cpuData_index);
+	deserialize_data(&miID, sizeof(int), cpuData, &cpuData_index);
+	free(cpuData);
 	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started.", setup.SEM_ID[semIndex], miID);
 	sem_wait(&semaforo_ansisop[semIndex]);
 	send(miID, "0", 1, 0);
 	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished.", setup.SEM_ID[semIndex], miID);
-    free(cpuData);
     pthread_exit(0);
 }
 
-int wait_coordination(int cpuID) {
-	char *tmp_buff = calloc(1, 4);
-	recv(cpuID, tmp_buff, 1, 0);
+int wait_coordination(int cpuID){
 	bool semWait=false;
+	int buffindex = 0;
+	char* tmp_buff = calloc(1, sizeof(int));
+
+	recv(cpuID, tmp_buff, 1, 0);
 	if (strncmp(tmp_buff, "0", 1) == 0) semWait=true;
-	recv(cpuID, tmp_buff, 4, 0);
-	size_t SEM_ID_Size = (size_t) atoi(tmp_buff);
-	char *SEM_ID = calloc(1, SEM_ID_Size);
+
+	recv(cpuID, tmp_buff, sizeof(int), 0);
+	size_t SEM_ID_Size;
+	deserialize_data(&SEM_ID_Size, sizeof(int), tmp_buff, &buffindex);
+
+	char* SEM_ID = calloc(1, SEM_ID_Size);
 	recv(cpuID, SEM_ID, SEM_ID_Size, 0);
 	int semIndex = getSEMindex(SEM_ID);
-	if(semWait) {
-		losDatosGlobales = calloc(1,8);
-		sprintf(losDatosGlobales, "%04d%04d", cpuID, semIndex);
+
+	if(semWait){
+		losDatosGlobales = calloc(1, sizeof(int)*2);
+		losDatosGlobales_index = 0;
+		serialize_data(&cpuID, (size_t) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
+		serialize_data(&semIndex, (size_t) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
 		pthread_t sem_thread;
 		pthread_create(&sem_thread, NULL, sem_wait_thread, losDatosGlobales);
-	} else {
+	}else{
 		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d.", setup.SEM_ID[semIndex], cpuID);
 		sem_post(&semaforo_ansisop[semIndex]);
 	}
 	free(tmp_buff);
+	free(SEM_ID);
 	return 1;
 }
-void* do_work(void *p) {
+void* do_work(void *p){
 	int tmp = *((int *) p);
 	int miID = tmp;
 	bool esTrue = true;
@@ -143,30 +132,32 @@ void* do_work(void *p) {
 	while(esTrue){
 		sem_wait(&semaforo_io[miID]);
 		t_io *io_op;
-		if(list_size(solicitudes_io[miID]) > 0){
+		if(list_size(solicitudes_io[miID]) > 0) {
 			pthread_mutex_lock(&mut_io_list);
 			io_op = list_remove(solicitudes_io[miID], 0);
 			pthread_mutex_unlock(&mut_io_list);
-			if (io_op->pid > 0){
-				log_info(kernel_log,"%s will perform %d operations.", setup.IO_ID[miID], atoi(io_op->io_units));
+			if (io_op->pid > 0) {
+				log_info(kernel_log, "%s will perform %d operations.", setup.IO_ID[miID], atoi(io_op->io_units));
 				int processing_io = atoi(setup.IO_SLEEP[miID]) * atoi(io_op->io_units) * 1000;
 				usleep((useconds_t) processing_io);
-				bool match_PCB(void *pcb){
+				bool match_PCB(void *pcb) {
 					t_pcb *unPCB = pcb;
-					bool matchea = (io_op->pid==unPCB->pid);
+					bool matchea = (io_op->pid == unPCB->pid);
 					return matchea;
 				}
 				t_pcb *elPCB;
 				elPCB = list_remove_by_condition(PCB_BLOCKED, match_PCB);
-				if (elPCB->pid > 0){
+				if (elPCB->pid > 0) {
 					elPCB->status = READY;
 					list_add(PCB_READY, elPCB);
 				} // Else -> The PCB was killed by end_program while performing I/O
-				log_info(kernel_log, "do_work: Finished an io operation on device %s requested by PID %d.", setup.IO_ID[miID], io_op->pid);
+				log_info(kernel_log, "do_work: Finished an io operation on device %s requested by PID %d.",
+						 setup.IO_ID[miID], io_op->pid);
 				free(io_op);
 			}
 		}
 	}
+	free(p);
 }
 
 int loadConfig(char* configFile){
@@ -187,12 +178,12 @@ int loadConfig(char* configFile){
 		setup.IO_COUNT = counter;
 		solicitudes_io = realloc(solicitudes_io, counter * sizeof(t_list));
 		semaforo_io = realloc(semaforo_io, counter * sizeof(sem_t));
-		io_device = calloc(1,sizeof(pthread_t) * counter);
-		int *thread_id = calloc(1,sizeof(int) * counter);
+		io_device = calloc(1, sizeof(pthread_t) * counter);
+		int *thread_id = calloc(1, sizeof(int) * counter);
 		for (i = 0; i < counter; i++) {
 			solicitudes_io[i] = list_create();
 			sem_init(&semaforo_io[i], 0, 0);
-			thread_id[i]=i;
+			thread_id[i] = i;
 			pthread_create(&io_device[i],NULL,do_work, &thread_id[i]);
 		}
 		setup.SEM_ID=config_get_array_value(config,"SEM_ID");
@@ -219,46 +210,58 @@ int loadConfig(char* configFile){
 
 int connect2UMC(){
 	int clientUMC;
-	char* buffer = calloc(1,5);
-	char* buffer_4=calloc(1,4);
+	char umcProtocol = '0';
+	void* umcHandshake = calloc(1, sizeof(int) + sizeof(char));
+	int umcHandshake_index = 0;
+	void* umcHandshakeResponse = calloc(1, sizeof(int));
+	int umcHandshakeResponse_index = 0;
 	log_info(kernel_log, "Connecting to UMC on %s:%d.", setup.IP_UMC, setup.PUERTO_UMC);
 	if (getClientSocket(&clientUMC, setup.IP_UMC, setup.PUERTO_UMC)) return (-1);
-	sprintf(buffer_4, "%04d", setup.STACK_SIZE);
-	sprintf(buffer, "%d%04d", 0, setup.STACK_SIZE);
-	send(clientUMC, buffer, 5 , 0);
-	log_info(kernel_log, "Stack size (sent to UMC): %s.",buffer_4);
-	if (recv(clientUMC, buffer_4, 4, 0) < 0) return (-1);
-	setup.PAGE_SIZE=atoi(buffer_4);
+	serialize_data(&umcProtocol, (size_t) sizeof(char), &umcHandshake, &umcHandshake_index);
+	serialize_data(&setup.STACK_SIZE, (size_t) sizeof(int), &umcHandshake, &umcHandshake_index);
+	send(clientUMC, umcHandshake, (size_t) umcHandshake_index, 0);
+	log_info(kernel_log, "Stack size (sent to UMC): %d.", setup.STACK_SIZE);
+	if (recv(clientUMC, umcHandshakeResponse, sizeof(int), 0) < 0) return (-1);
+	deserialize_data(&setup.PAGE_SIZE, sizeof(int), umcHandshakeResponse, &umcHandshakeResponse_index);
 	log_info(kernel_log, "Page size: (received from UMC): %d.",setup.PAGE_SIZE);
-	free(buffer);
-	free(buffer_4);
+	free(umcHandshake);
+	free(umcHandshakeResponse);
 	return clientUMC;
 }
 
 void *requestPages2UMC(void* request_buffer){
-	int deserialize_index = 0;
-	char PID[4];
+	int PID;
 	int ansisopLen=0;
-	char * code = NULL;
+	char* code = NULL;
 	int clientUMC = 0;
-	deserialize_data(PID, sizeof(int), request_buffer, &deserialize_index);
+	int deserialize_index = 0;
+	deserialize_data(&PID, sizeof(int), request_buffer, &deserialize_index);
 	deserialize_data(&ansisopLen, sizeof(int), request_buffer, &deserialize_index);
 	code = calloc(1,(size_t) ansisopLen);
-	deserialize_data(code, ansisopLen, request_buffer, &deserialize_index);
+	deserialize_data(code, (size_t) ansisopLen, request_buffer, &deserialize_index);
 	deserialize_data(&clientUMC, sizeof(int), request_buffer, &deserialize_index);
-	char* buffer;
-	char *buffer_4 = calloc(1,5);
-	int bufferLen=1+4+4+4+ansisopLen; //1+PID+req_pages+size+code
-	sprintf(buffer_4, "%04d", (ansisopLen/setup.PAGE_SIZE)+1);
-	log_info(kernel_log, "Requesting %s pages to UMC.", buffer_4);
-	asprintf(&buffer, "%d%04d%s%04d%s", 1,*(int*)PID,buffer_4, ansisopLen,code);
-	send(clientUMC, buffer, (size_t) bufferLen, 0);
-	recv(clientUMC, buffer_4, 4, 0);
+
+	void* req2UMC = calloc(1, (size_t) ansisopLen+13);//1+PID+nbrOfPages+ansisopLen+code
+	void* req2UMC_response = calloc(1, sizeof(int));
+	char umcProtocol = '1';
+	int nbrOfPages = ansisopLen/setup.PAGE_SIZE + 1;// +1 since ceil() does not work
+	int req2UMC_index = 0;
+	serialize_data(&umcProtocol, sizeof(char), req2UMC, &req2UMC_index);
+	serialize_data(&PID, sizeof(int), req2UMC, &req2UMC_index);
+	serialize_data(&nbrOfPages, sizeof(int), req2UMC, &req2UMC_index);
+	serialize_data(&ansisopLen, sizeof(int), req2UMC, &req2UMC_index);
+	serialize_data(&code, (size_t) ansisopLen, req2UMC, &req2UMC_index);
+	log_info(kernel_log, "Requesting %d pages to UMC.", nbrOfPages);
+
+	send(clientUMC, req2UMC, (size_t) req2UMC_index, 0);
+	recv(clientUMC, req2UMC_response, sizeof(int), 0);
+	int code_pages;
+	int code_pages_index = 0;
+	deserialize_data(&code_pages, sizeof(int), &req2UMC_response, &code_pages_index);
 	log_info(kernel_log, "UMC replied.");
-	int code_pages = atoi(buffer_4);
-	free(buffer);
-    free(buffer_4);
-	createNewPCB(*(int*) (PID), code_pages, code);
+	free(req2UMC);
+    free(req2UMC_response);
+	createNewPCB(PID, code_pages, code);
 }
 void tratarSeniales(int senial){
 	printf("\n\t=============================================\n");
@@ -289,12 +292,13 @@ t_pcb * recvPCB(int cpuID){
 	char* tmp_buff = calloc(1, sizeof(int));
 	int pcb_size;
 	recv(cpuID, tmp_buff, (size_t) sizeof(int), 0);
-	pcb_size = *(int*) tmp_buff;
+	int pcb_size_index = 0;
+	deserialize_data(&pcb_size, sizeof(int), &tmp_buff, &pcb_size_index);
 	void *pcb_serializado = calloc(1, (size_t) pcb_size);
 	recv(cpuID, pcb_serializado, (size_t) pcb_size, 0);
-	int pcb_serializado_cursor = 0;
+	int pcb_serializado_index = 0;
 	t_pcb* incomingPCB = calloc(1, sizeof(t_pcb));
-	deserialize_pcb(&incomingPCB, pcb_serializado, &pcb_serializado_cursor);
+	deserialize_pcb(&incomingPCB, pcb_serializado, &pcb_serializado_index);
 	//testSerializedPCB(incomingPCB, pcb_serializado);
 	free(tmp_buff);
 	free(pcb_serializado);
@@ -315,20 +319,22 @@ void restoreCPU(t_Client *laCPU){
 
 void check_CPU_FD_ISSET(void *cpu){
 	char* cpu_protocol = calloc(1, 1);
-	char* tmp_buff = calloc(1,4);
+	char* tmp_buff = calloc(1, sizeof(int));
 	int setValue = 0;
+	int nameSize;
+	int nameSize_index = 0;
 	t_Client* laCPU = (t_Client*) cpu;
 	if (laCPU != NULL && FD_ISSET(laCPU->clientID, &allSockets)) {
 		log_debug(kernel_log,"CPU %d has something to say.", laCPU->clientID);
 		if (recv(laCPU->clientID, cpu_protocol, 1, MSG_DONTWAIT) > 0){
-			switch (atoi(cpu_protocol)) {
+			switch (atoi(cpu_protocol)){
 				case 1:// Quantum end
 				case 2:// Program END
 					log_debug(kernel_log, "Receving a PCB");
 					t_pcb* incomingPCB = recvPCB(laCPU->clientID);
 					if (laCPU->status == EXIT || incomingPCB->status==EXIT || incomingPCB->status == BROKEN){
 						list_add(PCB_EXIT, incomingPCB);
-					} else {
+					}else{
 						list_add(PCB_READY, incomingPCB);
 					}
 					restoreCPU(laCPU);
@@ -337,11 +343,12 @@ void check_CPU_FD_ISSET(void *cpu){
 					log_debug(kernel_log, "Receving an Input/Output request + a PCB");
 					t_io *io_op = calloc(1,sizeof(t_io));
 					io_op->pid = laCPU->pid;
-					recv(laCPU->clientID, tmp_buff, 4, 0); // size of the io_name
-					io_op->io_name = calloc(1, (size_t) atoi(tmp_buff));
-					io_op->io_units = calloc(1,4);
-					recv(laCPU->clientID, io_op->io_name, (size_t) atoi(tmp_buff), 0);
-					recv(laCPU->clientID, io_op->io_units, 4, 0);
+					recv(laCPU->clientID, tmp_buff, sizeof(int), 0); // size of the io_name
+					deserialize_data(&nameSize, sizeof(int), &tmp_buff, &nameSize_index);
+					io_op->io_name = calloc(1, (size_t) nameSize);
+					io_op->io_units = calloc(1, sizeof(int));
+					recv(laCPU->clientID, io_op->io_name, (size_t) nameSize, 0);
+					recv(laCPU->clientID, io_op->io_units, sizeof(int), 0);
 					io_op->io_index = getIOindex(io_op->io_name);
 					t_pcb *blockedPCB = recvPCB(laCPU->clientID);
 					if (io_op->io_index < 0 || laCPU->status == EXIT) {
@@ -357,65 +364,75 @@ void check_CPU_FD_ISSET(void *cpu){
 					break;
 				case 4:// semaforo
 					log_debug(kernel_log, "Receving a semaphore operation from CPU %d", laCPU->clientID);
-					if (wait_coordination(laCPU->clientID) == 1){
+					if (wait_coordination(laCPU->clientID) == 1)
 						log_debug(kernel_log, "Semaphore operation successfully handled.");
-					}
 					break;
 				case 5:// var compartida
 					log_debug(kernel_log, "Receving a shared var operation from CPU %d", laCPU->clientID);
 					recv(laCPU->clientID, tmp_buff, 1, 0);
-					if (strncmp(tmp_buff, "1",1) == 0) setValue = 1;
-					recv(laCPU->clientID, tmp_buff, 4, 0);
-					size_t varNameSize = (size_t) atoi(tmp_buff);
-					char *theShared = calloc(1, varNameSize);
-					recv(laCPU->clientID, theShared, varNameSize, 0);
+					if (strncmp(tmp_buff, "1", 1) == 0) setValue = 1;
+					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
+					deserialize_data(&nameSize, sizeof(int), &tmp_buff, &nameSize_index);
+					char *theShared = calloc(1, (size_t) nameSize);
+					recv(laCPU->clientID, theShared, (size_t) nameSize, 0);
 					int sharedIndex = getSharedIndex(theShared);
+					nameSize_index = 0; // for either serialization or deserialization
 					if (setValue == 1) {
-						recv(laCPU->clientID, tmp_buff, 4, 0);//recv & set the value
-						int theVal = atoi(tmp_buff);
+						recv(laCPU->clientID, tmp_buff, sizeof(int), 0);//recv & set the value
+						int theVal;
+						deserialize_data(&theVal, sizeof(int), &tmp_buff, &nameSize_index);
 						setup.SHARED_VALUES[sharedIndex] = theVal;
 					} else {
-						char *sharedValue = calloc(1, 4);
-						sprintf(sharedValue, "%04d", setup.SHARED_VALUES[sharedIndex]);
-						send(laCPU->clientID, sharedValue, 4, 0); // send the value to the CPU
+						void* sharedValue = calloc(1, sizeof(int));
+						serialize_data(&setup.SHARED_VALUES[sharedIndex], (size_t) sizeof(int), &sharedValue, &nameSize_index);
+						send(laCPU->clientID, sharedValue, sizeof(int), 0); // send the value to the CPU
 						free(sharedValue);
 					}
 					free(theShared);
 					break;
 				case 6:// imprimirValor
 					log_debug(kernel_log, "Receving a value to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
-					recv(laCPU->clientID, tmp_buff, 4, 0);
-                    void * text2Console = calloc(1, sizeof(int) + 1);
-                    sprintf(text2Console, "1%04d", atoi(tmp_buff));
-					log_debug(kernel_log, "Console %d will print the value %d.", laCPU->pid, atoi(tmp_buff));
-					send(laCPU->pid, text2Console, 5, 0); // send the value to the console
+					int value2console;
+					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
+					deserialize_data(&value2console, sizeof(int), &tmp_buff, &nameSize_index);
+                    void* text2Console = calloc(1, sizeof(int) + sizeof(char));
+					int text2Console_index = 0;
+					char consoleProtocol = '1';
+					serialize_data(&consoleProtocol, (size_t) sizeof(char), &text2Console, &text2Console_index);
+					serialize_data(&value2console, (size_t) sizeof(int), &text2Console, &text2Console_index);
+					log_debug(kernel_log, "Console %d will print the value %d.", laCPU->pid, value2console);
+					send(laCPU->pid, text2Console, (size_t) text2Console_index, 0); // send the value to the console
                     free(text2Console);
 					break;
 				case 7:// imprimirTexto
 					log_debug(kernel_log, "Receving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
-					recv(laCPU->clientID, tmp_buff, 4, 0);
-					size_t txtSize = (size_t) atoi(tmp_buff);
+					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
+					size_t txtSize;
+					deserialize_data(&txtSize, sizeof(int), &tmp_buff, &nameSize_index);
 					char *theTXT = calloc(1, txtSize);
 					recv(laCPU->clientID, theTXT, txtSize, 0);
 					log_debug(kernel_log, "Console %d will print the text %s.", laCPU->pid, theTXT);
-					char *txt2console = calloc(1, 1+4+txtSize);
-					sprintf(txt2console, "%d%04d%s", 2, (int) txtSize, theTXT);
-					send(laCPU->pid, txt2console, (5+txtSize), 0); // send the text to the console
+					void* txt2console = calloc(1, sizeof(char)+sizeof(int)+txtSize);
+					char consoleProtocol2 = '2';
+					int txt2console_index = 0;
+					serialize_data(&consoleProtocol2, (size_t) sizeof(char), &txt2console, &txt2console_index);
+					serialize_data(&txtSize, (size_t) sizeof(int), &txt2console, &txt2console_index);
+					serialize_data(&theTXT, txtSize, &txt2console, &txt2console_index);
+					send(laCPU->pid, txt2console, (size_t) txt2console_index, 0); // send the text to the console
 					free(theTXT);
 					free(txt2console);
 					break;
 				default:
 					log_error(kernel_log,"Caso no contemplado. CPU dijo: %s",cpu_protocol);
 			}
-		} else {
+		}else{
 			log_info(kernel_log,"CPU %d has closed the connection.", laCPU->clientID);
 			close(laCPU->clientID);
 			bool getCPUIndex(void *nbr){
 				t_Client *unCliente = nbr;
 				bool matchea = (laCPU->clientID == unCliente->clientID);
-				if (matchea && laCPU->pid > 0){
-					end_program(laCPU->pid, true, false);
-				}
+				if (matchea && laCPU->pid > 0)
+					end_program(laCPU->pid, true, false, laCPU->status);
 				return matchea;
 			}
 			if (list_size(cpus_conectadas) > 0)
@@ -435,15 +452,15 @@ void destroy_PCB(void *pcb){
 }
 
 void check_CONSOLE_FD_ISSET(void *console){
-	char *buffer_4=calloc(1,4);
+	void* ConBuff = calloc(1, 1);
 	t_Client *cliente = console;
 	if (FD_ISSET(cliente->clientID, &allSockets)) {
-		if (recv(cliente->clientID, buffer_4, 1, 0) == 0){
+		if (recv(cliente->clientID, ConBuff, 1, 0) == 0){
 			log_info(kernel_log,"A console has closed the connection, the associated PID %04d will be terminated.", cliente->clientID);
-			end_program(cliente->clientID, false, true);
+			end_program(cliente->clientID, false, true, BROKEN);
 		}
 	}
-	free(buffer_4);
+	free(ConBuff);
 }
 
 int control_clients(){
@@ -456,7 +473,7 @@ int control_clients(){
 	list_iterate(consolas_conectadas,add2FD_SET);
 	list_iterate(cpus_conectadas,add2FD_SET);
 	list_iterate(cpus_executing,add2FD_SET);
-	int retval=select(maxSocket+1, &allSockets, NULL, NULL, &timeout); // (retval < 0) <=> signal
+	int retval = select(maxSocket+1, &allSockets, NULL, NULL, &timeout); // (retval < 0) <=> signal
 	if (retval>0) {
 		if (FD_ISSET(configFileFD, &allSockets)) {
 			char configFileBuff[EVENT_BUF_LEN];
@@ -497,22 +514,22 @@ int control_clients(){
 
 int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista){
 	int aceptado=0;
-	char buffer_4[4];
+	char newBuff[1];
 	if (FD_ISSET(*server, &*sockets)){
 		if ((aceptado=acceptConnection(*server)) < 1){
 			log_error(kernel_log,"Error while trying to Accept() a new %s.",what);
 		} else {
 			maxSocket=aceptado;
-			if (recv(aceptado, buffer_4, 1, 0) > 0){
-				if (strncmp(buffer_4, "0",1) == 0){
-					t_Client *cliente=calloc(1,sizeof(t_Client));
-					cliente->clientID=aceptado;
-					cliente->pid=0;
+			if (recv(aceptado, newBuff, 1, 0) > 0){
+				if (strncmp(newBuff, "0", 1) == 0){
+					t_Client *cliente = calloc(1, sizeof(t_Client));
+					cliente->clientID = aceptado;
+					cliente->pid = 0;
 					cliente->status = 0;
 					list_add(lista, cliente);
-					log_info(kernel_log, "New %s arriving (%d).", what, list_size(lista));
+					log_info(kernel_log, "New %s arriving (Total %s connections: %d).", what, what, list_size(lista));
 				}
-			} else {
+			}else{
 				log_error(kernel_log,"Error while trying to read from a newly accepted %s.",what);
 				close(aceptado);
 				return -1;
@@ -523,14 +540,15 @@ int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista){
 }
 
 void accept_new_PCB(int newConsole){
-	char buffer_4[4];
+	void* ansisopLenBuff = calloc(1, sizeof(int));
+	int ansisopLenBuff_index = 0;
+	int ansisopLen;
 	log_info(kernel_log, "NEW (0) program with PID=%04d arriving.", newConsole);
-	recv(newConsole, buffer_4, 4, 0);
-	int ansisopLen = atoi(buffer_4);
+	recv(newConsole, ansisopLenBuff, sizeof(int), 0);
+	deserialize_data(&ansisopLen, sizeof(int), ansisopLenBuff, &ansisopLenBuff_index);
 	char *code = calloc(1,(size_t) ansisopLen);
 	recv(newConsole, code, (size_t) ansisopLen, 0);
-	/* Recv ansisop from console */
-	void * request_buffer = NULL;
+	void* request_buffer = NULL;
 	int request_buffer_index = 0;
 	serialize_data(&newConsole, sizeof(int), &request_buffer, &request_buffer_index);
 	serialize_data(&ansisopLen, sizeof(int), &request_buffer, &request_buffer_index);
@@ -538,23 +556,25 @@ void accept_new_PCB(int newConsole){
 	serialize_data(&clientUMC, sizeof(int), &request_buffer, &request_buffer_index);
 	pthread_t newPCB_thread;
 	pthread_create(&newPCB_thread, NULL, requestPages2UMC, request_buffer);
-	free(code); // let it free
+	free(code);
+	free(ansisopLenBuff);
 }
 
 void createNewPCB(int newConsole, int code_pages, char* code){
-	char PID[4];
-	sprintf(PID,"%04d",newConsole);
+	void* PIDserializado = calloc(1, sizeof(int));
+	int PIDserializado_index = 0;
 	if (code_pages>0){
+		serialize_data(&newConsole, sizeof(int), &PIDserializado, &PIDserializado_index);
 		log_info(kernel_log, "Pages of code + stack = %d.", code_pages);
-		send(newConsole,PID,4,0);
+		send(newConsole, PIDserializado, sizeof(int), 0);
 		t_metadata_program* metadata = metadata_desde_literal(code);
-		t_pcb *newPCB = calloc(1,sizeof(t_pcb));
-		newPCB->pid=newConsole;
-		newPCB->program_counter=metadata->instruccion_inicio;
-		newPCB->stack_pointer=code_pages * setup.PAGE_SIZE;
-		newPCB->stack_index=queue_create();
-		newPCB->status=READY;
-		newPCB->instrucciones_size= metadata->instrucciones_size;
+		t_pcb *newPCB = calloc(1, sizeof(t_pcb));
+		newPCB->pid = newConsole;
+		newPCB->program_counter = metadata->instruccion_inicio;
+		newPCB->stack_pointer = code_pages * setup.PAGE_SIZE;
+		newPCB->stack_index = queue_create();
+		newPCB->status = READY;
+		newPCB->instrucciones_size = metadata->instrucciones_size;
 		newPCB->instrucciones_serializado = metadata->instrucciones_serializado;
 		newPCB->etiquetas_size = metadata->etiquetas_size;
         newPCB->etiquetas = calloc(1, metadata->etiquetas_size);
@@ -563,31 +583,33 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 		list_add(PCB_READY, newPCB);
 		log_info(kernel_log, "The program with PID=%04d is now READY (%d).", newPCB->pid, newPCB->status);
 	} else {
-		send(newConsole,"0000",4,0);
+		int cero = 0;
+		serialize_data(&cero, sizeof(int), &PIDserializado, &PIDserializado_index);
+		send(newConsole, PIDserializado, sizeof(int), 0);
 		log_error(kernel_log, "The program with PID=%04d could not be started. System run out of memory.", newConsole);
 		close(newConsole);
 	}
+	free(PIDserializado);
 }
 
 void round_robin(){
-	int       tmp_buffer_size = 1+sizeof(int)*3; /* 1+QUANTUM+QUANTUM_SLEEP+PCB_SIZE */
-	int       pcb_buffer_size = 0;
-	void     *pcb_buffer = NULL;
-	void     *tmp_buffer = NULL;
+	char uno = '1';
+	int tmp_buffer_size = 0;
+	int pcb_buffer_size = 0;
+	void* pcb_buffer = NULL;
+	void* tmp_buffer = NULL;
 	t_Client *laCPU = list_remove(cpus_conectadas,0);
 	t_pcb    *tuPCB = list_remove(PCB_READY,0);
 	tuPCB->status = EXECUTING;
 	laCPU->status = EXECUTING;
 	laCPU->pid = tuPCB->pid;
 	serialize_pcb(tuPCB, &pcb_buffer, &pcb_buffer_size);
-	//tmp_buffer = calloc(1,(size_t) tmp_buffer_size+pcb_buffer_size);
-	tmp_buffer = calloc(1, (size_t) tmp_buffer_size);
-	//TODO revisar esto
-	sprintf(tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
-	//asprintf(&tmp_buffer, "%d%04d%04d%04d", 1, setup.QUANTUM, setup.QUANTUM_SLEEP, pcb_buffer_size);
-	//tmp_buffer = realloc(tmp_buffer , (size_t) tmp_buffer_size + pcb_buffer_size);
+	serialize_data(&uno, sizeof(char), &tmp_buffer, &tmp_buffer_size);
+	serialize_data(&setup.QUANTUM, sizeof(int), &tmp_buffer, &tmp_buffer_size);
+	serialize_data(&setup.QUANTUM_SLEEP, sizeof(int), &tmp_buffer, &tmp_buffer_size);
+	serialize_data(&pcb_buffer_size, sizeof(int), &tmp_buffer, &tmp_buffer_size);
 	serialize_data(pcb_buffer, (size_t ) pcb_buffer_size, &tmp_buffer, &tmp_buffer_size);
-	log_info(kernel_log,"Submitting to CPU %d the PID %d.", laCPU->clientID, tuPCB->pid);
+	log_info(kernel_log,"Submitting to CPU %d the PID=%04d.", laCPU->clientID, tuPCB->pid);
 	send(laCPU->clientID, tmp_buffer, (size_t) tmp_buffer_size, 0);
 	list_add(cpus_executing,laCPU);
 	free(tmp_buffer);
@@ -596,7 +618,17 @@ void round_robin(){
 	free(tuPCB);
 }
 
-void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen) { /* Search everywhere for the PID and kill it ! */
+void RoundRobinReport(){
+	log_info(kernel_log, "Round Robin report:");
+	int nBLOCKED = list_size(PCB_BLOCKED);
+	int nEXIT = list_size(PCB_EXIT);
+	int nEXEC = list_size(cpus_executing);
+	int nREADY = list_size(PCB_READY);
+	int nNEW = list_size(consolas_conectadas) - nREADY - nEXEC - nBLOCKED - nEXIT;
+	log_info(kernel_log, "NEW=%d, READY=%d, EXECUTING=%d, BLOCKED=%d, EXIT=%d.", nNEW, nREADY, nEXEC, nBLOCKED, nEXIT);
+}
+
+void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) { /* Search everywhere for the PID and kill it ! */
 /*
  * CASOS
  *
@@ -617,7 +649,9 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen) { /* Search 
  * 4) It's new... (probably waiting for UMC to reply with requested pages)
  *      a) Puedo ignorar este caso si no cierro el socket con consola... en la próxima vuelta el PCB va a estar en PCB_READY.
  */
-	char* buffer=calloc(1,5);
+	char dos = '2';
+	void* umcKillProg = NULL;
+	int umcKillProg_index = 0;
 	bool pcb_found = false;
 	bool match_PCB(void *pcb){
 		t_pcb *unPCB = pcb;
@@ -648,35 +682,42 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen) { /* Search 
 	}
 
 	if (pcb_found == true) {
-		sprintf(buffer, "%d%04d", 2, pid);
-		send(clientUMC, buffer, 5, 0);
-		log_info(kernel_log, "Program %d has been terminated", pid);
+		serialize_data(&dos, sizeof(char), &umcKillProg, &umcKillProg_index);
+		serialize_data(&pid, sizeof(int), &umcKillProg, &umcKillProg_index);
+		send(clientUMC, umcKillProg, (size_t) umcKillProg_index, 0);
+		log_info(kernel_log, "Program %04d has been terminated", pid);
+		free(umcKillProg);
 	}
-	if (consoleStillOpen) send(pid, "0", 1, 0); // send exit code to console
+	if (consoleStillOpen){
+		int finalizar = 0;
+		void* consoleKillProg = NULL;
+		int consoleKillProg_index = 0;
+		if(status == BROKEN) finalizar = 3;
+		serialize_data(&finalizar, sizeof(int), &consoleKillProg, &consoleKillProg_index);
+		send(pid, consoleKillProg, sizeof(int), 0); // send exit code to console
+		free(consoleKillProg);
+	}
 	close(pid); // close console socket
 	bool getConsoleIndex(void *nbr) {
 		t_Client *unCliente = nbr;
 		return (pid == unCliente->clientID);
 	}
 	list_remove_by_condition(consolas_conectadas, getConsoleIndex);
-	free(buffer);
 }
 
 void process_io() {
 	int i;
 	for (i = 0; i < setup.IO_COUNT; i++) {
-		if (list_size(solicitudes_io[i]) > 0) {
+		if (list_size(solicitudes_io[i]) > 0)
 			sem_post(&semaforo_io[i]);
-		}
 	}
 }
 
 int getIOindex(char *io_name) {
 	int i;
 	for (i = 0; i < setup.IO_COUNT; i++) {
-		if (strcmp(setup.IO_ID[i],io_name) == 0) {
+		if (strcmp(setup.IO_ID[i],io_name) == 0)
 			return i;
-		}
 	}
 	return -1;
 }
@@ -684,9 +725,8 @@ int getIOindex(char *io_name) {
 int getSEMindex(char *sem_id) {
 	int i=0;
 	while(setup.SEM_ID){
-		if (strcmp(setup.SEM_ID[i],sem_id) == 0) {
+		if (strcmp(setup.SEM_ID[i], sem_id) == 0)
 			return i;
-		}
 		i++;
 	}
 	return -1;
@@ -695,9 +735,8 @@ int getSEMindex(char *sem_id) {
 int getSharedIndex(char *shared_name) {
 	int i = 0;
 	while (setup.SHARED_VARS[i]){
-		if (strcmp(setup.SHARED_VARS[i],shared_name) == 0) {
+		if (strcmp(setup.SHARED_VARS[i],shared_name) == 0)
 			return i;
-		}
 		i++;
 	}
 	return -1;
@@ -707,19 +746,10 @@ void call_handlers() {
 	while (list_size(PCB_EXIT) > 0) {
 		t_pcb *elPCB;
 		elPCB = list_get(PCB_EXIT, 0);
-		end_program(elPCB->pid, true, false);
+		end_program(elPCB->pid, true, false, elPCB->status);
 	}
 	if (list_size(PCB_BLOCKED) > 0) process_io();
 	while (list_size(cpus_conectadas) > 0 && list_size(PCB_READY) > 0 ) round_robin();
 }
 
-void RoundRobinReport(){
-	log_info(kernel_log, "Round Robin report:");
-	int nBLOCKED = list_size(PCB_BLOCKED);
-	int nEXIT = list_size(PCB_EXIT);
-	int nEXEC = list_size(cpus_executing);
-	int nREADY = list_size(PCB_READY);
-	int nNEW = list_size(consolas_conectadas) - nREADY - nEXEC - nBLOCKED - nEXIT;
-	log_info(kernel_log, "NEW=%d, READY=%d, EXECUTING=%d, BLOCKED=%d, EXIT=%d.", nNEW, nREADY, nEXEC, nBLOCKED, nEXIT);
-}
 // C'est tout

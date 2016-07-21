@@ -9,7 +9,6 @@ set(SOURCE_FILES
     libs/stack.c
     libs/pcb_tests.c
     kernel.c
-    setup.data
     socketCommons.c)
 
 include_directories(.)
