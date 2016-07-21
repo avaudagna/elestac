@@ -14,28 +14,33 @@
 
 #define ANSISOP_VAR_SIZE 4
 
-#define PAGINA_INVALIDA_ID "2"
-#define PAGINA_VALIDA_ID "1"
-#define STACK_OVERFLOW_ID "3"
-#define OPERACION_EXITOSA_ID "1"
+#define PAGINA_INVALIDA_ID '2'
+#define PAGINA_VALIDA_ID '1'
+#define STACK_OVERFLOW_ID '3'
+#define OPERACION_EXITOSA_ID '1'
 
-#define SHARED_VAR_ID "5"
-#define GET_VAR "0"
-#define SET_VAR "1"
+#define SHARED_VAR_ID '5'
+#define GET_VAR '0'
+#define SET_VAR '1'
 
-#define ENTRADA_SALIDA_ID "3"
+#define ENTRADA_SALIDA_ID '3'
 
-#define IMPRIMIR_ID "6"
-#define IMPRIMIR_TEXTO_ID "7"
+#define IMPRIMIR_ID '6'
+#define IMPRIMIR_TEXTO_ID '7'
 
-#define SEMAPHORE_ID "4"
-#define WAIT_ID "0"
-#define SIGNAL_ID "1"
+#define SEMAPHORE_ID '4'
+#define WAIT_ID '0'
+#define SIGNAL_ID '1'
 
 #define STACK_OVERFLOW -2
 
+
 //UMC Interface
+#define HANDSHAKE_CPU 1
+#define CAMBIO_PROCESO_ACTIVO '2'
+#define PEDIDO_BYTES '3'
 #define ALMACENAMIENTO_BYTES 4
+#define FIN_COMUNICACION_CPU 0
 
     //typedef t_var* t_posicion;
 

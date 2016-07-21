@@ -29,8 +29,8 @@
 #include <parser/metadata_program.h>
 #include "libs/pcb_tests.h"
 
-#define KERNEL_HANDSHAKE "0"
-#define UMC_HANDSHAKE "1"
+#define KERNEL_HANDSHAKE '0'
+#define UMC_HANDSHAKE '1'
 
 //cpu state machine states
 #define S0_FIRST_COMS 0
@@ -46,14 +46,14 @@
 #define S3_POSTPROCESS 3
 
 //Cpu-Kernel Messages
-#define QUANTUM_END "1"
-#define PROGRAM_END "2"
+#define QUANTUM_END '1'
+#define PROGRAM_END '2'
 
 //UMC operations
 #define UMC_OK_RESPONSE 1
-#define UMC_HANDSHAKE_RESPONSE_ID 0
-#define CAMBIO_PROCESO_ACTIVO "2"
-#define PEDIDO_BYTES 3
+#define UMC_HANDSHAKE_RESPONSE_ID '0'
+#define CAMBIO_PROCESO_ACTIVO 2
+#define PEDIDO_BYTES '3'
 #define ALMACENAMIENTO_BYTES 4
 #define FIN_COMUNICACION_CPU 0
 

@@ -17,7 +17,6 @@
 #include <pthread.h>
 #include <commons/collections/list.h>
 #include <commons/config.h>
-#include <commons/log.h>
 
 
 #define IDENTIFICADOR_MODULO 1
@@ -165,7 +164,9 @@ pthread_rwlock_t 	*semListaPids = NULL,
 				    *semRetardo	  = NULL,
 					*semClockPtrs = NULL;
 pthread_mutex_t * semSwap = NULL;
-t_log* cpu_umc;
+
+
+
 
 
 /*FUNCIONES DE INICIALIZACION*/
@@ -291,6 +292,8 @@ void agregarPaginaTLB(int pPid, PAGINA *pPagina, int ind_aux);
 void marcarPaginasModificadas();
 
 void modificarTablaPaginasDePid(void *pidpagina);
+
+void setPagModif(void *pagina);
 
 void modificarFifoPaginasDePid(void *clockpid);
 
@@ -492,15 +495,12 @@ void setFifoPagsModif(void *clockpagina) {
 }
 
 void modificarTablaPaginasDePid(void *pidpagina) {
-
-	void setPagModif(void *pagina) {
-		((PAGINA*)pagina)->modificado=1;
-	}
-
 	list_iterate(((PIDPAGINAS*)pidpagina)->headListaDePaginas,setPagModif);
 }
 
-
+void setPagModif(void *pagina) {
+	((PAGINA*)pagina)->modificado=1;
+}
 
 void vaciarTLB() {
 
@@ -599,10 +599,9 @@ void atenderCPU(int *socketBuff){
 	int pid_actual;
 	char estado=HANDSHAKE_CPU;
 
-	printf("\nNuevo CPU conectado : [%d]\n",contConexionesCPU);
-
 	while(estado != EXIT ){
 		switch(estado){
+
 		case IDENTIFICADOR_OPERACION:
 			estado = identificarOperacion(socketBuff);
 			break;
@@ -1028,7 +1027,7 @@ void swapUpdate(void){
 // 1+CANTIDAD_DE_PAGINAS_LIBRES ( 5 bytes )
 	void *buffer = calloc(1,sizeof(char)+sizeof(int));
 
-	if ( recv(socketClienteSwap, buffer, sizeof(char)+sizeof(int), 0) <= 0 ||  *((char*)buffer) != '1' ){
+	if ( recv(socketClienteSwap, buffer, sizeof(char)+sizeof(int), 0) <= 0 ||  *((char*)buffer) != 1 ){
 		free(buffer);
 		perror("recv");
 		printf("\nError comunicacion con SWAP,Finalizando\n");
