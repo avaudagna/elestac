@@ -356,8 +356,8 @@ void init_Parameters(char *configFile){
 
 void init_MemoriaPrincipal(void){
 	int i=0;
-	memoriaPrincipal = malloc(umcGlobalParameters.marcosSize * umcGlobalParameters.marcos);	// inicializo memoria principal
-	vectorMarcos = (MARCO *) malloc (sizeof(MARCO) * umcGlobalParameters.marcos) ;
+	memoriaPrincipal = calloc(1,umcGlobalParameters.marcosSize * umcGlobalParameters.marcos);	// inicializo memoria principal
+	vectorMarcos = (MARCO *) calloc(1,sizeof(MARCO) * umcGlobalParameters.marcos) ;
 
 	for(i=0;i<umcGlobalParameters.marcos;i++){
 		vectorMarcos[i].estado=LIBRE;
@@ -368,13 +368,13 @@ void init_MemoriaPrincipal(void){
 
 void init_Semaforos(void){
 
-	semMemPrin = malloc(sizeof(pthread_rwlock_t));
-    semFifosxPid = malloc(sizeof(pthread_rwlock_t));
-    semListaPids = malloc(sizeof(pthread_rwlock_t));
-    semTLB = malloc(sizeof(pthread_rwlock_t));
-    semRetardo = malloc(sizeof(pthread_rwlock_t));
-    semClockPtrs = malloc(sizeof(pthread_rwlock_t));
-	semSwap = malloc(sizeof(pthread_mutex_t));
+	semMemPrin = calloc(1,sizeof(pthread_rwlock_t));
+    semFifosxPid = calloc(1,sizeof(pthread_rwlock_t));
+    semListaPids = calloc(1,sizeof(pthread_rwlock_t));
+    semTLB = calloc(1,sizeof(pthread_rwlock_t));
+    semRetardo = calloc(1,sizeof(pthread_rwlock_t));
+    semClockPtrs = calloc(1,sizeof(pthread_rwlock_t));
+	semSwap = calloc(1,sizeof(pthread_mutex_t));
 
 
 
@@ -1236,7 +1236,7 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 	// levanto bytes a almacenar
 
 	bytesAlmacenar = calloc(1,(size_t )tamanio);
-	temp = (PAGINA *) malloc(sizeof(PAGINA));
+	temp = (PAGINA *) calloc(1,sizeof(PAGINA));
 	temp->nroPagina = pagina;
 
 	if(recv(*socketBuff,bytesAlmacenar,(size_t )tamanio, 0) <= 0 ) {
@@ -1762,7 +1762,7 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 	CLOCK_PID * pid_clock  = NULL;
 	FIFO_INDICE *nuevoPidFifoIndice = NULL;
 
-	pagina = (CLOCK_PAGINA *) malloc(sizeof(CLOCK_PAGINA));
+	pagina = (CLOCK_PAGINA *) calloc(1,sizeof(CLOCK_PAGINA));
 	pagina->bitDeModificado = 0;
 	pagina->bitDeUso = 1;
 	pagina->nroPagina = pPagina;
@@ -2072,7 +2072,7 @@ void reemplazarPaginaTLB(int pPid, PAGINA *pPagina, int indice) {
 
 	TLB * aux = NULL;
 
-	aux = (TLB *) malloc(sizeof(TLB));
+	aux = (TLB *) calloc(1,sizeof(TLB));
 	aux->pid=pPid;
 	aux->nroPagina=pPagina->nroPagina;
 	aux->nroDeMarco = pPagina->nroDeMarco;
@@ -2131,7 +2131,7 @@ void agregarPaginaTLB(int pPid, PAGINA *pPagina, int ind_aux) {
 
 	TLB * aux = NULL;
 
-	aux = (TLB *) malloc(sizeof(TLB));
+	aux = (TLB *) calloc(1,sizeof(TLB));
 	aux->pid=pPid;
 	aux->nroPagina=pPagina->nroPagina;
 	aux->nroDeMarco = pPagina->nroDeMarco;
