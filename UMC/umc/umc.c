@@ -1108,7 +1108,6 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 	int 	pPagina,
 			offset,
 			tamanio,
-			tamanioContenidoPagina,
 			indice_buff,
 			marcoVictima;
 	t_list 	*headerTablaDePaginas = NULL;
@@ -1175,7 +1174,7 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 
 					if  ( cantPagDisponiblesxPID(pid_actual) > 0){ // SI EL PROCESO TIENE MARGEN PARA ALMACENAR MAS PAGINAS EN MEMORIA
 						printf("\n[ PAGE FAULT ]: el proceso tiene disponible marcos en memoria\n");
-						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, tamanioContenidoPagina);
+						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, umcGlobalParameters.marcosSize);
 						actualizarTlb(pid_actual,aux);
                         resolverEnMP(socketBuff, aux, offset, tamanio);
 					}
