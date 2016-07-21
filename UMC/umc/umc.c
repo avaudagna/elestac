@@ -937,7 +937,7 @@ void enviarPaginaAlSwap(void *trama, size_t sizeTrama){
 	if (send(socketClienteSwap,trama,sizeTrama, 0) == -1 ){
 		perror("send");
 		printf("\n Error al comunicarse con Swap. Finalizando\n");
-		//liberarRecursos();
+		liberarRecursos();
 		exit(1);
 	}
 }
@@ -1029,7 +1029,7 @@ void swapUpdate(void){
 		free(buffer);
 		perror("recv");
 		printf("\nError comunicacion con SWAP,Finalizando\n");
-		//liberarRecursos();
+		liberarRecursos();
 		exit(1);
 	}
 	memcpy(&paginasLibresEnSwap,buffer+sizeof(char), sizeof(int));
@@ -1682,7 +1682,7 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 		free(buffer);
 		perror("send");
 		printf("\nError en la comunicacion con SWAP,Finalizando\n");
-		//liberarRecursos();
+		liberarRecursos();
 		exit(1);
 	}
 	pthread_mutex_unlock(semSwap);
@@ -1695,7 +1695,7 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 		free(buffer);
 		perror("send");
 		printf("\nError en la comunicacion con SWAP,Finalizando\n");
-		//liberarRecursos();
+		liberarRecursos();
 		exit(1);
 	}
 	pthread_mutex_unlock(semSwap);
@@ -1710,7 +1710,7 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 	}
 	else{
 		printf("\nError en la comunicacion con SWAP, Devolvio una pagina INVALIDA,Finalizando\n");
-		//liberarRecursos();
+		liberarRecursos();
 		exit(1);
 	}
 	return NULL;
@@ -2228,7 +2228,7 @@ void finalizarProceso(int *socketBuff){
 		free(buffer);
 		perror("recv");
 		printf("Error en la comunicacion con Kernel [Finalizar Proceso], Finalizando.\n");
-		//liberarRecursos();
+		liberarRecursos();
 		exit(1);
 	}
 	memcpy(&pPid,buffer,sizeof(int));
