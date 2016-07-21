@@ -395,10 +395,10 @@ void check_CPU_FD_ISSET(void *cpu){
 					int value2console;
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
 					deserialize_data(&value2console, sizeof(int), &tmp_buff, &nameSize_index);
-                    void* text2Console = calloc(1, sizeof(int) + sizeof(char));
+                    void* text2Console = NULL;
 					int text2Console_index = 0;
-					char consoleProtocol = '1';
-					serialize_data(&consoleProtocol, (size_t) sizeof(char), &text2Console, &text2Console_index);
+					int consoleProtocol = 1;
+					serialize_data(&consoleProtocol, (size_t) sizeof(int), &text2Console, &text2Console_index);
 					serialize_data(&value2console, (size_t) sizeof(int), &text2Console, &text2Console_index);
 					log_debug(kernel_log, "Console %d will print the value %d.", laCPU->pid, value2console);
 					send(laCPU->pid, text2Console, (size_t) text2Console_index, 0); // send the value to the console
@@ -411,11 +411,11 @@ void check_CPU_FD_ISSET(void *cpu){
 					deserialize_data(&txtSize, sizeof(int), &tmp_buff, &nameSize_index);
 					char *theTXT = calloc(1, txtSize);
 					recv(laCPU->clientID, theTXT, txtSize, 0);
-					log_debug(kernel_log, "Console %d will print the text %s.", laCPU->pid, theTXT);
-					void* txt2console = calloc(1, sizeof(char)+sizeof(int)+txtSize);
-					char consoleProtocol2 = '2';
+					log_debug(kernel_log, "Console %d will print this text: %s.", laCPU->pid, theTXT);
+					void* txt2console = NULL;
+					int consoleProtocol2 = 2;
 					int txt2console_index = 0;
-					serialize_data(&consoleProtocol2, (size_t) sizeof(char), &txt2console, &txt2console_index);
+					serialize_data(&consoleProtocol2, (size_t) sizeof(int), &txt2console, &txt2console_index);
 					serialize_data(&txtSize, (size_t) sizeof(int), &txt2console, &txt2console_index);
 					serialize_data(&theTXT, txtSize, &txt2console, &txt2console_index);
 					send(laCPU->pid, txt2console, (size_t) txt2console_index, 0); // send the text to the console
@@ -693,6 +693,7 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 		void* consoleKillProg = NULL;
 		int consoleKillProg_index = 0;
 		if(status == BROKEN) finalizar = 3;
+		log_info(kernel_log, "Program status was %d. Console will inform this properly to the user.", status);
 		serialize_data(&finalizar, sizeof(int), &consoleKillProg, &consoleKillProg_index);
 		send(pid, consoleKillProg, sizeof(int), 0); // send exit code to console
 		free(consoleKillProg);
