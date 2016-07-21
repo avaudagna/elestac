@@ -733,7 +733,7 @@ char handShakeKernel(int *socketBuff){
 		return ((char)EXIT);
 	}
 	memcpy(&stack_size,buffHsk,sizeof(int));
-	printf("\n[KERNEL]:Stack Size=%d",stack_size);
+	printf("\n[KERNEL]:Stack Size=%d\n",stack_size);
 	free(buffHsk);
 
 	buffHsk = calloc(1,sizeof(int));
@@ -851,7 +851,7 @@ void dividirEnPaginas(int pid_aux, int paginasDeCodigo, void *codigo, int code_s
 	void 	*aux_code = NULL,
 			*trama = NULL;
 	PAGINA  *page_node;
-	char 	caracter=1;
+	char 	caracter='1';
 
 /*Cosas a Realizar por cada pagina :
  * 1. Armo la trama para enviarle a SWAP
