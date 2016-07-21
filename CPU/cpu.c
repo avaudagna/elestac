@@ -1,5 +1,8 @@
 
 #include "cpu.h"
+#include "libs/pcb.h"
+#include "libs/stack.h"
+#include "cpu_structs.h"
 
 //Variables globales
 t_setup * setup; // GLOBAL settings
@@ -309,35 +312,44 @@ int get_execution_line(void ** instruction_line) {
 
 int umc_first_com() {
     //Send handshake
-    if( send(umcSocketClient , UMC_HANDSHAKE , sizeof(char), 0) < 0) {
-        log_error(cpu_log, "Send UMC handshake %s failed", UMC_HANDSHAKE);
+    char * umc_handshake = calloc(1, sizeof(char));
+    *umc_handshake = UMC_HANDSHAKE;
+    if( send(umcSocketClient , umc_handshake , sizeof(char), 0) < 0) {
+        log_error(cpu_log, "Send UMC handshake %s failed", umc_handshake);
         return ERROR;
     }
+    free(umc_handshake);
     //Recv hanshake operation response
-    char operation[2] = "";
+    char *operation = calloc(1, sizeof(char));
     if( recv(umcSocketClient , operation, sizeof(char) , 0) <= 0) {
         log_error(cpu_log, "Recv UMC bad operation");
         return ERROR;
     }
-    if(strcmp(operation, string_itoa(UMC_HANDSHAKE_RESPONSE_ID)) != 0) {
-        log_error(cpu_log, "Recv UMC bad operation: %c", operation);
+    if( *operation == UMC_HANDSHAKE_RESPONSE_ID ) {
+        log_error(cpu_log, "Recv UMC bad operation: %c", *(char*)operation);
         return ERROR;
     }
+    free(operation);
     //Recv Page Size
-    char umc_buffer[4];
+    int *umc_buffer = calloc(1, sizeof(int));
     if( recv(umcSocketClient , umc_buffer, sizeof(int) , 0) <= 0) {
         log_error(cpu_log, "Recv UMC PAGE_SIZE failed");
         return ERROR;
     }
-    setup->PAGE_SIZE = atoi(umc_buffer);
+    setup->PAGE_SIZE = *umc_buffer;
+    free(umc_buffer);
     return SUCCESS;
 }
 
 int change_active_process() {
     //send actual process pid
-    char * buffer = NULL;
-    asprintf(&buffer, "2%04d", actual_pcb->pid);
-    if( send(umcSocketClient , buffer, sizeof(char) + sizeof(int), 0) < 0) {
+    void * buffer = NULL;
+//    asprintf(&buffer, "%d%04d", CAMBIO_PROCESO_ACTIVO, actual_pcb->pid);
+    int buffer_index = 0;
+    char operacion = CAMBIO_PROCESO_ACTIVO;
+    serialize_data(&operacion, sizeof(char), buffer, &buffer_index);
+    serialize_data(&actual_pcb->pid, sizeof(int), buffer, &buffer_index);
+    if( send(umcSocketClient , buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "Send pid %d to UMC failed", actual_pcb->pid);
         return ERROR;
     }
@@ -371,9 +383,9 @@ int get_pcb() {
 }
 
 int kernel_first_com() {
-    char kernel_handshake[2] = KERNEL_HANDSHAKE;
-
-    if( send(kernelSocketClient, kernel_handshake, 1, 0) < 0) {
+    char *kernel_handshake = calloc(1, sizeof(char));
+    *kernel_handshake = KERNEL_HANDSHAKE;
+    if( send(kernelSocketClient, kernel_handshake, sizeof(char), 0) < 0) {
         log_error(cpu_log, "Error sending handshake to KERNEL");
         return ERROR;
     }
@@ -386,15 +398,21 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
 
     void * recv_bytes_buffer = NULL;
     int buffer_index = 0;
-    char * aux_buffer = calloc(1, sizeof(char) + sizeof(int) *3);
     while(list_size(instruction_addresses_list) > 0) {
 
         logical_addr * element = list_get(instruction_addresses_list, 0);
 
-        sprintf(aux_buffer, "%d%04d%04d%04d", PEDIDO_BYTES, element->page_number, element->offset, element->tamanio);
+//        sprintf(aux_buffer, "%d%04d%04d%04d", PEDIDO_BYTES, element->page_number, element->offset, element->tamanio);
+        void * aux_buffer = NULL;
+        int aux_buffer_index = 0;
+        char operacion = PEDIDO_BYTES;
+        serialize_data(&operacion, sizeof(char), aux_buffer,&aux_buffer_index);
+        serialize_data(&element->page_number, sizeof(int), aux_buffer, &aux_buffer_index);
+        serialize_data(&element->offset, sizeof(int), aux_buffer, &aux_buffer_index);
+        serialize_data(&element->tamanio, sizeof(int), aux_buffer, &aux_buffer_index);
         log_info(cpu_log, "Fetching for (%d,%d,%d) in UMC", element->page_number, element->offset, element->tamanio);
         //Send bytes request to UMC
-        if( send(umcSocketClient, aux_buffer, strlen(aux_buffer), 0) < 0) {
+        if( send(umcSocketClient, aux_buffer, aux_buffer_index, 0) < 0) {
             puts("Last Fetch failed");
             return ERROR;
         }
@@ -424,7 +442,7 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
 
 int request_address_data(void ** buffer, logical_addr *address) {
     void * aux_buffer = calloc(1, sizeof(int) * 3 + sizeof(char));
-    sprintf(aux_buffer, "%d%04d%04d%04d", PEDIDO_BYTES, address->page_number, address->offset, address->tamanio);
+    sprintf(aux_buffer, "%d%04d%04d%04d", atoi(PEDIDO_BYTES), address->page_number, address->offset, address->tamanio);
     log_info(cpu_log, "Fetching for (%d,%d,%d) in UMC", address->page_number, address->offset, address->tamanio);
     printf("\nFetching for (%d,%d,%d) in UMC\n", address->page_number, address->offset, address->tamanio);
     //Send bytes request to UMC
@@ -446,7 +464,9 @@ int request_address_data(void ** buffer, logical_addr *address) {
 
 int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
     void * buffer = calloc(1,sizeof(int));
-    char kernel_operation [2] = "";
+    char * kernel_operation = calloc(1, sizeof(char));
+    int deserialized_data_index = 0;
+
     if(buffer == NULL) {
         log_error(cpu_log, "recibir pcb buffer mem alloc failed");
         return ERROR;
@@ -457,32 +477,36 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
         log_error(cpu_log, "KERNEL handshake response receive failed");
         return ERROR;
     }
-    if( strcmp(kernel_operation, "1") != 0 ) {
+    if( *kernel_operation != '1') {
         log_error(cpu_log, "Wrong KERNEL handshake response received");
         return ERROR;
     }
+    free(kernel_operation);
 
     //Quantum data
     if( recv(kernelSocketClient , buffer , sizeof(int) , 0) < 0) {
         log_error(cpu_log, "Q recv failed");
         return ERROR;
     }
-    kernel_data_buffer->Q = atoi(buffer);
+    deserialize_data(&kernel_data_buffer->Q , sizeof(int), buffer, &deserialized_data_index);
     log_info(cpu_log, "Q: %d", kernel_data_buffer->Q);
 
     if( recv(kernelSocketClient , buffer , sizeof(int) , 0) < 0) {
         log_error(cpu_log, "QSleep recv failed");
         return ERROR;
     }
-    kernel_data_buffer->QSleep = atoi(buffer);
+    deserialized_data_index = 0;
+    deserialize_data(&kernel_data_buffer->QSleep , sizeof(int), buffer, &deserialized_data_index);
     log_info(cpu_log, "QSleep: %d", kernel_data_buffer->QSleep);
 
     if( recv(kernelSocketClient ,buffer , sizeof(int) , 0) < 0) {
         log_error(cpu_log, "pcb_size recv failed");
         return ERROR;
     }
-    kernel_data_buffer->pcb_size = atoi(buffer);
+    deserialized_data_index = 0;
+    deserialize_data(&kernel_data_buffer->pcb_size , sizeof(int), buffer, &deserialized_data_index);
     log_info(cpu_log, "pcb_size: %d", kernel_data_buffer->pcb_size);
+    free(buffer);
 
     kernel_data_buffer->serialized_pcb = calloc(1, (size_t ) kernel_data_buffer->pcb_size);
     if(kernel_data_buffer->serialized_pcb  == NULL) {
