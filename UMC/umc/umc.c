@@ -630,6 +630,7 @@ void atenderCPU(int *socketBuff){
 
 	}
 	contConexionesCPU--;
+	liberarRecursos();
 	close(*socketBuff);		// cierro socket
 	pthread_exit(0);		// chau thread
 }
@@ -707,7 +708,7 @@ void atenderKernel(int * socketBuff){
 	}
 
 	contConexionesNucleo--; // finaliza la comunicacion con el socket
-
+	liberarRecursos();
 	close(*socketBuff); // cierro socket
 	pthread_exit(0);	// chau thread
 
@@ -817,6 +818,7 @@ void recibirYAlmacenarNuevoProceso(int * socketBuff,int cantidadPaginasSolicitad
 		free(buffer);
 		perror("recv");
 		printf("\n Error en la comunicacion con Kernel:[Recepcion Code Size] Finalizando.\n");
+		liberarRecursos();
 		exit(1);
 	}else{
 		// levanto el codigo
@@ -827,6 +829,7 @@ void recibirYAlmacenarNuevoProceso(int * socketBuff,int cantidadPaginasSolicitad
 			free(buffer);
 			perror("recv");
 			printf("\n Error en la comunicacion con Kernel:[Recepcion de todo el Codigo] Finalizando.\n");
+			liberarRecursos();
 			exit(1);
 		}
 		else{
@@ -2447,11 +2450,11 @@ void liberarRecursos(void){
 	 *  3) Liberar TLB
 	 *  4) Liberar memoria principal y semaforos
 	 * */
-	void liberarHeaderFifo(CLOCK_PID * nodo){
-		list_clean_and_destroy_elements(nodo->headerFifo,free);
+	void liberarHeaderFifo(void * nodo){
+		list_clean_and_destroy_elements(((CLOCK_PID *)nodo)->headerFifo,free);
 	}
-	void liberarHeaderTablaPaginas(PIDPAGINAS * nodo){
-		list_clean_and_destroy_elements(nodo->headListaDePaginas,free);
+	void liberarHeaderTablaPaginas(void * nodo){
+		list_clean_and_destroy_elements(((PIDPAGINAS *)nodo)->headListaDePaginas,free);
 	}
 	// 1)
 	if(headerFIFOxPID != NULL){
