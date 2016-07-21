@@ -639,7 +639,7 @@ void atenderCPU(int *socketBuff){
 char handShakeCpu(int *socketBuff) {
 
 	void *buffer = calloc(1,sizeof(char)+sizeof(int));
-	char caracter=0;
+	char caracter='0';
 
 	memcpy(buffer,&caracter,sizeof(char));
 	memcpy(buffer+sizeof(char),&umcGlobalParameters.marcosSize,sizeof(int));
@@ -916,7 +916,7 @@ void enviarPaginasDeStackAlSwap(int pPid, int nroDePaginaInicial) {
 	int 	nroPaginaActual=0,
         	i = 0;
 	void 	*trama = NULL;
-	char	caracter=1;
+	char	caracter='1';
 	size_t  tamanioTotalTrama = sizeof(char)+sizeof(int)+sizeof(int)+(size_t)umcGlobalParameters.marcosSize;
 	// trama de escritura a swap : 1+pid+nroDePagina+aux_code
 	for(i =0 ,nroPaginaActual=nroDePaginaInicial; i<stack_size; i++, nroPaginaActual++) {
@@ -2018,7 +2018,7 @@ void *obtenerMarcoLibreEnMP(int *indice) {
 
 void resolverEnMP(int *socketBuff, PAGINA *pPagina, int offset, int tamanio) {
 // 1+CODIGO
-	char caracter=1;
+	char caracter='1';
 	void *buffer = calloc(1,(size_t)tamanio + sizeof(char) );
 	memcpy(buffer,&caracter,sizeof(char));
 	pthread_rwlock_rdlock(semMemPrin);
@@ -2223,7 +2223,7 @@ void finalizarProceso(int *socketBuff){
 					*headerTablaPaginas = NULL;
 	t_link_element 	*aux 				= NULL;
 	PAGINA 			*pag_aux  			= NULL;
-	char 			caracter			= 1;
+	char 			caracter			= '1';
 
 	// levanto PID
 	if(recv(*socketBuff,buffer, sizeof(int), 0) <= 0 ) {
