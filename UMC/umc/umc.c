@@ -525,9 +525,9 @@ void procesarConexiones(void)
 		}
 	    printf("\nConnected..\n");
 
-	    socketCliente = (int *) malloc ( sizeof(int));
+	    socketCliente = (int *) calloc(1,sizeof(int));
 	    *socketCliente = socketBuffer;
-	    thread_id = (pthread_t * ) malloc (sizeof(pthread_t));	// new thread
+	    thread_id = (pthread_t * ) calloc(1,sizeof(pthread_t));	// new thread
 
 	    ConnectionHandler = QuienSos(socketCliente);
 
@@ -900,7 +900,7 @@ void indexarPaginasDeStack(int _pid, int nroDePagina) {
 
 	PAGINA * page_node;
 
-	page_node = (PAGINA *)malloc (sizeof(PAGINA));
+	page_node = (PAGINA *)calloc(1,sizeof(PAGINA));
 	page_node->nroPagina=nroDePagina;
 	page_node->modificado=0;
 	page_node->presencia=0;
@@ -1767,11 +1767,11 @@ void almacenoPaginaEnMP(int *pPid, int pPagina, char codigo[], int tamanioPagina
 	pagina->bitDeUso = 1;
 	pagina->nroPagina = pPagina;
 
-	pid_clock = ( CLOCK_PID *) malloc ( sizeof(CLOCK_PID)) ;
+	pid_clock = ( CLOCK_PID *) calloc(1,sizeof(CLOCK_PID)) ;
 	pid_clock->pid = *pPid;
 	pid_clock->headerFifo = NULL;
 
-	nuevoPidFifoIndice = (FIFO_INDICE *) malloc (sizeof(FIFO_INDICE));
+	nuevoPidFifoIndice = (FIFO_INDICE *) calloc(1,sizeof(FIFO_INDICE));
 	nuevoPidFifoIndice->pid = *pPid;
 	nuevoPidFifoIndice->indice=0;
 
