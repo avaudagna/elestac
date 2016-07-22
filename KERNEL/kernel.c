@@ -241,7 +241,7 @@ void *requestPages2UMC(void* request_buffer){
 	deserialize_data(code, (size_t) ansisopLen, request_buffer, &deserialize_index);
 	deserialize_data(&clientUMC, sizeof(int), request_buffer, &deserialize_index);
 
-	void* req2UMC = NULL;//1+PID+nbrOfPages+ansisopLen+code
+	void* req2UMC = calloc(1, sizeof(int)*3 + sizeof(char) + ansisopLen);//1+PID+nbrOfPages+ansisopLen+code
 	void* req2UMC_response = calloc(1, sizeof(int));
 	char umcProtocol = '1';
 	int nbrOfPages = ansisopLen/setup.PAGE_SIZE + 1;// +1 since ceil() does not work
@@ -589,6 +589,11 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 		send(newConsole, PIDserializado, sizeof(int), 0);
 		log_error(kernel_log, "The program with PID=%04d could not be started. System run out of memory.", newConsole);
 		close(newConsole);
+		bool getConsoleIndex(void *nbr) {
+			t_Client *unCliente = nbr;
+			return (newConsole == unCliente->clientID);
+		}
+		list_remove_by_condition(consolas_conectadas, getConsoleIndex);
 	}
 	free(PIDserializado);
 }
@@ -688,18 +693,18 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 		send(clientUMC, umcKillProg, (size_t) umcKillProg_index, 0);
 		log_info(kernel_log, "Program %04d has been terminated", pid);
 		free(umcKillProg);
+		if (consoleStillOpen){
+			int finalizar = 0;
+			void* consoleKillProg = NULL;
+			int consoleKillProg_index = 0;
+			if(status == BROKEN) finalizar = 3;
+			log_info(kernel_log, "Program status was %d. Console will inform this properly to the user.", status);
+			serialize_data(&finalizar, sizeof(int), &consoleKillProg, &consoleKillProg_index);
+			send(pid, consoleKillProg, sizeof(int), 0); // send exit code to console
+			free(consoleKillProg);
+			close(pid); // close console socket
+		}
 	}
-	if (consoleStillOpen){
-		int finalizar = 0;
-		void* consoleKillProg = NULL;
-		int consoleKillProg_index = 0;
-		if(status == BROKEN) finalizar = 3;
-		log_info(kernel_log, "Program status was %d. Console will inform this properly to the user.", status);
-		serialize_data(&finalizar, sizeof(int), &consoleKillProg, &consoleKillProg_index);
-		send(pid, consoleKillProg, sizeof(int), 0); // send exit code to console
-		free(consoleKillProg);
-	}
-	close(pid); // close console socket
 	bool getConsoleIndex(void *nbr) {
 		t_Client *unCliente = nbr;
 		return (pid == unCliente->clientID);
