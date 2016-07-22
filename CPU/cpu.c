@@ -210,7 +210,7 @@ int execute_state_machine() {
 
 int post_process_operations() {
     log_info(cpu_log, "Starting delay of : %d seconds", actual_kernel_data->QSleep);
-    sleep(actual_kernel_data->QSleep);
+    usleep(actual_kernel_data->QSleep);
     if(LAST_QUANTUM_FLAG) {
         //Signal for exiting CPU was sent
         return EXIT;
@@ -234,11 +234,15 @@ void finished_quantum_post_process() {
 }
 
 void send_quantum_end_notif() {
-    if( send(kernelSocketClient , QUANTUM_END , sizeof(char), 0) < 0) {
+    char * operation = calloc(1, sizeof(char));
+    *operation = QUANTUM_END;
+    if( send(kernelSocketClient , operation, sizeof(char), 0) < 0) {
         log_error(cpu_log, "Send QUANTUM_END to KERNEL failed");
+        free(operation);
         return;
     }
     log_info(cpu_log, "Quantum end notification sent to KERNEL");
+    free(operation);
 }
 
 int execute_line(void *instruction_line) {
@@ -273,7 +277,8 @@ void program_end_notification() {
 
     log_info(cpu_log, "=== Finished Program ===");
     log_info(cpu_log, "Finishid executing PCB with PID %d", actual_pcb->pid);
-    if( send(kernelSocketClient , PROGRAM_END , sizeof(char), 0) < 0) {
+    char operation = PROGRAM_END;
+    if( send(kernelSocketClient , &operation, sizeof(char), 0) < 0) {
         log_error(cpu_log, "Send PROGRAM_END to KERNEL failed");
         return;
     }
@@ -325,7 +330,7 @@ int umc_first_com() {
         log_error(cpu_log, "Recv UMC bad operation");
         return ERROR;
     }
-    if( *operation == UMC_HANDSHAKE_RESPONSE_ID ) {
+    if( *operation != UMC_HANDSHAKE_RESPONSE_ID ) {
         log_error(cpu_log, "Recv UMC bad operation: %c", *(char*)operation);
         return ERROR;
     }
@@ -347,8 +352,8 @@ int change_active_process() {
 //    asprintf(&buffer, "%d%04d", CAMBIO_PROCESO_ACTIVO, actual_pcb->pid);
     int buffer_index = 0;
     char operacion = CAMBIO_PROCESO_ACTIVO;
-    serialize_data(&operacion, sizeof(char), buffer, &buffer_index);
-    serialize_data(&actual_pcb->pid, sizeof(int), buffer, &buffer_index);
+    serialize_data(&operacion, sizeof(char), &buffer, &buffer_index);
+    serialize_data(&actual_pcb->pid, sizeof(int), &buffer, &buffer_index);
     if( send(umcSocketClient , buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "Send pid %d to UMC failed", actual_pcb->pid);
         return ERROR;
@@ -406,10 +411,10 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
         void * aux_buffer = NULL;
         int aux_buffer_index = 0;
         char operacion = PEDIDO_BYTES;
-        serialize_data(&operacion, sizeof(char), aux_buffer,&aux_buffer_index);
-        serialize_data(&element->page_number, sizeof(int), aux_buffer, &aux_buffer_index);
-        serialize_data(&element->offset, sizeof(int), aux_buffer, &aux_buffer_index);
-        serialize_data(&element->tamanio, sizeof(int), aux_buffer, &aux_buffer_index);
+        serialize_data(&operacion, sizeof(char), &aux_buffer,&aux_buffer_index);
+        serialize_data(&element->page_number, sizeof(int), &aux_buffer, &aux_buffer_index);
+        serialize_data(&element->offset, sizeof(int), &aux_buffer, &aux_buffer_index);
+        serialize_data(&element->tamanio, sizeof(int), &aux_buffer, &aux_buffer_index);
         log_info(cpu_log, "Fetching for (%d,%d,%d) in UMC", element->page_number, element->offset, element->tamanio);
         //Send bytes request to UMC
         if( send(umcSocketClient, aux_buffer, aux_buffer_index, 0) < 0) {
@@ -422,6 +427,14 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
             log_error(cpu_log, "get_instruction_line recv_bytes_buffer mem alloc failed");
             return ERROR;
         }
+
+        //TODO: Esto lo tengo que hacer en check_umc_response_status y validar que no sea 2 (STACK_OVERFLOW)
+        if(recv_umc_response_status() == '1') {
+            log_info(cpu_log, "UMC_RESPONSE_OK");
+        } else {
+            log_error(cpu_log, "UMC ERROR!");
+        }
+
         if( recv(umcSocketClient , recv_bytes_buffer , (size_t ) element->tamanio , 0) < 0) {
             log_error(cpu_log, "UMC bytes recv failed");
             return ERROR;
@@ -435,14 +448,28 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
         free(recv_bytes_buffer);
         list_remove_and_destroy_element(instruction_addresses_list, 0, free);
     }
-    *instruction_line = realloc(*instruction_line, (size_t) (1 + buffer_index));
+    *instruction_line = realloc(*instruction_line, (size_t) (sizeof(char) + buffer_index));
     * (char*)(*instruction_line+buffer_index) = '\0';
     return SUCCESS;
 }
 
+int recv_umc_response_status() {
+    void * umc_response_status_buffer = calloc(1, sizeof(char));
+    char umc_response_status;
+    int umc_response_status_buffer_index = 0;
+    if( recv(umcSocketClient , umc_response_status_buffer, sizeof(char), 0) < 0) {
+        log_error(cpu_log, "UMC bytes recv failed");
+        return ERROR;
+    }
+    deserialize_data(&umc_response_status, sizeof(char), umc_response_status_buffer, &umc_response_status_buffer_index);
+    free(umc_response_status_buffer);
+    return umc_response_status;
+}
+
 int request_address_data(void ** buffer, logical_addr *address) {
     void * aux_buffer = calloc(1, sizeof(int) * 3 + sizeof(char));
-    sprintf(aux_buffer, "%d%04d%04d%04d", atoi(PEDIDO_BYTES), address->page_number, address->offset, address->tamanio);
+    //TODO: Uncomment if using
+//    sprintf(aux_buffer, "%d%04d%04d%04d", atoi(PEDIDO_BYTES), address->page_number, address->offset, address->tamanio);
     log_info(cpu_log, "Fetching for (%d,%d,%d) in UMC", address->page_number, address->offset, address->tamanio);
     printf("\nFetching for (%d,%d,%d) in UMC\n", address->page_number, address->offset, address->tamanio);
     //Send bytes request to UMC

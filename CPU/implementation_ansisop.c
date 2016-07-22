@@ -17,6 +17,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
     int valor = 0;
 
     t_list * pedidos = NULL;
+    //TODO: CAMBIAR ESTO PARA QUE LA LISTA DE PEDIDOS SEA DE NUMEROS, NO DE SPRINTF
     obtener_lista_operaciones_escritura(&pedidos, actual_stack_pointer, ANSISOP_VAR_SIZE, valor);
 
     int index = 0;
@@ -27,7 +28,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
         return ERROR;
     }
 
-    while (lissize_t(pedidos) > 0) {
+    while (list_size(pedidos) > 0) {
         nodo = list_remove(pedidos, index);
         log_info(cpu_log, "sending request : %s for variable %c with value %d", nodo->data, variable, valor);
         if( send(umcSocketClient, nodo->data , (size_t ) nodo->data_length, 0) < 0) {
@@ -38,7 +39,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
             log_error(cpu_log, "UMC response recv failed");
             return ERROR;
         }
-        if(strncmp(umc_response_buffer, string_itoa(UMC_OK_RESPONSE), sizeof(char)) != 0) {
+        if(*umc_response_buffer == UMC_OK_RESPONSE) {
             log_error(cpu_log, "STACK OVERFLOW");
             stack_overflow_exit();
             return STACK_OVERFLOW;
@@ -102,7 +103,7 @@ void armar_pedidos_escritura(t_list ** pedidos, t_list *direcciones, int valor) 
     logical_addr * address = NULL;
     int buff_len = 0;
     *pedidos = list_create();
-    while(lissize_t(direcciones) > 0) {
+    while(list_size(direcciones) > 0) {
         address = list_remove(direcciones, index);
         nodo = calloc(1, sizeof(t_nodo_send));
         buff_len = sizeof(char) + sizeof(int) *3;
@@ -149,11 +150,11 @@ t_valor_variable dereferenciar(t_posicion direccion_variable) {
 //                 current_address->offset, current_address->tamanio);
         int umc_request_buffer_index = 0;
         char operation = PEDIDO_BYTES;
-        serialize_data(&operation, sizeof(char), umc_request_buffer, &umc_request_buffer_index);
-        serialize_data(&current_address->page_number, sizeof(int), umc_request_buffer, &umc_request_buffer_index);
-        serialize_data(&current_address->offset, sizeof(int), umc_request_buffer, &umc_request_buffer_index);
-        serialize_data(&current_address->tamanio, sizeof(int), umc_request_buffer, &umc_request_buffer_index);
-        log_info(cpu_log, "sending request : %s for direccion variable %d", umc_request_buffer, direccion_variable);
+        serialize_data(&operation, sizeof(char), &umc_request_buffer, &umc_request_buffer_index);
+        serialize_data(&current_address->page_number, sizeof(int), &umc_request_buffer, &umc_request_buffer_index);
+        serialize_data(&current_address->offset, sizeof(int), &umc_request_buffer, &umc_request_buffer_index);
+        serialize_data(&current_address->tamanio, sizeof(int), &umc_request_buffer, &umc_request_buffer_index);
+        log_info(cpu_log, "sending request : %s for direccion variable %d", &umc_request_buffer, direccion_variable);
         if( send(umcSocketClient, umc_request_buffer, (size_t) umc_request_buffer_index, 0) < 0) {
             log_error(cpu_log, "UMC expected addr send failed");
             return ERROR;
@@ -188,7 +189,7 @@ void asignar(t_posicion direccion_variable, t_valor_variable valor) {
 
     int index = 0;
     t_nodo_send * nodo = NULL;
-    while (lissize_t(pedidos) > 0) {
+    while (list_size(pedidos) > 0) {
         nodo = list_remove(pedidos, index);
         if(nodo != NULL) {
             log_info(cpu_log, "sending request : %s for direccion variable %d with value %d",  nodo->data , direccion_variable, valor);
@@ -204,13 +205,13 @@ void asignar(t_posicion direccion_variable, t_valor_variable valor) {
             }
 
             //StackOverflow: 3
-            if(strcmp(umc_response_buffer, STACK_OVERFLOW_ID) == 0){
+            if(*umc_response_buffer == STACK_OVERFLOW_ID){
                 log_error(cpu_log, "UMC raised Exception: STACKOVERFLOW");
                 break;
             }
 
             //EXITO (Se podria loggear de que la operacion fue exitosa)
-            if(strcmp(umc_response_buffer, OPERACION_EXITOSA_ID) == 0){
+            if(*umc_response_buffer == OPERACION_EXITOSA_ID){
                 log_info(cpu_log, "Asignar variable operation to UMC with value %d was successful", valor);
             } else {
                 log_error(cpu_log, "Asignar variable operation to UMC with value %d failed", valor);
@@ -227,14 +228,14 @@ void asignar(t_posicion direccion_variable, t_valor_variable valor) {
 t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
     //5 + 0 + nameSize + name (1+1+4+nameSize bytes)
     void* buffer = NULL;
-    int value = 0, action = atoi(GET_VAR), variable_name_length = (int) strlen(variable), buffer_index = 0;
-    char operation = SHARED_VAR_ID;
+    int value = 0, variable_name_length = (int) strlen(variable), buffer_index = 0;
+    char operation = SHARED_VAR_ID, action = GET_VAR;
 
 //    asprintf(&buffer, "%d%d%04d%s", atoi(SHARED_VAR_ID), atoi(GET_VAR), strlen(variable), variable);
-    serialize_data(&operation, sizeof(char), buffer, &buffer_index);
-    serialize_data(&action, sizeof(int), buffer, &buffer_index);
-    serialize_data(&variable_name_length, sizeof(int), buffer, &buffer_index);
-    serialize_data(&variable, sizeof(t_nombre_compartida), buffer, &buffer_index);
+    serialize_data(&operation, sizeof(char), &buffer, &buffer_index);
+    serialize_data(&action, sizeof(char), &buffer, &buffer_index);
+    serialize_data(&variable_name_length, sizeof(int), &buffer, &buffer_index);
+    serialize_data(&variable, sizeof(t_nombre_compartida), &buffer, &buffer_index);
 
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "send of obtener variable compartida of %s failed", variable);
@@ -260,11 +261,11 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
     int buffer_index = 0, variable_length = (int) strlen(variable);
     char operation = SHARED_VAR_ID, action = SET_VAR;
 //    asprintf(&buffer, "%d%d%04d%s%04d", atoi(SHARED_VAR_ID), atoi(SET_VAR), strlen(variable), variable, valor);
-    serialize_data(&operation, sizeof(char), buffer, &buffer_index);
-    serialize_data(&action, sizeof(char), buffer, &buffer_index);
-    serialize_data(&variable_length, sizeof(int), buffer, &buffer_index);
-    serialize_data(&variable, (size_t) variable_length, buffer, &buffer_index);
-    serialize_data(&valor, sizeof(int), buffer, &buffer_index);
+    serialize_data(&operation, sizeof(char), &buffer, &buffer_index);
+    serialize_data(&action, sizeof(char), &buffer, &buffer_index);
+    serialize_data(&variable_length, sizeof(int), &buffer, &buffer_index);
+    serialize_data(&variable, (size_t) variable_length, &buffer, &buffer_index);
+    serialize_data(&valor, sizeof(int), &buffer, &buffer_index);
 
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "set value of %s failed", variable);
@@ -339,10 +340,10 @@ void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
     int dispositivo_length = (int) strlen(dispositivo), buffer_index = 0;
     //Armo paquete de I/O operation
 //    asprintf(&buffer, "%d%04d%s%04d", atoi(ENTRADA_SALIDA_ID), strlen(dispositivo), dispositivo, tiempo);
-    serialize_data(&operation, sizeof(char), buffer, &buffer_index);
-    serialize_data(&dispositivo_length, sizeof(int), buffer, &buffer_index);
-    serialize_data(&dispositivo, (size_t) dispositivo_length, buffer, &buffer_index);
-    serialize_data(&tiempo, sizeof(int), buffer, &buffer_index);
+    serialize_data(&operation, sizeof(char), &buffer, &buffer_index);
+    serialize_data(&dispositivo_length, sizeof(int), &buffer, &buffer_index);
+    serialize_data(&dispositivo, (size_t) dispositivo_length, &buffer, &buffer_index);
+    serialize_data(&tiempo, sizeof(int), &buffer, &buffer_index);
 
     //Envio el paquete a KERNEL
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
@@ -356,8 +357,8 @@ void imprimir(t_valor_variable valor) {
     int buffer_index = 0;
     char operation = IMPRIMIR_ID;
 //    asprintf(&buffer, "%d%04d", atoi(IMPRIMIR_ID), valor);
-    serialize_data(&operation , sizeof(char), buffer, &buffer_index);
-    serialize_data(&valor, sizeof(int), buffer, &buffer_index);
+    serialize_data(&operation , sizeof(char), &buffer, &buffer_index);
+    serialize_data(&valor, sizeof(int), &buffer, &buffer_index);
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "imprimir value %d send to KERNEL failed", valor);
         return ;
@@ -372,9 +373,9 @@ void imprimirTexto(char* texto) {
     int texto_len = (int) strlen(texto), buffer_index = 0;
     char operation = IMPRIMIR_TEXTO_ID;
 //    asprintf(&buffer, "%d%04d%s", atoi(IMPRIMIR_TEXTO_ID), texto_len, texto);
-    serialize_data(&operation, sizeof(char), buffer, &buffer_index);
-    serialize_data(&texto_len, sizeof(int), buffer, &buffer_index);
-    serialize_data(&texto, (size_t) texto_len, buffer, &buffer_index);
+    serialize_data(&operation, sizeof(char), &buffer, &buffer_index);
+    serialize_data(&texto_len, sizeof(int), &buffer, &buffer_index);
+    serialize_data(&texto, (size_t) texto_len, &buffer, &buffer_index);
 
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "imprimirTexto with texto : %s , send failed", texto);
@@ -388,10 +389,10 @@ void la_wait (t_nombre_semaforo identificador_semaforo){
     int buffer_index = 0, identificador_semaforo_length = (int) strlen(identificador_semaforo);
     char operation = SEMAPHORE_ID, action = WAIT_ID;
 //    asprintf(&buffer, "%d%d%04d%s", atoi(SEMAPHORE_ID), atoi(WAIT_ID), strlen(identificador_semaforo), identificador_semaforo);
-    serialize_data(&operation, sizeof(char), buffer, &buffer_index);
-    serialize_data(&action, sizeof(char), buffer, &buffer_index);
-    serialize_data(&identificador_semaforo_length, sizeof(int), buffer, &buffer_index);
-    serialize_data(&identificador_semaforo, (size_t) identificador_semaforo_length, buffer, &buffer_index);
+    serialize_data(&operation, sizeof(char), &buffer, &buffer_index);
+    serialize_data(&action, sizeof(char), &buffer, &buffer_index);
+    serialize_data(&identificador_semaforo_length, sizeof(int), &buffer, &buffer_index);
+    serialize_data(&identificador_semaforo, (size_t) identificador_semaforo_length, &buffer, &buffer_index);
 
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "wait(%s) failed", identificador_semaforo);
@@ -409,10 +410,10 @@ void la_signal (t_nombre_semaforo identificador_semaforo){
     int buffer_index = 0, identificador_semaforo_length = (int) strlen(identificador_semaforo);
     char operation = SEMAPHORE_ID, action = SIGNAL_ID;
 //    asprintf(&buffer, "%d%d%04d%s", atoi(SEMAPHORE_ID), atoi(SIGNAL_ID), strlen(identificador_semaforo), identificador_semaforo);
-    serialize_data(&operation, sizeof(char), buffer, &buffer_index);
-    serialize_data(&action, sizeof(char), buffer, &buffer_index);
-    serialize_data(&identificador_semaforo_length, sizeof(int), buffer, &buffer_index);
-    serialize_data(&identificador_semaforo, sizeof(int), buffer, &buffer_index);
+    serialize_data(&operation, sizeof(char), &buffer, &buffer_index);
+    serialize_data(&action, sizeof(char), &buffer, &buffer_index);
+    serialize_data(&identificador_semaforo_length, sizeof(int), &buffer, &buffer_index);
+    serialize_data(&identificador_semaforo, sizeof(int), &buffer, &buffer_index);
 
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "signal(%s) failed", identificador_semaforo);
