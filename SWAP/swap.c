@@ -57,7 +57,7 @@ char* package;
 
 //CONFIG
 char* IP_SWAP;
-char* PUERTO_SWAP;
+int PUERTO_SWAP;
 char* SWAP_DATA;
 int CANTIDAD_PAGINAS;
 int RETARDO_COMPACTACION;
@@ -80,6 +80,9 @@ void umc_escribir();
 
 int request_FinalizacionPrograma(int pid);
 void umc_finalizarPrograma();
+
+void umc_enviarOperacionExitosa();
+void umc_enviarMarcosLibres();
 
 //Inicializacion y finalizacion
 int init_Config(char * config_file_path);
@@ -118,7 +121,6 @@ void imprimir_EstadoBitMap();
 void imprimir_NodosEstructuraControl();
 
 //Otras
-char obtenerPrimerChar(void* buffer);
 int mod (int a, int b);
 void excepcionAlHablarConUMC();
 
@@ -155,13 +157,18 @@ int umc_handshake(){
 	char handShake;
 	int tamanioTrama = sizeof(char)+sizeof(int);
 
-	void* buffer = calloc(1,sizeof(int));
+	void* buffer = calloc(1, sizeof(int));
 
 	//recv el identificador de operacion (espero una 'U')
-	if(recv(umcSocket, &handShake, sizeof(char),0)<= 0){
+	if(recv(umcSocket, buffer, sizeof(char),0)<= 0){
 		free(buffer);
 		return -1;
 	}
+
+	memcpy(&handShake, buffer, sizeof(char));
+
+	free(buffer);
+	buffer = calloc(1, sizeof(int));
 
 	if(handShake == 'U'){ //El handshake es correcto
 
@@ -171,21 +178,28 @@ int umc_handshake(){
 			return -1;
 		}
 
-		TAMANIO_PAGINA = atoi(buffer);
+		memcpy(&TAMANIO_PAGINA, buffer, sizeof(int));
 
 		init_BitMap();
 
 		//Armo la trama a responder char[]: S+cantPaginasLibres
-		int SIZE_TRAMA = 5;
-		char* respuesta = calloc(1,SIZE_TRAMA);
-		sprintf(respuesta,"S%04d", paginas_CantidadPaginasLibres());
+		//Primero envio S para indicar que el handshake es correcto
+		int SIZE_TRAMA = sizeof(char); //char(1) + int (4) --> 5
+		char caracter='S';
 
-		if(send(umcSocket,(void *) respuesta, SIZE_TRAMA,0) == -1){
+		void* trama_handshake = calloc(1, SIZE_TRAMA);
+
+		memcpy(trama_handshake, &caracter, sizeof(char));
+
+		if(send(umcSocket, trama_handshake, SIZE_TRAMA, 0) == -1){
 			log_error(LOG_SWAP, "Error while trying to complete handshake");
 			return handshakeOK;
 		}
 
-		free(respuesta);
+		free(trama_handshake);
+
+		//Luego envio la cantidad de marcos libres
+		umc_enviarMarcosLibres();
 
 		log_info(LOG_SWAP, "Handshake with UMC succesfully done. Page size received: %d", TAMANIO_PAGINA);
 		handshakeOK = 1;
@@ -207,7 +221,7 @@ int umc_handshake(){
 }
 
 char* request_Lectura(int pid, int numeroPagina){
-	log_info(LOG_SWAP, "[REQUEST] Page requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
+	log_info(LOG_SWAP, "[REQUEST] Page requested by UMC [PID: %d | Page number: %d]", pid, numeroPagina);
 
 	//Aplicamos el retardo de acceso
 	usleep(RETARDO_ACCESO);
@@ -226,7 +240,7 @@ char* request_Lectura(int pid, int numeroPagina){
 }
 
 int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
-	log_info(LOG_SWAP, "[REQUEST] Page writing requested by UMC [PID: %d | Page number: %d] \n", pid, numeroPagina);
+	log_info(LOG_SWAP, "[REQUEST] Page writing requested by UMC [PID: %d | Page number: %d]", pid, numeroPagina);
 
 	//Aplicamos el retardo de acceso
 	usleep(RETARDO_ACCESO);
@@ -271,7 +285,7 @@ int request_EscrituraPagina(int pid, int numeroPagina, char* codigo){
 }
 
 int request_FinalizacionPrograma(int pid){
-	log_info(LOG_SWAP, "[REQUEST] Program finalization requested by UMC [PID: %d] \n", pid);
+	log_info(LOG_SWAP, "[REQUEST] Program finalization requested by UMC [PID: %d]", pid);
 
 	int paginasLiberadas = 0;
 	paginasLiberadas = swap_LiberarPrograma(pid);
@@ -317,8 +331,8 @@ int init_Config(char * config_file_path){
 						break;
 
 					case 1:
-						PUERTO_SWAP = config_get_string_value(punteroAStruct,keys[i]);
-						log_info(LOG_SWAP, "%s --> %s", keys[i], PUERTO_SWAP);
+						PUERTO_SWAP = config_get_int_value(punteroAStruct,keys[i]);
+						log_info(LOG_SWAP, "%s --> %d", keys[i], PUERTO_SWAP);
 						break;
 
 					case 2:
@@ -358,25 +372,23 @@ int init_Config(char * config_file_path){
 void init_Server(){
 	log_info(LOG_SWAP, ".:: INITIALIZING SERVER PROCESS ::.");
 
-	setServerSocket(&swapSocket,IP_SWAP,atoi(PUERTO_SWAP));
+	setServerSocket(&swapSocket, IP_SWAP, PUERTO_SWAP);
 
 	acceptConnection(&umcSocket, &swapSocket);
-
-	void* buffer = NULL;
-//	int handshakeOK = 0;
-	int operacion = 0;
-
 
 	if(umc_handshake() != 1){
 		log_error(LOG_SWAP, "Bad UMC hanshake");
 		close_SwapProcess();
 	}
 
+	void* buffer = NULL;
+	int operacion = 0;
+
 	while(1){
 		log_info(LOG_SWAP, "Waiting for UMC request");
 
-		buffer = calloc(1,sizeof(char));
-		if(recv(umcSocket,buffer,sizeof(char),0) <= 0){
+		buffer = calloc(1, sizeof(int));
+		if(recv(umcSocket, buffer, sizeof(int), 0) <= 0){
 			free(buffer);
 			close(umcSocket);
 			close(swapSocket);
@@ -384,11 +396,7 @@ void init_Server(){
 			return;
 		}
 
-		/****************************
-         * Leo el codigo de operacion
-         * y convierto el char a int
-         ****************************/
-		operacion = atoi(buffer);
+		memcpy(&operacion, buffer, sizeof(int));
 		free(buffer);
 
 		switch (operacion) {
@@ -409,15 +417,6 @@ void init_Server(){
 				break;
 		}
 	}
-//        else { //volvemos a tratar de hacer el hand
-//			handshakeOK = umc_handshake();
-//
-//			char error[1] = {'E'};
-//			if(send(umcSocket,(void *) error, 1,0) == -1) {
-//				perror("send");
-//			}
-//
-//		}
 
 }
 
@@ -425,41 +424,36 @@ void init_Server(){
 void umc_leer(){
 	int pid;
 	int numeroPagina;
-
-	char* buffer = calloc(1,sizeof(int));
+	void* buffer;
 
 	//Recibo el PID
+	buffer = calloc(1,sizeof(int));
 	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
 		excepcionAlHablarConUMC();
 
-	//Lo convertimos a int
-	pid = atoi(buffer);
-
+	memcpy(&pid, buffer, sizeof(int));
 	free(buffer);
-	buffer = calloc(1,sizeof(int));
 
 	//Recibo el numero pagina
-	if(recv(umcSocket, buffer, sizeof(buffer), 0)<= 0)
+	buffer = calloc(1, sizeof(int));
+	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
 		excepcionAlHablarConUMC();
 
-	//Lo convertimos a int
-	numeroPagina = atoi(buffer);
-
+	memcpy(&numeroPagina, buffer, sizeof(int));
 	free(buffer);
-	buffer = calloc(1,sizeof(char) * TAMANIO_PAGINA);
 
 	//Hacemos el request
-	char* resultadoRequest = request_Lectura(pid, numeroPagina);
+	void* resultadoRequest = request_Lectura(pid, numeroPagina);
 
-	if(resultadoRequest != NULL){ //ENVIAMOS A UMC 1+cantPaginasLibres
-		void* respuesta = calloc(1, sizeof(int) + TAMANIO_PAGINA);
-		sprintf(respuesta,"%04d",pid);
-		memcpy(respuesta+4, resultadoRequest, TAMANIO_PAGINA);
-
-		if(send(umcSocket, respuesta, sizeof(int) + TAMANIO_PAGINA,0) == -1)
+	if(resultadoRequest != NULL){ //ENVIAMOS A UMC pid(int)+pagina (char*)
+		//Enviamos el pid
+		if(send(umcSocket, &pid, sizeof(int), 0) == -1){
 			excepcionAlHablarConUMC();
+		}
 
-		free(respuesta);
+		//Enviamos la pagina
+		if(send(umcSocket, resultadoRequest, TAMANIO_PAGINA, 0) == -1)
+			excepcionAlHablarConUMC();
 
 	} else { //ENVIAMOS ERROR A UMC
 		char error[1] = {'E'};
@@ -468,35 +462,33 @@ void umc_leer(){
 
 	}
 
-	free(buffer);
+	free(resultadoRequest);
 }
 
 void umc_escribir(){
-	int SIZE_TRAMA = 5;
-
-	char* buffer = calloc(1,sizeof(int));
-
 	int pid;
 	int numeroPagina;
-	char* codigo = calloc(1,sizeof(char) * TAMANIO_PAGINA);
+	char* codigo = calloc(1, sizeof(char) * TAMANIO_PAGINA);
+
+	void* buffer = calloc(1, sizeof(int));
 
 	//Recibo el PID
 	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
 		excepcionAlHablarConUMC();
 
-	pid = atoi(buffer);
+	memcpy(&pid, buffer, sizeof(int));
 
 	free(buffer);
-	buffer = calloc(1,sizeof(int));
+	buffer = calloc(1, sizeof(int));
 
 	//Recibo el numero pagina
 	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
 		excepcionAlHablarConUMC();
 
-	numeroPagina = atoi(buffer);
+	memcpy(&numeroPagina, buffer, sizeof(int));
 
 	free(buffer);
-	buffer = calloc(1,sizeof(char) * TAMANIO_PAGINA);
+	buffer = calloc(1, sizeof(char) * TAMANIO_PAGINA);
 
 	//Recibimos el codigo
 	if(recv(umcSocket, buffer, sizeof(char)*TAMANIO_PAGINA, 0)<= 0)
@@ -507,16 +499,13 @@ void umc_escribir(){
 	//Hacemos el request
 	int resultadoRequest = request_EscrituraPagina(pid, numeroPagina, codigo);
 
+	free(buffer);
+	free(codigo);
+
 	if(resultadoRequest > -1){ //ENVIAMOS A UMC 1+cantPaginasLibres
-		char* respuesta;
+		umc_enviarOperacionExitosa();
 
-		respuesta = calloc(1,sizeof(char)*SIZE_TRAMA);
-		sprintf(respuesta,"%d%04d", 1, paginas_CantidadPaginasLibres());
-
-		if(send(umcSocket,(void *) respuesta, (size_t) SIZE_TRAMA,0) == -1)
-			excepcionAlHablarConUMC();
-
-		free(respuesta);
+		umc_enviarMarcosLibres();
 
 	} else { //ENVIAMOS ERROR A UMC
 		char error[1] = {'E'};
@@ -524,47 +513,65 @@ void umc_escribir(){
 			excepcionAlHablarConUMC();
 	}
 
-	free(buffer);
-	free(codigo);
-
 }
 
 void umc_finalizarPrograma(){
-	int pid, SIZE_TRAMA = 5;
-	char* buffer = calloc(1,sizeof(int));
+	int pid;
+	char* buffer = calloc(1, sizeof(int));
 
 	//Recibo el PID
 	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
 		excepcionAlHablarConUMC();
 
-/*	char aux;
-	memcpy(&aux,buffer,1);
-*/	//free(buffer);
-	pid = atoi(buffer);
+	memcpy(&pid, buffer, sizeof(int));
 
 	free(buffer);
-//	buffer = calloc(1,sizeof(int));
 
 	//Hacemos el request
 	int resultadoRequest = request_FinalizacionPrograma(pid);
 
 	if(resultadoRequest > 0){ //ENVIAMOS A UMC 1+cantPaginasLibres
-		char* respuesta = calloc(1,sizeof(char)*SIZE_TRAMA);
-		sprintf(respuesta,"%d%04d", 1, paginas_CantidadPaginasLibres());
+		umc_enviarOperacionExitosa();
 
-		if(send(umcSocket,(void *) respuesta, SIZE_TRAMA,0) == -1)
-			excepcionAlHablarConUMC();
-
-		free(respuesta);
+		umc_enviarMarcosLibres();
 
 	} else { //ENVIAMOS ERROR A UMC
-		/*	char error[1] = {'E'};
-            if(send(umcSocket,(void *) error, 1,0) == -1)
-                excepcionAlHablarConUMC();
-        */
+		char error[1] = {'E'};
+		if(send(umcSocket,(void *) error, 1,0) == -1)
+			excepcionAlHablarConUMC();
+
 	}
 
-//	free(buffer);
+}
+
+void umc_enviarOperacionExitosa(){
+	int SIZE_TRAMA = sizeof(int);
+
+	void* operacion_exitosa = calloc(1, SIZE_TRAMA);
+	int	todoOk = 1;
+
+	memcpy(operacion_exitosa, &todoOk, sizeof(int));
+
+	if(send(umcSocket, operacion_exitosa, SIZE_TRAMA, 0) == -1){
+		excepcionAlHablarConUMC();
+	}
+
+	free(operacion_exitosa);
+}
+
+void umc_enviarMarcosLibres(){
+	int SIZE_TRAMA = sizeof(int);
+
+	void* trama_libres = calloc(1, SIZE_TRAMA);
+	int paginasLibres = paginas_CantidadPaginasLibres();
+
+	memcpy(trama_libres, &paginasLibres, sizeof(int));
+
+	if(send(umcSocket, trama_libres, SIZE_TRAMA, 0) == -1){
+		excepcionAlHablarConUMC();
+	}
+
+	free(trama_libres);
 }
 
 int init_SwapFile(){
@@ -604,8 +611,6 @@ int init_SwapFile(){
 	string_append(&comandoCrearSwap, " count=");
 	string_append(&comandoCrearSwap, "1");
 
-	//printf("%s %s \n", "Command executed --->",comandoCrearSwap);
-
 	if(system(comandoCrearSwap)){
 		log_error(LOG_SWAP, "SWAP file can not be created");
 
@@ -632,8 +637,8 @@ int init_SwapFile(){
 
 int init_BitMap(){
 	//Creamos y limpiamos el BitMap
-	bitMap = calloc(1,sizeof(char)*CANTIDAD_PAGINAS);
-	bitArrayStruct = bitarray_create(bitMap,CANTIDAD_PAGINAS/8);
+	bitMap = calloc(1, sizeof(char)*CANTIDAD_PAGINAS);
+	bitArrayStruct = bitarray_create(bitMap, CANTIDAD_PAGINAS/8);
 
 	int i; //Inicializamos todos los bits en cero (vacio)
 	for (i = 0; i < bitarray_get_max_bit(bitArrayStruct); ++i) {
@@ -661,7 +666,6 @@ void close_SwapProcess(){
 
 	//CONFIG
 	free(IP_SWAP);
-	free(PUERTO_SWAP);
 	free(SWAP_DATA);
 
 	//Eliminamos la lista con todos sus modulos
@@ -916,12 +920,13 @@ char* paginas_LeerPagina(int posicion){
 
 	fseek(fp,posicion,SEEK_SET);
 
-	char* contenidoObtenido = calloc(1,TAMANIO_PAGINA*sizeof(char)); //CUIDADO ACA
+	char* contenidoObtenido = calloc(1, TAMANIO_PAGINA*sizeof(char)); //CUIDADO ACA
 
 	//Leemos, si es distinto al count, fallo
 	if(fread(contenidoObtenido,TAMANIO_PAGINA,1,fp) != 1){
 		log_warning(LOG_SWAP, "Page couldn't be readed");
 		free(contenidoObtenido);
+
 		return NULL;
 	}
 
@@ -1145,10 +1150,6 @@ void imprimir_EstadoBitMap(){
  *		   Otras
  *
  *************************/
-char obtenerPrimerChar(void* buffer){
-
-}
-
 int mod (int a, int b){
 	int ret = a % b;
 
