@@ -448,6 +448,7 @@ void check_CPU_FD_ISSET(void *cpu){
 
 void destroy_PCB(void *pcb){
 	t_pcb *unPCB = pcb;
+	free(unPCB->etiquetas);
 	free(unPCB);
 }
 
