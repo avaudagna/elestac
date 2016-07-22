@@ -17,7 +17,6 @@
 #include <pthread.h>
 #include <commons/collections/list.h>
 #include <commons/config.h>
-#include "libs/serialize.h"
 
 
 #define IDENTIFICADOR_MODULO 1
@@ -34,20 +33,20 @@
 
 /* COMUNICACION/OPERACIONES CON KERNEL*/
 #define REPOSO 3
-#define IDENTIFICADOR_OPERACION 99
-#define HANDSHAKE 0
-#define SOLICITUD_NUEVO_PROCESO 1
+#define IDENTIFICADOR_OPERACION '9'
+#define HANDSHAKE '0'
+#define SOLICITUD_NUEVO_PROCESO '1'
 
-#define PEDIR_PAGINA_SWAP 2
-#define EXIT 90
-#define FINALIZAR_PROCESO_KERNEL 2
+#define PEDIR_PAGINA_SWAP '2'
+#define EXIT '8'
+#define FINALIZAR_PROCESO_KERNEL '2'
 
 /* COMUNICACION/OPERACIONES CON CPU */
-#define HANDSHAKE_CPU 1
-#define CAMBIO_PROCESO_ACTIVO 2
-#define PEDIDO_BYTES 3
-#define ALMACENAMIENTO_BYTES 4
-#define FIN_COMUNICACION_CPU 0
+#define HANDSHAKE_CPU '1'
+#define CAMBIO_PROCESO_ACTIVO '2'
+#define PEDIDO_BYTES '3'
+#define ALMACENAMIENTO_BYTES '4'
+#define FIN_COMUNICACION_CPU '0'
 #define SIZE_HANDSHAKE_SWAP 5 // 'U' 1 Y 4 BYTES PARA LA CANTIDAD DE PAGINAS
 #define PRESENTE_MP 1
 #define AUSENTE 0
@@ -308,7 +307,7 @@ void imprimirTlb(void *entradaTlb);
 int main(int argc , char **argv){
 
 	if(argc != 2){
-		printf("Error cantidad de argumentos, finalizando...");
+		printf("Error cantidad de argumentos, finalizando...\n");
 		exit(1);
 	}
 
@@ -449,12 +448,12 @@ void * funcion_menu (void * noseusa)
      while(!flag)
      {
 
-          printf("\n*****\nIngresar opcion deseada\n1) Setear Retardo\n2)Dump\n3)Limpiar TLB\n4)Marcar Todas las Paginas como modificadas\n-1)Salir\n*********");
+          printf("\n*****\nIngresar opcion deseada\n1) Setear Retardo\n2)Dump\n3)Limpiar TLB\n4)Marcar Todas las Paginas como modificadas\n-1)Salir\n*********\n");
           scanf("%d",&opcion);
           switch(opcion)
           {
                case RETARDO:
-                    printf("\nIngrese nuevo retardo: ");
+                    printf("\nIngrese nuevo retardo:\n");
 				  	scanf("%d",&umcGlobalParameters.retardo);
                     break;
                case DUMP:
@@ -640,7 +639,7 @@ void atenderCPU(int *socketBuff){
 char handShakeCpu(int *socketBuff) {
 
 	void *buffer = calloc(1,sizeof(char)+sizeof(int));
-	char caracter=0;
+	char caracter='0';
 
 	memcpy(buffer,&caracter,sizeof(char));
 	memcpy(buffer+sizeof(char),&umcGlobalParameters.marcosSize,sizeof(int));
@@ -700,7 +699,7 @@ void atenderKernel(int * socketBuff){
 			estado = IDENTIFICADOR_OPERACION;
 			break;
 		default:
-			printf("Identificador de operacion invalido");
+			printf("Identificador de operacion invalido\n");
 			estado=EXIT;
 			break;
 
@@ -730,11 +729,11 @@ char handShakeKernel(int *socketBuff){
 	void * buffHsk = calloc(1,sizeof(int));
 	if(recv(*socketBuff, buffHsk, sizeof(int), 0) <= 0 ){ // levanto los 4 bytes q son del stack_size
 		perror("recv");
-		printf("\nError en Handshake con KERNEL\nFinalizando.");
+		printf("\nError en Handshake con KERNEL\nFinalizando.\n");
 		return ((char)EXIT);
 	}
 	memcpy(&stack_size,buffHsk,sizeof(int));
-	printf("\n[KERNEL]:Stack Size=%d",stack_size);
+	printf("\n[KERNEL]:Stack Size=%d\n",stack_size);
 	free(buffHsk);
 
 	buffHsk = calloc(1,sizeof(int));
@@ -742,7 +741,7 @@ char handShakeKernel(int *socketBuff){
 
 	if ( send(*socketBuff,buffHsk, sizeof(int),0) == -1 ) {
 		perror("send");
-		printf("\nError en Handshake con KERNEL\nFinalizando.");
+		printf("\nError en Handshake con KERNEL\nFinalizando.\n");
 		return ((char)EXIT);
 	}
 	return ((char)IDENTIFICADOR_OPERACION);
@@ -852,7 +851,7 @@ void dividirEnPaginas(int pid_aux, int paginasDeCodigo, void *codigo, int code_s
 	void 	*aux_code = NULL,
 			*trama = NULL;
 	PAGINA  *page_node;
-	char 	caracter=1;
+	char 	caracter='1';
 
 /*Cosas a Realizar por cada pagina :
  * 1. Armo la trama para enviarle a SWAP
@@ -917,7 +916,7 @@ void enviarPaginasDeStackAlSwap(int pPid, int nroDePaginaInicial) {
 	int 	nroPaginaActual=0,
         	i = 0;
 	void 	*trama = NULL;
-	char	caracter=1;
+	char	caracter='1';
 	size_t  tamanioTotalTrama = sizeof(char)+sizeof(int)+sizeof(int)+(size_t)umcGlobalParameters.marcosSize;
 	// trama de escritura a swap : 1+pid+nroDePagina+aux_code
 	for(i =0 ,nroPaginaActual=nroDePaginaInicial; i<stack_size; i++, nroPaginaActual++) {
@@ -1028,7 +1027,7 @@ void swapUpdate(void){
 // 1+CANTIDAD_DE_PAGINAS_LIBRES ( 5 bytes )
 	void *buffer = calloc(1,sizeof(char)+sizeof(int));
 
-	if ( recv(socketClienteSwap, buffer, sizeof(char)+sizeof(int), 0) <= 0 ||  *((char*)buffer) != 1 ){
+	if ( recv(socketClienteSwap, buffer, sizeof(char)+sizeof(int), 0) <= 0 ||  *((char*)buffer) != '1' ){
 		free(buffer);
 		perror("recv");
 		printf("\nError comunicacion con SWAP,Finalizando\n");
@@ -1085,7 +1084,7 @@ void handShakeSwap(void){
 		if ( *((char*)trama_handshake) == 'S'){
 			memcpy(&paginasLibresEnSwap,trama_handshake+sizeof(char),sizeof(int));
 		}else{
-			printf("\n Error en el HandShake con SWAP\nFinalizando Sistema");
+			printf("\n Error en el HandShake con SWAP\nFinalizando Sistema\n");
 			free(trama_handshake);
 			exit(1);
 		}
@@ -1109,7 +1108,6 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 	int 	pPagina,
 			offset,
 			tamanio,
-			tamanioContenidoPagina,
 			indice_buff,
 			marcoVictima;
 	t_list 	*headerTablaDePaginas = NULL;
@@ -1140,7 +1138,7 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 		resolverEnMP(socketBuff,temp,offset,tamanio);	// lo hago asi para poder reutilizar resolverEnMP , que al fin y al cabo es lo que se termina haciendo
 		actualizarTlb(pid_actual,temp);
 		free(temp);
-		printf("\n[ TLB HIT ]");
+		printf("\n[ TLB HIT ]\n");
 	}
 	else {	// No esta en TLB o no se usa TLB
 
@@ -1176,7 +1174,7 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 
 					if  ( cantPagDisponiblesxPID(pid_actual) > 0){ // SI EL PROCESO TIENE MARGEN PARA ALMACENAR MAS PAGINAS EN MEMORIA
 						printf("\n[ PAGE FAULT ]: el proceso tiene disponible marcos en memoria\n");
-						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, tamanioContenidoPagina);
+						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, umcGlobalParameters.marcosSize);
 						actualizarTlb(pid_actual,aux);
                         resolverEnMP(socketBuff, aux, offset, tamanio);
 					}
@@ -1193,7 +1191,7 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 				resolverEnMP(socketBuff, aux, offset, tamanio); // pagina en memoria principal , se la mando de una al CPU :)
 				actualizarTlb(pid_actual,aux);
 				setBitDeUso(pid_actual,pPagina,1);
-				printf("\n[ PAGE TABLE HIT ]");
+				printf("\n[ PAGE TABLE HIT ]\n");
 			}
 		}
 	}
@@ -1264,7 +1262,7 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 		aux = obtenerPaginaDeTablaDePaginas(headerTablaDePaginas, pagina);
 		if (aux == NULL) {	// valido pedido de pagina
 			pedidoDePaginaInvalida(socketBuff);	// Finaliza la ejecucion
-			return ((char)EXIT);
+			return (EXIT);
 		}
 		else {
 			if (aux->presencia == AUSENTE) {    // La pagina NO se encuentra en memoria principal
@@ -1273,11 +1271,11 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 				if ( marcosDisponiblesEnMP() == 0){	// NO HAY MARCOS LIBRES EN MEMORIA
 					if( cantPagDisponiblesxPID(pid_actual) == umcGlobalParameters.marcosXProc ){// si el proceso no tiene asignado ningun marco
 						enviarMsgACPU(socketBuff,ABORTAR_PROCESO,1);
-						return ((char)EXIT);
+						return (EXIT);
 					}
 					else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo , y una vez que ya se trajo la pagina a MP,  ahi si guardo los bytes
 						//algoritmoClock(*pid_actual,pagina,tamanioContenidoPagina,contenidoPagina);
-						printf("Aplicando %s",umcGlobalParameters.algoritmo);
+						printf("Aplicando %s\n",umcGlobalParameters.algoritmo);
 						punteroAlgoritmo(pid_actual,pagina,contenidoPagina,&marcoVictima);
 						guardarBytesEnPagina(pid_actual, pagina, offset, tamanio, bytesAlmacenar);
 						setBitDeUso(pid_actual,pagina,1);
@@ -1314,7 +1312,7 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 			}
 		}
 	}
-	return ((char)IDENTIFICADOR_OPERACION);
+	return (IDENTIFICADOR_OPERACION);
 }
 
 void setBitModificado(int pPid, int pagina, int valorBitModificado) {
@@ -1706,7 +1704,7 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 	memcpy(&pid,buffer,sizeof(pid));
 	memcpy(contenidoPagina,buffer+sizeof(pid),(size_t )umcGlobalParameters.marcosSize);
     free(buffer);
-    printf("\n[%04d]->SWAP answer pid : %d ",*pid_actual,pid);
+    printf("\n[%04d]->SWAP answer pid : %d\n",*pid_actual,pid);
 
 	if (pid == *pid_actual) {  // valido que la pagina que me respondio swap se corresponda a la que pedi
 		return contenidoPagina;
@@ -2019,7 +2017,7 @@ void *obtenerMarcoLibreEnMP(int *indice) {
 
 void resolverEnMP(int *socketBuff, PAGINA *pPagina, int offset, int tamanio) {
 // 1+CODIGO
-	char caracter=1;
+	char caracter='1';
 	void *buffer = calloc(1,(size_t)tamanio + sizeof(char) );
 	memcpy(buffer,&caracter,sizeof(char));
 	pthread_rwlock_rdlock(semMemPrin);
@@ -2224,7 +2222,7 @@ void finalizarProceso(int *socketBuff){
 					*headerTablaPaginas = NULL;
 	t_link_element 	*aux 				= NULL;
 	PAGINA 			*pag_aux  			= NULL;
-	char 			caracter			= 1;
+	char 			caracter			= '1';
 
 	// levanto PID
 	if(recv(*socketBuff,buffer, sizeof(int), 0) <= 0 ) {
@@ -2349,7 +2347,7 @@ void dump(void){
 	}
 	else{
 		printf("\n **************** TLB ****************\n");
-		printf("| PID | Pagina | Marco | Contador-LRU |");
+		printf("| PID | Pagina | Marco | Contador-LRU |\n");
 		list_iterate(headerTLB,imprimirTlb);
 	}
 	printf("\n");

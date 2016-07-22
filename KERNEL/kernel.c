@@ -241,23 +241,23 @@ void *requestPages2UMC(void* request_buffer){
 	deserialize_data(code, (size_t) ansisopLen, request_buffer, &deserialize_index);
 	deserialize_data(&clientUMC, sizeof(int), request_buffer, &deserialize_index);
 
-	void* req2UMC = calloc(1, (size_t) ansisopLen+13);//1+PID+nbrOfPages+ansisopLen+code
+	void* req2UMC = NULL;//1+PID+nbrOfPages+ansisopLen+code
 	void* req2UMC_response = calloc(1, sizeof(int));
 	char umcProtocol = '1';
 	int nbrOfPages = ansisopLen/setup.PAGE_SIZE + 1;// +1 since ceil() does not work
 	int req2UMC_index = 0;
-	serialize_data(&umcProtocol, sizeof(char), req2UMC, &req2UMC_index);
-	serialize_data(&PID, sizeof(int), req2UMC, &req2UMC_index);
-	serialize_data(&nbrOfPages, sizeof(int), req2UMC, &req2UMC_index);
-	serialize_data(&ansisopLen, sizeof(int), req2UMC, &req2UMC_index);
-	serialize_data(&code, (size_t) ansisopLen, req2UMC, &req2UMC_index);
+	serialize_data(&umcProtocol, sizeof(char), &req2UMC, &req2UMC_index);
+	serialize_data(&PID, sizeof(int), &req2UMC, &req2UMC_index);
+	serialize_data(&nbrOfPages, sizeof(int), &req2UMC, &req2UMC_index);
+	serialize_data(&ansisopLen, sizeof(int), &req2UMC, &req2UMC_index);
+	serialize_data(code, (size_t) ansisopLen, &req2UMC, &req2UMC_index);
 	log_info(kernel_log, "Requesting %d pages to UMC.", nbrOfPages);
 
 	send(clientUMC, req2UMC, (size_t) req2UMC_index, 0);
 	recv(clientUMC, req2UMC_response, sizeof(int), 0);
 	int code_pages;
 	int code_pages_index = 0;
-	deserialize_data(&code_pages, sizeof(int), &req2UMC_response, &code_pages_index);
+	deserialize_data(&code_pages, sizeof(int), req2UMC_response, &code_pages_index);
 	log_info(kernel_log, "UMC replied.");
 	free(req2UMC);
     free(req2UMC_response);
@@ -293,7 +293,7 @@ t_pcb * recvPCB(int cpuID){
 	int pcb_size;
 	recv(cpuID, tmp_buff, (size_t) sizeof(int), 0);
 	int pcb_size_index = 0;
-	deserialize_data(&pcb_size, sizeof(int), &tmp_buff, &pcb_size_index);
+	deserialize_data(&pcb_size, sizeof(int), tmp_buff, &pcb_size_index);
 	void *pcb_serializado = calloc(1, (size_t) pcb_size);
 	recv(cpuID, pcb_serializado, (size_t) pcb_size, 0);
 	int pcb_serializado_index = 0;
@@ -344,7 +344,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					t_io *io_op = calloc(1,sizeof(t_io));
 					io_op->pid = laCPU->pid;
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0); // size of the io_name
-					deserialize_data(&nameSize, sizeof(int), &tmp_buff, &nameSize_index);
+					deserialize_data(&nameSize, sizeof(int), tmp_buff, &nameSize_index);
 					io_op->io_name = calloc(1, (size_t) nameSize);
 					io_op->io_units = calloc(1, sizeof(int));
 					recv(laCPU->clientID, io_op->io_name, (size_t) nameSize, 0);
@@ -372,7 +372,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					recv(laCPU->clientID, tmp_buff, 1, 0);
 					if (strncmp(tmp_buff, "1", 1) == 0) setValue = 1;
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
-					deserialize_data(&nameSize, sizeof(int), &tmp_buff, &nameSize_index);
+					deserialize_data(&nameSize, sizeof(int), tmp_buff, &nameSize_index);
 					char *theShared = calloc(1, (size_t) nameSize);
 					recv(laCPU->clientID, theShared, (size_t) nameSize, 0);
 					int sharedIndex = getSharedIndex(theShared);
@@ -380,7 +380,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					if (setValue == 1) {
 						recv(laCPU->clientID, tmp_buff, sizeof(int), 0);//recv & set the value
 						int theVal;
-						deserialize_data(&theVal, sizeof(int), &tmp_buff, &nameSize_index);
+						deserialize_data(&theVal, sizeof(int), tmp_buff, &nameSize_index);
 						setup.SHARED_VALUES[sharedIndex] = theVal;
 					} else {
 						void* sharedValue = calloc(1, sizeof(int));
@@ -394,7 +394,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					log_debug(kernel_log, "Receving a value to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
 					int value2console;
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
-					deserialize_data(&value2console, sizeof(int), &tmp_buff, &nameSize_index);
+					deserialize_data(&value2console, sizeof(int), tmp_buff, &nameSize_index);
                     void* text2Console = NULL;
 					int text2Console_index = 0;
 					int consoleProtocol = 1;
@@ -408,7 +408,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					log_debug(kernel_log, "Receving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
 					size_t txtSize;
-					deserialize_data(&txtSize, sizeof(int), &tmp_buff, &nameSize_index);
+					deserialize_data(&txtSize, sizeof(int), tmp_buff, &nameSize_index);
 					char *theTXT = calloc(1, txtSize);
 					recv(laCPU->clientID, theTXT, txtSize, 0);
 					log_debug(kernel_log, "Console %d will print this text: %s.", laCPU->pid, theTXT);
