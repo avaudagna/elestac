@@ -2473,13 +2473,21 @@ void liberarRecursos(void){
 		list_clean_and_destroy_elements(headerTLB,free);
 	}
 	// 4)
+	if(!semFifosxPid)
 		free(semFifosxPid);
+	if(!semMemPrin)
 		free(semMemPrin);
+	if(!semSwap)
 		free(semSwap);
+	if(!semClockPtrs)
 		free(semClockPtrs);
+	if(!semListaPids)
 		free(semListaPids);
+	if(!semRetardo)
 		free(semRetardo);
+	if(!semTLB)
 		free(semTLB);
+	if(!memoriaPrincipal)
 		free(memoriaPrincipal);
 
 		pthread_exit(0);
