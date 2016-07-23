@@ -1500,15 +1500,17 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, void *contenidoPagina,
 				break;
 			}
 			else{
+				pthread_rwlock_unlock(semFifosxPid);
 				setBitDeUso(pPid,((CLOCK_PAGINA*) recorredor->data)->nroPagina,0);
+				pthread_rwlock_rdlock(semFifosxPid);
 			}
 		}
 		// ¿ Se encontro alguna victima en la primer recorrida de la 2da vuelta ?
 		if(estado)	break;
 		// recorro desde el comienzo de la lista hasta de donde comence a recorrer anteriormente
-		pthread_rwlock_rdlock(semFifosxPid);
+		//pthread_rwlock_rdlock(semFifosxPid);
 		recorredor = fifoPID->head;
-		pthread_rwlock_unlock(semFifosxPid);
+		//pthread_rwlock_unlock(semFifosxPid);
 		for (i=0;i<(punteroPIDClock->indice);i++,recorredor=recorredor->next){
 			if(((CLOCK_PAGINA*) recorredor->data)->bitDeUso == 0 && ((CLOCK_PAGINA*) recorredor->data)->bitDeModificado == 1 ) {    // Encontre Pagina Victima
 				estado = true;
@@ -1516,9 +1518,13 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, void *contenidoPagina,
 				break;
 			}
 			else{
+				pthread_rwlock_unlock(semFifosxPid);
 				setBitDeUso(pPid,((CLOCK_PAGINA*) recorredor->data)->nroPagina,0);		// voy actualizando el bit de uso
+				pthread_rwlock_rdlock(semFifosxPid);
 			}
 		}
+		if(estado) break;
+		else pthread_rwlock_unlock(semFifosxPid);
 
 	}
 
