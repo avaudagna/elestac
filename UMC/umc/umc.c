@@ -2242,7 +2242,7 @@ void finalizarProceso(int *socketBuff){
 	memcpy(buffer+sizeof(char),&pPid,sizeof(int));
 
 	pthread_mutex_lock(semSwap);
-	enviarPaginaAlSwap(buffer,sizeof(char)+sizeof(int)));		// Elimnarlo en SWAP
+	enviarPaginaAlSwap(buffer,sizeof(char)+sizeof(int));		// Elimnarlo en SWAP
 	swapUpdate();
 	pthread_mutex_unlock(semSwap);
 	limpiarPidDeTLB(pPid);							// Elimino PID de la TLB
