@@ -92,7 +92,7 @@ void serialize_stack (t_stack *stack, void **buffer, int *buffer_size) {
     u_int32_t cantidad_elementos_stack = 0;
     t_stack_entry *data = NULL;
     u_int32_t indice = 0;
-    size_t stack_entry_item_size = 0, stack_entry_list_buffer_size = *buffer_size;
+    int stack_entry_item_size = 0, stack_entry_list_buffer_size = *buffer_size;
 
     //Stack / Queue
     t_list *elementos = stack-> elements; //Tomo la lista de elementos de la queue
@@ -137,24 +137,24 @@ void serialize_stack_entry(t_stack_entry *entry, void **buffer, int *buffer_size
     serialize_data(&entry->cant_args, sizeof(int), buffer, buffer_size);
     //serialize_data(&entry->args, (size_t) sizeof(t_arg)*entry->cant_args, buffer, buffer_size);
     for(i = 0; i < entry->cant_args; i++) {
-        serialize_data(&(entry->args+i)->page_number, (size_t) sizeof(int), buffer, buffer_size);
-        serialize_data(&(entry->args+i)->offset, (size_t) sizeof(int), buffer, buffer_size);
-        serialize_data(&(entry->args+i)->tamanio, (size_t) sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->args+i)->page_number, sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->args+i)->offset, sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->args+i)->tamanio, sizeof(int), buffer, buffer_size);
     }
     serialize_data(&entry->cant_vars, sizeof(int), buffer, buffer_size);
     //serialize_data(&entry->vars, (size_t) sizeof(t_var)*entry->cant_vars, buffer, buffer_size);
     for(i = 0; i < entry->cant_vars; i++) {
-        serialize_data(&(entry->vars+i)->var_id, (size_t) sizeof(char), buffer, buffer_size);
-        serialize_data(&(entry->vars+i)->page_number, (size_t) sizeof(int), buffer, buffer_size);
-        serialize_data(&(entry->vars+i)->offset, (size_t) sizeof(int), buffer, buffer_size);
-        serialize_data(&(entry->vars+i)->tamanio, (size_t) sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->vars+i)->var_id, sizeof(char), buffer, buffer_size);
+        serialize_data(&(entry->vars+i)->page_number, sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->vars+i)->offset, sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->vars+i)->tamanio, sizeof(int), buffer, buffer_size);
     }
     serialize_data(&entry->cant_ret_vars, sizeof(int), buffer, buffer_size);
     //serialize_data(&entry->ret_vars, (size_t) sizeof(t_ret_var)*entry->cant_vars, buffer, buffer_size);
     for(i = 0; i < entry->cant_ret_vars; i++) {
-        serialize_data(&(entry->ret_vars+i)->page_number, (size_t) sizeof(int), buffer, buffer_size);
-        serialize_data(&(entry->ret_vars+i)->offset, (size_t) sizeof(int), buffer, buffer_size);
-        serialize_data(&(entry->ret_vars+i)->tamanio, (size_t) sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->ret_vars+i)->page_number, sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->ret_vars+i)->offset, sizeof(int), buffer, buffer_size);
+        serialize_data(&(entry->ret_vars+i)->tamanio, sizeof(int), buffer, buffer_size);
     }
     serialize_data(&entry->ret_pos, sizeof(int), buffer, buffer_size);
 }
