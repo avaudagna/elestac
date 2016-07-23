@@ -83,12 +83,13 @@ int start_kernel(int argc, char* configFile){
 void* sem_wait_thread(void* cpuData){
 	int semIndex, miID;
 	int cpuData_index = 0;
-	deserialize_data(&semIndex, sizeof(int), cpuData, &cpuData_index);
-	deserialize_data(&miID, sizeof(int), cpuData, &cpuData_index);
+    char kernel_response = '0';
+    deserialize_data(&miID, sizeof(int), cpuData, &cpuData_index);
+    deserialize_data(&semIndex, sizeof(int), cpuData, &cpuData_index);
 	free(cpuData);
 	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started.", setup.SEM_ID[semIndex], miID);
 	sem_wait(&semaforo_ansisop[semIndex]);
-	send(miID, "0", 1, 0);
+	send(miID, &kernel_response, sizeof(char), 0);
 	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished.", setup.SEM_ID[semIndex], miID);
     pthread_exit(0);
 }
@@ -96,13 +97,14 @@ void* sem_wait_thread(void* cpuData){
 int wait_coordination(int cpuID){
 	bool semWait=false;
 	int buffindex = 0;
-	char* tmp_buff = calloc(1, sizeof(int));
+    char doWait;
+	recv(cpuID, &doWait, sizeof(char), 0);
+	if (doWait == '0')
+        semWait=true;
 
-	recv(cpuID, tmp_buff, 1, 0);
-	if (strncmp(tmp_buff, "0", 1) == 0) semWait=true;
-
+    void* tmp_buff = calloc(1, sizeof(int));
 	recv(cpuID, tmp_buff, sizeof(int), 0);
-	size_t SEM_ID_Size;
+	int SEM_ID_Size;
 	deserialize_data(&SEM_ID_Size, sizeof(int), tmp_buff, &buffindex);
 
 	char* SEM_ID = calloc(1, SEM_ID_Size);
@@ -110,7 +112,7 @@ int wait_coordination(int cpuID){
 	int semIndex = getSEMindex(SEM_ID);
 
 	if(semWait){
-		losDatosGlobales = calloc(1, sizeof(int)*2);
+		losDatosGlobales = NULL;
 		losDatosGlobales_index = 0;
 		serialize_data(&cpuID, (size_t) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
 		serialize_data(&semIndex, (size_t) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
@@ -368,8 +370,9 @@ void check_CPU_FD_ISSET(void *cpu){
 					break;
 				case 5:// var compartida
 					log_debug(kernel_log, "Receving a shared var operation from CPU %d", laCPU->clientID);
-					recv(laCPU->clientID, tmp_buff, 1, 0);
-					if (strncmp(tmp_buff, "1", 1) == 0) setValue = 1;
+					recv(laCPU->clientID, tmp_buff, sizeof(char), 0);
+					if (*tmp_buff == '1')
+                        setValue = 1;
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
 					deserialize_data(&nameSize, sizeof(int), tmp_buff, &nameSize_index);
 					char *theShared = calloc(1, (size_t) nameSize);

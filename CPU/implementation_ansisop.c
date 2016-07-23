@@ -271,7 +271,7 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
     serialize_data(&operation, sizeof(char), &buffer, &buffer_index);
     serialize_data(&action, sizeof(char), &buffer, &buffer_index);
     serialize_data(&variable_name_length, sizeof(int), &buffer, &buffer_index);
-    serialize_data(&variable, sizeof(t_nombre_compartida), &buffer, &buffer_index);
+    serialize_data(variable, (size_t) variable_name_length, &buffer, &buffer_index);
 
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "send of obtener variable compartida of %s failed", variable);
@@ -300,7 +300,7 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
     serialize_data(&operation, sizeof(char), &buffer, &buffer_index);
     serialize_data(&action, sizeof(char), &buffer, &buffer_index);
     serialize_data(&variable_length, sizeof(int), &buffer, &buffer_index);
-    serialize_data(&variable, (size_t) variable_length, &buffer, &buffer_index);
+    serialize_data(variable, (size_t) variable_length, &buffer, &buffer_index);
     serialize_data(&valor, sizeof(int), &buffer, &buffer_index);
 
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
@@ -428,15 +428,17 @@ void la_wait (t_nombre_semaforo identificador_semaforo){
     serialize_data(&operation, sizeof(char), &buffer, &buffer_index);
     serialize_data(&action, sizeof(char), &buffer, &buffer_index);
     serialize_data(&identificador_semaforo_length, sizeof(int), &buffer, &buffer_index);
-    serialize_data(&identificador_semaforo, (size_t) identificador_semaforo_length, &buffer, &buffer_index);
+    serialize_data(identificador_semaforo, (size_t) identificador_semaforo_length, &buffer, &buffer_index);
 
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "wait(%s) failed", identificador_semaforo);
         return;
     }
+    log_info(cpu_log, "Starting wait");
     //me quedo esperando activamente a que kernel me responda
     recv(kernelSocketClient, response_buffer, sizeof(char), 0);
-    //kernel_response debería ser 0
+    //kernel_response debería ser '0'
+    log_info(cpu_log, "Finished wait");
     free(buffer);
     free(response_buffer);
 }
@@ -449,7 +451,7 @@ void la_signal (t_nombre_semaforo identificador_semaforo){
     serialize_data(&operation, sizeof(char), &buffer, &buffer_index);
     serialize_data(&action, sizeof(char), &buffer, &buffer_index);
     serialize_data(&identificador_semaforo_length, sizeof(int), &buffer, &buffer_index);
-    serialize_data(&identificador_semaforo, sizeof(int), &buffer, &buffer_index);
+    serialize_data(identificador_semaforo, sizeof(int), &buffer, &buffer_index);
 
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "signal(%s) failed", identificador_semaforo);
