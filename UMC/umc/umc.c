@@ -2329,7 +2329,7 @@ int getPosicionListaPids(int pPid) {
 void retardo(void){
 
 	pthread_rwlock_rdlock(semRetardo);
-	usleep(umcGlobalParameters.retardo * 1000000);
+	usleep(umcGlobalParameters.retardo);
 	pthread_rwlock_unlock(semRetardo);
 }
 
