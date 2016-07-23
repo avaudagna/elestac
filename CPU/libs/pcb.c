@@ -15,9 +15,9 @@ void serialize_pcb(t_pcb *pcb, void **buffer, int *buffer_size) {
     serialize_data(&pcb->stack_pointer, sizeof(uint32_t), buffer, buffer_size);
     serialize_stack(pcb->stack_index, buffer, buffer_size);
     serialize_data(&pcb->status, sizeof(int), buffer, buffer_size);
-    serialize_data(&pcb->instrucciones_size, sizeof(t_size), buffer, buffer_size);
+    serialize_data(&pcb->instrucciones_size, sizeof(size_t), buffer, buffer_size);
     serialize_instrucciones(pcb->instrucciones_serializado, pcb->instrucciones_size, buffer, buffer_size);
-    serialize_data(&pcb->etiquetas_size, sizeof(t_size), buffer, buffer_size);
+    serialize_data(&pcb->etiquetas_size, sizeof(size_t), buffer, buffer_size);
     serialize_data(pcb->etiquetas, (size_t) pcb->etiquetas_size, buffer, buffer_size);
 }
 
@@ -58,7 +58,7 @@ void deserialize_etiquetas(char **etiquetas, size_t etiquetas_size, void *serial
 
 void serialize_t_instructions(t_intructions *intructions, void **buffer, int *buffer_size) {
     serialize_data(&intructions->start, sizeof(t_puntero_instruccion), buffer, buffer_size);
-    serialize_data(&intructions->offset, sizeof(t_size), buffer, buffer_size);
+    serialize_data(&intructions->offset, sizeof(size_t), buffer, buffer_size);
 }
 
 void deserialize_instrucciones(t_intructions **instrucciones, int instrucciones_size, void **serialized_data, int *serialized_data_size) {
@@ -67,6 +67,6 @@ void deserialize_instrucciones(t_intructions **instrucciones, int instrucciones_
     //instrucciones_size tiene la cantidad de instrucciones cargadas
     for(indice = 0; indice < instrucciones_size; indice ++) {
         deserialize_data(&(*instrucciones+indice)->start, sizeof(t_puntero_instruccion), serialized_data, serialized_data_size);
-        deserialize_data(&(*instrucciones+indice)->offset, sizeof(t_size), serialized_data, serialized_data_size);
+        deserialize_data(&(*instrucciones+indice)->offset, sizeof(size_t), serialized_data, serialized_data_size);
     }
 }
