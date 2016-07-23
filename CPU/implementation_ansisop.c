@@ -275,6 +275,7 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
 
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "send of obtener variable compartida of %s failed", variable);
+        free(buffer);
         return ERROR;
     }
     free(buffer);
@@ -451,7 +452,7 @@ void la_signal (t_nombre_semaforo identificador_semaforo){
     serialize_data(&operation, sizeof(char), &buffer, &buffer_index);
     serialize_data(&action, sizeof(char), &buffer, &buffer_index);
     serialize_data(&identificador_semaforo_length, sizeof(int), &buffer, &buffer_index);
-    serialize_data(identificador_semaforo, sizeof(int), &buffer, &buffer_index);
+    serialize_data(identificador_semaforo, (size_t) identificador_semaforo_length, &buffer, &buffer_index);
 
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "signal(%s) failed", identificador_semaforo);

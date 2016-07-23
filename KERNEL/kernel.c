@@ -19,6 +19,7 @@ int losDatosGlobales_index;
 
 int main (int argc, char* *argv){
 	kernel_log = log_create("kernel.log", "Elestac-KERNEL", true, LOG_LEVEL_TRACE);
+    pthread_mutex_init(&mut_io_list, NULL);
 	PCB_READY = list_create();
 	PCB_BLOCKED = list_create();
 	PCB_EXIT = list_create();
@@ -96,22 +97,24 @@ void* sem_wait_thread(void* cpuData){
 
 int wait_coordination(int cpuID){
 	bool semWait=false;
-	int buffindex = 0;
-    char doWait;
-	recv(cpuID, &doWait, sizeof(char), 0);
-	if (doWait == '0')
-        semWait=true;
+	int semaphore_trama_buffer_index = 0, SEM_ID_Size = 0;
+	char doWait, *SEM_ID = NULL;
+	size_t size_trama_semaphore = sizeof(char) + sizeof(int);
+	void * semaphore_trama_buffer = calloc(1, size_trama_semaphore);
 
-    void* tmp_buff = calloc(1, sizeof(int));
-	recv(cpuID, tmp_buff, sizeof(int), 0);
-	int SEM_ID_Size;
-	deserialize_data(&SEM_ID_Size, sizeof(int), tmp_buff, &buffindex);
+    recv(cpuID, semaphore_trama_buffer, size_trama_semaphore  , 0);
+    deserialize_data(&doWait, sizeof(char), semaphore_trama_buffer,&semaphore_trama_buffer_index);
+    deserialize_data(&SEM_ID_Size, sizeof(int), semaphore_trama_buffer,&semaphore_trama_buffer_index);
+    SEM_ID = calloc(1, SEM_ID_Size);
+    recv(cpuID, SEM_ID, SEM_ID_Size, 0);
 
-	char* SEM_ID = calloc(1, SEM_ID_Size);
-	recv(cpuID, SEM_ID, SEM_ID_Size, 0);
 	int semIndex = getSEMindex(SEM_ID);
 
-	if(semWait){
+
+    if (doWait == '0')
+        semWait=true;
+
+    if(semWait){
 		losDatosGlobales = NULL;
 		losDatosGlobales_index = 0;
 		serialize_data(&cpuID, (size_t) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
@@ -122,7 +125,6 @@ int wait_coordination(int cpuID){
 		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d.", setup.SEM_ID[semIndex], cpuID);
 		sem_post(&semaforo_ansisop[semIndex]);
 	}
-	free(tmp_buff);
 	free(SEM_ID);
 	return 1;
 }
@@ -319,7 +321,7 @@ void restoreCPU(t_Client *laCPU){
 }
 
 void check_CPU_FD_ISSET(void *cpu){
-	char* cpu_protocol = calloc(1, 1);
+    char cpu_protocol = '\0';
 	char* tmp_buff = calloc(1, sizeof(int));
 	int setValue = 0;
 	int nameSize;
@@ -327,10 +329,10 @@ void check_CPU_FD_ISSET(void *cpu){
 	t_Client* laCPU = (t_Client*) cpu;
 	if (laCPU != NULL && FD_ISSET(laCPU->clientID, &allSockets)) {
 		log_debug(kernel_log,"CPU %d has something to say.", laCPU->clientID);
-		if (recv(laCPU->clientID, cpu_protocol, 1, MSG_DONTWAIT) > 0){
-			switch (atoi(cpu_protocol)){
-				case 1:// Quantum end
-				case 2:// Program END
+		    if (recv(laCPU->clientID, &cpu_protocol, sizeof(char), MSG_DONTWAIT) > 0){
+			switch (cpu_protocol){
+				case '1':// Quantum end
+				case '2':// Program END
 					log_debug(kernel_log, "Receving a PCB");
 					t_pcb* incomingPCB = recvPCB(laCPU->clientID);
 					if (laCPU->status == EXIT || incomingPCB->status==EXIT || incomingPCB->status == BROKEN){
@@ -340,7 +342,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					}
 					restoreCPU(laCPU);
 					break;
-				case 3:// IO
+				case '3':// IO
 					log_debug(kernel_log, "Receving an Input/Output request + a PCB");
 					t_io *io_op = calloc(1,sizeof(t_io));
 					io_op->pid = laCPU->pid;
@@ -363,12 +365,12 @@ void check_CPU_FD_ISSET(void *cpu){
 					}
 					restoreCPU(laCPU);
 					break;
-				case 4:// semaforo
+				case '4':// semaforo
 					log_debug(kernel_log, "Receving a semaphore operation from CPU %d", laCPU->clientID);
 					if (wait_coordination(laCPU->clientID) == 1)
 						log_debug(kernel_log, "Semaphore operation successfully handled.");
 					break;
-				case 5:// var compartida
+				case '5':// var compartida
 					log_debug(kernel_log, "Receving a shared var operation from CPU %d", laCPU->clientID);
 					recv(laCPU->clientID, tmp_buff, sizeof(char), 0);
 					if (*tmp_buff == '1')
@@ -392,7 +394,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					}
 					free(theShared);
 					break;
-				case 6:// imprimirValor
+				case '6':// imprimirValor
 					log_debug(kernel_log, "Receving a value to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
 					int value2console;
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
@@ -406,7 +408,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					send(laCPU->pid, text2Console, (size_t) text2Console_index, 0); // send the value to the console
                     free(text2Console);
 					break;
-				case 7:// imprimirTexto
+				case '7':// imprimirTexto
 					log_debug(kernel_log, "Receving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
 					size_t txtSize;
@@ -444,12 +446,12 @@ void check_CPU_FD_ISSET(void *cpu){
 		}
 		RoundRobinReport();
 	}
-	free(cpu_protocol);
 	free(tmp_buff);
 }
 
 void destroy_PCB(void *pcb){
 	t_pcb *unPCB = pcb;
+    free(unPCB->etiquetas);
 	free(unPCB);
 }
 
@@ -590,6 +592,11 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 		send(newConsole, PIDserializado, sizeof(int), 0);
 		log_error(kernel_log, "The program with PID=%04d could not be started. System run out of memory.", newConsole);
 		close(newConsole);
+        bool getConsoleIndex(void *nbr) {
+            t_Client *unCliente = nbr;
+            return (newConsole == unCliente->clientID);
+        }
+        list_remove_by_condition(consolas_conectadas, getConsoleIndex);
 	}
 	free(PIDserializado);
 }
@@ -689,18 +696,18 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 		send(clientUMC, umcKillProg, (size_t) umcKillProg_index, 0);
 		log_info(kernel_log, "Program %04d has been terminated", pid);
 		free(umcKillProg);
+        if (consoleStillOpen){
+            char finalizar = '0';
+            void* consoleKillProg = NULL;
+            int consoleKillProg_index = 0;
+            if(status == BROKEN) finalizar = '3';
+            log_info(kernel_log, "Program status was %d. Console will inform this properly to the user.", status);
+            serialize_data(&finalizar, sizeof(char), &consoleKillProg, &consoleKillProg_index);
+            send(pid, consoleKillProg, sizeof(char), 0); // send exit code to console
+            free(consoleKillProg);
+        }
+        close(pid); // close console socket
 	}
-	if (consoleStillOpen){
-		char finalizar = '0';
-		void* consoleKillProg = NULL;
-		int consoleKillProg_index = 0;
-		if(status == BROKEN) finalizar = '3';
-		log_info(kernel_log, "Program status was %d. Console will inform this properly to the user.", status);
-		serialize_data(&finalizar, sizeof(char), &consoleKillProg, &consoleKillProg_index);
-		send(pid, consoleKillProg, sizeof(char), 0); // send exit code to console
-		free(consoleKillProg);
-	}
-	close(pid); // close console socket
 	bool getConsoleIndex(void *nbr) {
 		t_Client *unCliente = nbr;
 		return (pid == unCliente->clientID);
