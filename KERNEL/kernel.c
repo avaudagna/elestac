@@ -289,17 +289,16 @@ void add2FD_SET(void *client){
 }
 
 t_pcb * recvPCB(int cpuID){
-	char* tmp_buff = calloc(1, sizeof(int));
-	int pcb_size;
-	recv(cpuID, tmp_buff, (size_t) sizeof(int), 0);
-	int pcb_size_index = 0;
+	void* tmp_buff = calloc(1, sizeof(int));
+	int pcb_size = 0, pcb_size_index = 0;
+	recv(cpuID, tmp_buff, sizeof(int), 0);
 	deserialize_data(&pcb_size, sizeof(int), tmp_buff, &pcb_size_index);
 	void *pcb_serializado = calloc(1, (size_t) pcb_size);
 	recv(cpuID, pcb_serializado, (size_t) pcb_size, 0);
 	int pcb_serializado_index = 0;
 	t_pcb* incomingPCB = calloc(1, sizeof(t_pcb));
 	deserialize_pcb(&incomingPCB, pcb_serializado, &pcb_serializado_index);
-	//testSerializedPCB(incomingPCB, pcb_serializado);
+//	testSerializedPCB(incomingPCB, pcb_serializado);
 	free(tmp_buff);
 	free(pcb_serializado);
 	return incomingPCB;
