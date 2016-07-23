@@ -419,7 +419,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					int txt2console_index = 0;
 					serialize_data(&consoleProtocol2, (size_t) sizeof(char), &txt2console, &txt2console_index);
 					serialize_data(&txtSize, (size_t) sizeof(int), &txt2console, &txt2console_index);
-					serialize_data(&theTXT, txtSize, &txt2console, &txt2console_index);
+					serialize_data(theTXT, txtSize, &txt2console, &txt2console_index);
 					send(laCPU->pid, txt2console, (size_t) txt2console_index, 0); // send the text to the console
 					free(theTXT);
 					free(txt2console);

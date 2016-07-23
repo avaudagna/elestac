@@ -378,7 +378,7 @@ void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
 //    asprintf(&buffer, "%d%04d%s%04d", atoi(ENTRADA_SALIDA_ID), strlen(dispositivo), dispositivo, tiempo);
     serialize_data(&operation, sizeof(char), &buffer, &buffer_index);
     serialize_data(&dispositivo_length, sizeof(int), &buffer, &buffer_index);
-    serialize_data(&dispositivo, (size_t) dispositivo_length, &buffer, &buffer_index);
+    serialize_data(dispositivo, (size_t) dispositivo_length, &buffer, &buffer_index);
     serialize_data(&tiempo, sizeof(int), &buffer, &buffer_index);
 
     //Envio el paquete a KERNEL
@@ -411,7 +411,7 @@ void imprimirTexto(char* texto) {
 //    asprintf(&buffer, "%d%04d%s", atoi(IMPRIMIR_TEXTO_ID), texto_len, texto);
     serialize_data(&operation, sizeof(char), &buffer, &buffer_index);
     serialize_data(&texto_len, sizeof(int), &buffer, &buffer_index);
-    serialize_data(&texto, (size_t) texto_len, &buffer, &buffer_index);
+    serialize_data(texto, (size_t) texto_len, &buffer, &buffer_index);
 
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "imprimirTexto with texto : %s , send failed", texto);
