@@ -55,7 +55,7 @@
 #define ABORTAR_PROCESO "6"
 #define OK "1"
 #define BUSCANDO_VICTIMA 0
-#define FINALIZAR_PROCESO 3
+#define FINALIZAR_PROCESO '3'
 
 #define STACK_OVERFLOW "2"
 typedef struct umc_parametros {
@@ -2222,7 +2222,7 @@ void finalizarProceso(int *socketBuff){
 					*headerTablaPaginas = NULL;
 	t_link_element 	*aux 				= NULL;
 	PAGINA 			*pag_aux  			= NULL;
-	char 			caracter			= '1';
+	char 			caracter			= FINALIZAR_PROCESO;
 
 	// levanto PID
 	if(recv(*socketBuff,buffer, sizeof(int), 0) <= 0 ) {

@@ -397,8 +397,8 @@ void check_CPU_FD_ISSET(void *cpu){
 					deserialize_data(&value2console, sizeof(int), tmp_buff, &nameSize_index);
                     void* text2Console = NULL;
 					int text2Console_index = 0;
-					int consoleProtocol = 1;
-					serialize_data(&consoleProtocol, (size_t) sizeof(int), &text2Console, &text2Console_index);
+					char consoleProtocol = '1';
+					serialize_data(&consoleProtocol, (size_t) sizeof(char), &text2Console, &text2Console_index);
 					serialize_data(&value2console, (size_t) sizeof(int), &text2Console, &text2Console_index);
 					log_debug(kernel_log, "Console %d will print the value %d.", laCPU->pid, value2console);
 					send(laCPU->pid, text2Console, (size_t) text2Console_index, 0); // send the value to the console
@@ -413,9 +413,9 @@ void check_CPU_FD_ISSET(void *cpu){
 					recv(laCPU->clientID, theTXT, txtSize, 0);
 					log_debug(kernel_log, "Console %d will print this text: %s.", laCPU->pid, theTXT);
 					void* txt2console = NULL;
-					int consoleProtocol2 = 2;
+					char consoleProtocol2 = '2';
 					int txt2console_index = 0;
-					serialize_data(&consoleProtocol2, (size_t) sizeof(int), &txt2console, &txt2console_index);
+					serialize_data(&consoleProtocol2, (size_t) sizeof(char), &txt2console, &txt2console_index);
 					serialize_data(&txtSize, (size_t) sizeof(int), &txt2console, &txt2console_index);
 					serialize_data(&theTXT, txtSize, &txt2console, &txt2console_index);
 					send(laCPU->pid, txt2console, (size_t) txt2console_index, 0); // send the text to the console
