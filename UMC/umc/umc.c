@@ -2023,7 +2023,7 @@ void resolverEnMP(int *socketBuff, PAGINA *pPagina, int offset, int tamanio) {
 	pthread_rwlock_rdlock(semMemPrin);
 	memcpy(buffer+sizeof(char),(vectorMarcos[pPagina->nroDeMarco].comienzoMarco)+offset,(size_t )tamanio);
 	pthread_rwlock_unlock(semMemPrin);
-	if (send(*socketBuff,buffer,(size_t )tamanio,0) <= 0) {    // envio a CPU la pagina
+	if (send(*socketBuff,buffer,(size_t )tamanio+sizeof(char),0) <= 0) {    // envio a CPU la pagina
 		free(buffer);
 		perror("send");
 		printf("\nError en la comunicacion con CPU,Finalizando.\n");
