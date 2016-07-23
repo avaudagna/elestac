@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
     while (continua) {
         kernel_operation = calloc(1, sizeof(char));
 		if (recv(kernelSocketClient, kernel_operation, sizeof(char), 0) > 0) {
-			log_info(console_log, "Kernel dijo: %c", kernel_operation);
+			log_info(console_log, "Kernel dijo: %c", *kernel_operation);
 			switch (*kernel_operation) {
 				case '0':// Program END
 					continua = false;
