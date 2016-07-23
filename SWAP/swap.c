@@ -153,7 +153,7 @@ int main(int argc , char **argv) {
  **********************/
 int umc_handshake(){
 	int handshakeOK = 0;
-    size_t tamanioTrama = sizeof(char)+sizeof(int);
+	size_t tamanioTrama = sizeof(char)+sizeof(int);
 	void * handShake = calloc(1, tamanioTrama );
 
 	//recv el identificador de operacion (espero una 'U')
@@ -162,26 +162,26 @@ int umc_handshake(){
 		return -1;
 	}
 
-    int handshake_index = 0;
+	int handshake_index = 0;
 	if(*(char*)handShake == 'U'){ //El handshake es correcto
-        handshake_index += sizeof(char);
-        deserialize_data(&TAMANIO_PAGINA, sizeof(int), handShake, &handshake_index);
+		handshake_index += sizeof(char);
+		deserialize_data(&TAMANIO_PAGINA, sizeof(int), handShake, &handshake_index);
 
 		init_BitMap();
 
 		//Armo la trama a responder char[]: S+cantPaginasLibres
 		int respuesta_index = 0, cantidad_paginas_libres = paginas_CantidadPaginasLibres();
 		void * respuesta = NULL;
-        char operacion = 'S';
+		char operacion = 'S';
 
 //		sprintf(respuesta,"S%04d", paginas_CantidadPaginasLibres());
-        serialize_data(&operacion, sizeof(char), &respuesta, &respuesta_index );
-        serialize_data(&cantidad_paginas_libres , sizeof(int), &respuesta, &respuesta_index );
+		serialize_data(&operacion, sizeof(char), &respuesta, &respuesta_index );
+		serialize_data(&cantidad_paginas_libres , sizeof(int), &respuesta, &respuesta_index );
 
 
 		if(send(umcSocket,respuesta, (size_t) respuesta_index, 0) == -1){
 			log_error(LOG_SWAP, "Error while trying to complete handshake");
-            free(respuesta);
+			free(respuesta);
 			return -1;
 		}
 
@@ -372,7 +372,7 @@ void init_Server(){
 	while(1){
 		log_info(LOG_SWAP, "Waiting for UMC request");
 
-        char* operacion = calloc(1,sizeof(char));
+		char* operacion = calloc(1,sizeof(char));
 		if(recv(umcSocket,operacion,sizeof(char),0) <= 0){
 			free(operacion);
 			close(umcSocket);
@@ -418,15 +418,15 @@ void umc_leer(){
 
 	char* buffer = calloc(1,sizeof(int));
 
-    int pid, numeroPagina, buffer_index = 0;
+	int pid, numeroPagina, buffer_index = 0;
 
-    //Recibo el PID y NUMERO_DE_PAGINA
-    if (recv(umcSocket, buffer, sizeof(int) * 2, 0) <= 0) {
-        excepcionAlHablarConUMC();
-    }
-    deserialize_data(&pid, sizeof(int), buffer, &buffer_index);
-    deserialize_data(&numeroPagina, sizeof(int), buffer, &buffer_index);
-    free(buffer);
+	//Recibo el PID y NUMERO_DE_PAGINA
+	if (recv(umcSocket, buffer, sizeof(int) * 2, 0) <= 0) {
+		excepcionAlHablarConUMC();
+	}
+	deserialize_data(&pid, sizeof(int), buffer, &buffer_index);
+	deserialize_data(&numeroPagina, sizeof(int), buffer, &buffer_index);
+	free(buffer);
 
 
 	buffer = calloc(1,(size_t) TAMANIO_PAGINA);
@@ -435,11 +435,11 @@ void umc_leer(){
 	char* resultadoRequest = request_Lectura(pid, numeroPagina);
 
 	if(resultadoRequest != NULL){
-        //ENVIAMOS A UMC PID+CONTENIDO_DE_MARCO
+		//ENVIAMOS A UMC PID+CONTENIDO_DE_MARCO
 		void* respuesta = NULL;
-        int respuesta_index = 0;
-        serialize_data(&pid ,sizeof(int), &respuesta, &respuesta_index);
-        serialize_data(resultadoRequest, (size_t) TAMANIO_PAGINA, &respuesta, &respuesta_index);
+		int respuesta_index = 0;
+		serialize_data(&pid ,sizeof(int), &respuesta, &respuesta_index);
+		serialize_data(resultadoRequest, (size_t) TAMANIO_PAGINA, &respuesta, &respuesta_index);
 
 		if(send(umcSocket, respuesta, (size_t) respuesta_index ,0) == -1)
 			excepcionAlHablarConUMC();
@@ -457,29 +457,29 @@ void umc_leer(){
 }
 
 void umc_escribir() {
-    void *buffer = calloc(1, sizeof(int) * 2);
+	void *buffer = calloc(1, sizeof(int) * 2);
 
-    int pid, numeroPagina, buffer_index = 0;
-    void *codigo = NULL;
+	int pid, numeroPagina, buffer_index = 0;
+	void *codigo = NULL;
 
-    //Recibo el PID
+	//Recibo el PID
 
-    if (recv(umcSocket, buffer, sizeof(int) * 2, 0) <= 0) {
-        excepcionAlHablarConUMC();
-    }
-    deserialize_data(&pid, sizeof(int), buffer, &buffer_index);
-    deserialize_data(&numeroPagina, sizeof(int), buffer, &buffer_index);
-    free(buffer);
+	if (recv(umcSocket, buffer, sizeof(int) * 2, 0) <= 0) {
+		excepcionAlHablarConUMC();
+	}
+	deserialize_data(&pid, sizeof(int), buffer, &buffer_index);
+	deserialize_data(&numeroPagina, sizeof(int), buffer, &buffer_index);
+	free(buffer);
 
-    buffer = calloc(1, (size_t) TAMANIO_PAGINA);
+	buffer = calloc(1, (size_t) TAMANIO_PAGINA);
 
-    //Recibimos el codigo
-    if (recv(umcSocket, buffer, (size_t) TAMANIO_PAGINA, 0) <= 0) {
-        excepcionAlHablarConUMC();
-    }
-    codigo =  calloc(1,sizeof(char) * TAMANIO_PAGINA);
+	//Recibimos el codigo
+	if (recv(umcSocket, buffer, (size_t) TAMANIO_PAGINA, 0) <= 0) {
+		excepcionAlHablarConUMC();
+	}
+	codigo =  calloc(1,sizeof(char) * TAMANIO_PAGINA);
 	memcpy(codigo, buffer, (size_t) TAMANIO_PAGINA);
-    free(buffer);
+	free(buffer);
 
 	//Hacemos el request
 	int resultadoRequest = request_EscrituraPagina(pid, numeroPagina, codigo);
@@ -487,11 +487,11 @@ void umc_escribir() {
 	if(resultadoRequest > -1) { //ENVIAMOS A UMC 1+cantPaginasLibres
 
 		char operacion = '1';
-        void * respuesta = NULL;
-        int respuesta_index = 0, cant_paginas_libres = paginas_CantidadPaginasLibres();
+		void * respuesta = NULL;
+		int respuesta_index = 0, cant_paginas_libres = paginas_CantidadPaginasLibres();
 
-        serialize_data(&operacion, sizeof(char), &respuesta, &respuesta_index);
-        serialize_data(&cant_paginas_libres, sizeof(int), &respuesta, &respuesta_index);
+		serialize_data(&operacion, sizeof(char), &respuesta, &respuesta_index);
+		serialize_data(&cant_paginas_libres, sizeof(int), &respuesta, &respuesta_index);
 
 		if(send(umcSocket,respuesta, (size_t) respuesta_index,0) == -1)
 			excepcionAlHablarConUMC();
@@ -513,7 +513,7 @@ void umc_finalizarPrograma(){
 	//Recibo el PID
 	if(recv(umcSocket, buffer, sizeof(int), 0)<= 0)
 		excepcionAlHablarConUMC();
-    deserialize_data(&pid, sizeof(int), buffer, &buffer_index);
+	deserialize_data(&pid, sizeof(int), buffer, &buffer_index);
 
 	free(buffer);
 
@@ -522,24 +522,24 @@ void umc_finalizarPrograma(){
 
 	if(resultadoRequest > -1) { //ENVIAMOS A UMC 1+cantPaginasLibres
 
-        char operacion = '1';
-        void *respuesta = NULL;
-        int respuesta_index = 0, cant_paginas_libres = paginas_CantidadPaginasLibres();
+		char operacion = '1';
+		void *respuesta = NULL;
+		int respuesta_index = 0, cant_paginas_libres = paginas_CantidadPaginasLibres();
 
-        serialize_data(&operacion, sizeof(char), &respuesta, &respuesta_index);
-        serialize_data(&cant_paginas_libres, sizeof(int), &respuesta, &respuesta_index);
+		serialize_data(&operacion, sizeof(char), &respuesta, &respuesta_index);
+		serialize_data(&cant_paginas_libres, sizeof(int), &respuesta, &respuesta_index);
 
-        if (send(umcSocket, respuesta, (size_t) respuesta_index, 0) == -1) {
-            free(respuesta);
-            excepcionAlHablarConUMC();
-        }
-        free(respuesta);
+		if (send(umcSocket, respuesta, (size_t) respuesta_index, 0) == -1) {
+			free(respuesta);
+			excepcionAlHablarConUMC();
+		}
+		free(respuesta);
 
 	} else { //ENVIAMOS ERROR A UMC
-        char error[1] = {'E'};
-        if(send(umcSocket,(void *) error, sizeof(char),0) == -1) {
-            excepcionAlHablarConUMC();
-        }
+		char error[1] = {'E'};
+		if(send(umcSocket,(void *) error, sizeof(char),0) == -1) {
+			excepcionAlHablarConUMC();
+		}
 	}
 
 //	free(buffer);

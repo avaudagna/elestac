@@ -1,5 +1,5 @@
 /* Kernel.c by pacevedo */
-#include <libs/pcb.h>
+#include "libs/pcb.h"
 #include "kernel.h"
 
 /* BEGIN OF GLOBAL STUFF I NEED EVERYWHERE */

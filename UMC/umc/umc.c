@@ -50,7 +50,7 @@
 #define SIZE_HANDSHAKE_SWAP 5 // 'U' 1 Y 4 BYTES PARA LA CANTIDAD DE PAGINAS
 #define PRESENTE_MP 1
 #define AUSENTE 0
-#define ESCRITURA 1
+#define ESCRITURA '1'
 #define LECTURA	3
 #define ABORTAR_PROCESO "6"
 #define OK "1"
