@@ -39,8 +39,8 @@
 #define HANDSHAKE_CPU 1
 #define CAMBIO_PROCESO_ACTIVO '2'
 #define PEDIDO_BYTES '3'
-#define ALMACENAMIENTO_BYTES 4
-#define FIN_COMUNICACION_CPU 0
+#define ALMACENAMIENTO_BYTES '4'
+#define FIN_COMUNICACION_CPU '0'
 
     //typedef t_var* t_posicion;
 
@@ -48,7 +48,7 @@
 
 typedef struct {
     int data_length;
-    char * data;
+    void * data;
 } t_nodo_send;
 
     extern int umcSocketClient;

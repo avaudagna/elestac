@@ -209,7 +209,7 @@ int execute_state_machine() {
 }
 
 int post_process_operations() {
-    log_info(cpu_log, "Starting delay of : %d seconds", actual_kernel_data->QSleep);
+    log_info(cpu_log, "Starting delay of : %d seconds", actual_kernel_data->QSleep/1000);
     usleep(actual_kernel_data->QSleep);
     if(LAST_QUANTUM_FLAG) {
         //Signal for exiting CPU was sent

@@ -53,8 +53,8 @@
 #define UMC_OK_RESPONSE '1'
 #define UMC_HANDSHAKE_RESPONSE_ID '0'
 #define PEDIDO_BYTES '3'
-#define ALMACENAMIENTO_BYTES 4
-#define FIN_COMUNICACION_CPU 0
+#define ALMACENAMIENTO_BYTES '4'
+#define FIN_COMUNICACION_CPU '0'
 
 int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer);
 t_list * armarDireccionesLogicasList(t_intructions *original_instruction);

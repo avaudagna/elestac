@@ -30,7 +30,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
 
     while (list_size(pedidos) > 0) {
         nodo = list_remove(pedidos, index);
-        log_info(cpu_log, "sending request : %s for variable %c with value %d", nodo->data, variable, valor);
+        log_info(cpu_log, "Sending request to define variable '%c' with value %d", variable, valor);
         if( send(umcSocketClient, nodo->data , (size_t ) nodo->data_length, 0) < 0) {
             log_error(cpu_log, "UMC expected addr send failed");
             return ERROR;
@@ -39,7 +39,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
             log_error(cpu_log, "UMC response recv failed");
             return ERROR;
         }
-        if(*umc_response_buffer == UMC_OK_RESPONSE) {
+        if(*umc_response_buffer != UMC_OK_RESPONSE) {
             log_error(cpu_log, "STACK OVERFLOW");
             stack_overflow_exit();
             return STACK_OVERFLOW;
@@ -91,28 +91,26 @@ logical_addr * armar_direccion_logica_variable(int stack_index_actual, int page_
 void obtener_lista_operaciones_escritura(t_list ** pedidos, t_posicion posicion_variable, int offset, int valor) {
     t_intructions instruccion_a_buscar;
     instruccion_a_buscar.start = (t_puntero_instruccion) posicion_variable;
-    instruccion_a_buscar.offset = (size_t) offset;
+    instruccion_a_buscar.offset = (t_size) offset;
     t_list * lista_direcciones = armarDireccionesLogicasList(&instruccion_a_buscar);
     armar_pedidos_escritura(pedidos, lista_direcciones, valor);
 }
 
 void armar_pedidos_escritura(t_list ** pedidos, t_list *direcciones, int valor) {
-    void *buffer = NULL;
     t_nodo_send * nodo = NULL;
     int index = 0, indice_copiado = 0;
     logical_addr * address = NULL;
-    int buff_len = 0;
     *pedidos = list_create();
+    char operation = ALMACENAMIENTO_BYTES;
     while(list_size(direcciones) > 0) {
         address = list_remove(direcciones, index);
         nodo = calloc(1, sizeof(t_nodo_send));
-        buff_len = sizeof(char) + sizeof(int) *3;
-        buffer = calloc(1, sizeof(char) + sizeof(int) *3 + address->tamanio);
-        nodo->data = buffer;
-        sprintf(buffer, "4%04d%04d%04d", address->page_number, address->offset, address->tamanio);
-        serialize_data( ((char*) (&valor)) + indice_copiado, (size_t) address->tamanio, &buffer, &buff_len);
+        serialize_data(&operation, sizeof(char), &nodo->data ,&nodo->data_length);
+        serialize_data(&address->page_number, sizeof(int), &nodo->data ,&nodo->data_length);
+        serialize_data(&address->offset, sizeof(int), &nodo->data ,&nodo->data_length);
+        serialize_data(&address->tamanio, sizeof(int), &nodo->data ,&nodo->data_length);
+        serialize_data( ((char*) (&valor)) + indice_copiado, (size_t) address->tamanio, &nodo->data, &nodo->data_length);
         indice_copiado += address->tamanio;
-        nodo->data_length = buff_len;
         list_add(*pedidos,nodo);
     }
 }
