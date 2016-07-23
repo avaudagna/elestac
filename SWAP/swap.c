@@ -629,22 +629,31 @@ void close_SwapProcess(){
 	 ******************************/
 
 	//SWAP
-	free(ABSOLUTE_PATH_SWAP);
-	free(bitMap);
-	free(bitArrayStruct);
-	free(headControlCodigo);
+    if(!ABSOLUTE_PATH_SWAP)
+	    free(ABSOLUTE_PATH_SWAP);
+    if(!bitMap)
+        free(bitMap);
+    if(!bitArrayStruct)
+	    free(bitArrayStruct);
+	if(!headControlCodigo)
+        free(headControlCodigo);
 
 	//CONEXION
-	free(package);
+	if(!package)
+        free(package);
 
 	//CONFIG
-	free(IP_SWAP);
-	free(PUERTO_SWAP);
-	free(SWAP_DATA);
+    if(!IP_SWAP)
+	    free(IP_SWAP);
+	if(!PUERTO_SWAP)
+        free(PUERTO_SWAP);
+	if(!SWAP_DATA)
+        free(SWAP_DATA);
 
 	//Eliminamos la lista con todos sus modulos
 	listaControl_EliminarLista();
-	free(headControlCodigo);
+	if(!headControlCodigo)
+        free(headControlCodigo);
 
 	//Liberamos el BitMap
 	bitarray_destroy(bitArrayStruct);
@@ -1082,8 +1091,8 @@ void listaControl_EliminarLista(){
 		temp_node = current->next;
 
 		current->next = temp_node->next;
-
-		free(temp_node);
+        if(!temp_node)
+		    free(temp_node);
 	}
 
 	headControlCodigo = NULL;
