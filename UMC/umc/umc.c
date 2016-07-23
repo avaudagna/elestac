@@ -2242,7 +2242,7 @@ void finalizarProceso(int *socketBuff){
 	memcpy(buffer+sizeof(char),&pPid,sizeof(int));
 
 	pthread_mutex_lock(semSwap);
-	enviarPaginaAlSwap(buffer,sizeof(char)+sizeof(int)+sizeof(int));		// Elimnarlo en SWAP
+	enviarPaginaAlSwap(buffer,sizeof(char)+sizeof(int)));		// Elimnarlo en SWAP
 	swapUpdate();
 	pthread_mutex_unlock(semSwap);
 	limpiarPidDeTLB(pPid);							// Elimino PID de la TLB
@@ -2280,7 +2280,7 @@ void finalizarProceso(int *socketBuff){
 		pthread_rwlock_unlock(semListaPids);
 
 	}
-	printf("\n PID[%d] eliminado de memoria.\n",pPid);
+	printf("\n PID[%d] eliminado de memoria.\nCantidad de Marcos libres en Swap:%d\n",pPid,paginasLibresEnSwap);
 }
 
 
@@ -2465,7 +2465,7 @@ void liberarRecursos(void){
 	if(headerListaDePids != NULL){
 		if(headerListaDePids->head != NULL){
 			list_iterate(headerListaDePids,liberarHeaderTablaPaginas);
-			list_clean_and_destroy_elements(headerFIFOxPID,free);
+			list_clean_and_destroy_elements(headerListaDePids,free);
 		}
 	}
 	// 3)
