@@ -110,5 +110,6 @@ typedef struct {
     void la_signal(t_nombre_semaforo identificador_semaforo);
 
     void stack_overflow_exit();
+    char recv_umc_response_status();
 
 #endif

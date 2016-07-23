@@ -403,6 +403,7 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
 
     void * recv_bytes_buffer = NULL;
     int buffer_index = 0;
+    char response_status;
     while(list_size(instruction_addresses_list) > 0) {
 
         logical_addr * element = list_get(instruction_addresses_list, 0);
@@ -429,10 +430,12 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
         }
 
         //TODO: Esto lo tengo que hacer en check_umc_response_status y validar que no sea 2 (STACK_OVERFLOW)
-        if(recv_umc_response_status() == '1') {
+        response_status = recv_umc_response_status();
+        if(response_status == '1') {
             log_info(cpu_log, "UMC_RESPONSE_OK");
-        } else {
-            log_error(cpu_log, "UMC ERROR!");
+        } else if (response_status == '2') {
+            log_error(cpu_log, "=== STACK OVERFLOW ===");
+            exit(1);
         }
 
         if( recv(umcSocketClient , recv_bytes_buffer , (size_t ) element->tamanio , 0) < 0) {
@@ -453,18 +456,6 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
     return SUCCESS;
 }
 
-int recv_umc_response_status() {
-    void * umc_response_status_buffer = calloc(1, sizeof(char));
-    char umc_response_status;
-    int umc_response_status_buffer_index = 0;
-    if( recv(umcSocketClient , umc_response_status_buffer, sizeof(char), 0) < 0) {
-        log_error(cpu_log, "UMC bytes recv failed");
-        return ERROR;
-    }
-    deserialize_data(&umc_response_status, sizeof(char), umc_response_status_buffer, &umc_response_status_buffer_index);
-    free(umc_response_status_buffer);
-    return umc_response_status;
-}
 
 int request_address_data(void ** buffer, logical_addr *address) {
     void * aux_buffer = calloc(1, sizeof(int) * 3 + sizeof(char));

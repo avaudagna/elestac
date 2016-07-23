@@ -1,4 +1,5 @@
 #include "implementation_ansisop.h"
+#include "libs/stack.h"
 
 static const int CONTENIDO_VARIABLE = 20;
 static const int POSICION_MEMORIA = 0x10;
@@ -28,9 +29,15 @@ t_posicion definirVariable(t_nombre_variable variable) {
         return ERROR;
     }
 
+    char operation;
+    int page, offset, size, print_index = 0;
     while (list_size(pedidos) > 0) {
         nodo = list_remove(pedidos, index);
-        log_info(cpu_log, "Sending request to define variable '%c' with value %d", variable, valor);
+        deserialize_data(&operation, sizeof(char), nodo->data, &print_index);
+        deserialize_data(&page, sizeof(int), nodo->data, &print_index);
+        deserialize_data(&offset, sizeof(int), nodo->data, &print_index);
+        deserialize_data(&size, sizeof(int), nodo->data, &print_index);
+        log_info(cpu_log, "Sending request op:%c (%d,%d,%d) to define variable '%c' with value %d", operation, page, offset, size, variable, valor);
         if( send(umcSocketClient, nodo->data , (size_t ) nodo->data_length, 0) < 0) {
             log_error(cpu_log, "UMC expected addr send failed");
             return ERROR;
@@ -141,6 +148,7 @@ t_valor_variable dereferenciar(t_posicion direccion_variable) {
 
     void * variable_buffer = calloc(1, ANSISOP_VAR_SIZE), *umc_request_buffer = NULL;
     int variable_buffer_index = 0;
+    char response_status;
     logical_addr * current_address = NULL;
     while(list_size(pedidos) > 0) {
         current_address  = list_remove(pedidos, 0);
@@ -152,12 +160,22 @@ t_valor_variable dereferenciar(t_posicion direccion_variable) {
         serialize_data(&current_address->page_number, sizeof(int), &umc_request_buffer, &umc_request_buffer_index);
         serialize_data(&current_address->offset, sizeof(int), &umc_request_buffer, &umc_request_buffer_index);
         serialize_data(&current_address->tamanio, sizeof(int), &umc_request_buffer, &umc_request_buffer_index);
-        log_info(cpu_log, "sending request : %s for direccion variable %d", &umc_request_buffer, direccion_variable);
+        log_info(cpu_log, "sending request : op:%c (%d,%d,%d) for direccion variable %d",operation, current_address->page_number,
+                 current_address->offset, current_address->tamanio, direccion_variable);
+//        log_info(cpu_log, "sending request : %s for direccion variable %d", &umc_request_buffer, direccion_variable);
         if( send(umcSocketClient, umc_request_buffer, (size_t) umc_request_buffer_index, 0) < 0) {
             log_error(cpu_log, "UMC expected addr send failed");
             return ERROR;
         }
-        if( recv(umcSocketClient , ((char*) variable_buffer) + variable_buffer_index , (size_t) current_address->tamanio , 0) < 0) {
+
+        response_status = recv_umc_response_status();
+        if(response_status == '1') {
+            log_info(cpu_log, "UMC_RESPONSE_OK");
+        } else if (response_status == '2') {
+            log_error(cpu_log, "=== STACK OVERFLOW ===");
+            exit(1);
+        }
+        if( recv(umcSocketClient , ((char*) variable_buffer) + variable_buffer_index , (size_t) current_address->tamanio, 0) < 0) {
             log_error(cpu_log, "UMC response recv failed");
             break;
         }
@@ -165,9 +183,22 @@ t_valor_variable dereferenciar(t_posicion direccion_variable) {
     }
 
 	free(umc_request_buffer);
+    log_info(cpu_log, "Valor variable obtained : %d", *(int*)variable_buffer);
     return (t_valor_variable) *(t_valor_variable*)variable_buffer;
 }
 
+char recv_umc_response_status() {
+    void * umc_response_status_buffer = calloc(1, sizeof(char));
+    char umc_response_status;
+    int umc_response_status_buffer_index = 0;
+    if( recv(umcSocketClient , umc_response_status_buffer, sizeof(char), 0) < 0) {
+        log_error(cpu_log, "UMC bytes recv failed");
+        return ERROR;
+    }
+    deserialize_data(&umc_response_status, sizeof(char), umc_response_status_buffer, &umc_response_status_buffer_index);
+    free(umc_response_status_buffer);
+    return umc_response_status;
+}
 void construir_operaciones_lectura(t_list **pedidos, t_posicion posicion_variable) {
     t_intructions instruccion_a_buscar;
     instruccion_a_buscar.start = (t_puntero_instruccion) posicion_variable;
@@ -187,10 +218,17 @@ void asignar(t_posicion direccion_variable, t_valor_variable valor) {
 
     int index = 0;
     t_nodo_send * nodo = NULL;
+    int page, offset, size, print_index = 0;
+    char operation;
     while (list_size(pedidos) > 0) {
         nodo = list_remove(pedidos, index);
         if(nodo != NULL) {
-            log_info(cpu_log, "sending request : %s for direccion variable %d with value %d",  nodo->data , direccion_variable, valor);
+            deserialize_data(&operation, sizeof(char), nodo->data, &print_index);
+            deserialize_data(&page, sizeof(int), nodo->data, &print_index);
+            deserialize_data(&offset, sizeof(int), nodo->data, &print_index);
+            deserialize_data(&size, sizeof(int), nodo->data, &print_index);
+            log_info(cpu_log, "Sending request op:%c (%d,%d,%d) for direccion variable %d with value %d", operation, page, offset, size, direccion_variable, valor);
+//            log_info(cpu_log, "sending request : %s for direccion variable %d with value %d",  nodo->data , direccion_variable, valor);
             if( send(umcSocketClient, nodo->data , (size_t ) nodo->data_length, 0) < 0) {
                 log_error(cpu_log, "UMC expected addr send failed");
                 break;

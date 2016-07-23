@@ -84,7 +84,8 @@ void testSerializedPCB(t_pcb *newPCB, void *pcb_buffer) {
     printf("etiquetas_size: %d=%d\n", newPCB->etiquetas_size, *(int*)(pcb_buffer+auxIndex));
     assert(newPCB->etiquetas_size == *(int*)(pcb_buffer+auxIndex));
     auxIndex+=sizeof(int);
-    printEtiquetas(newPCB->etiquetas, (char*)(pcb_buffer+auxIndex));
+    if(newPCB->etiquetas_size > 0)
+        printEtiquetas(newPCB->etiquetas, (char*)(pcb_buffer+auxIndex));
     auxIndex+=newPCB->etiquetas_size;
     assert(memcmp(newPCB->etiquetas, (char*)(pcb_buffer+auxIndex),  newPCB->etiquetas_size) == 0);
 }
