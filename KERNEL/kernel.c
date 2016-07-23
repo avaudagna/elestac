@@ -688,13 +688,13 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 		free(umcKillProg);
 	}
 	if (consoleStillOpen){
-		int finalizar = 0;
+		char finalizar = '0';
 		void* consoleKillProg = NULL;
 		int consoleKillProg_index = 0;
-		if(status == BROKEN) finalizar = 3;
+		if(status == BROKEN) finalizar = '3';
 		log_info(kernel_log, "Program status was %d. Console will inform this properly to the user.", status);
-		serialize_data(&finalizar, sizeof(int), &consoleKillProg, &consoleKillProg_index);
-		send(pid, consoleKillProg, sizeof(int), 0); // send exit code to console
+		serialize_data(&finalizar, sizeof(char), &consoleKillProg, &consoleKillProg_index);
+		send(pid, consoleKillProg, sizeof(char), 0); // send exit code to console
 		free(consoleKillProg);
 	}
 	close(pid); // close console socket
