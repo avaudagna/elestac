@@ -58,9 +58,9 @@ int main(int argc, char *argv[]) {
 	fgets(hash_bang, 100, fp);
 	file_length = file_length - strlen(hash_bang) - 1;
 
-	char *prog = (char *) calloc(1, (size_t) (file_length));
+	char *prog = (char *) calloc(1, (int) (file_length));
 
-	fread(prog, (size_t) file_length, 1, fp);
+	fread(prog, (int) file_length, 1, fp);
 	fclose(fp);
 
     int mensaje_index = 0;
@@ -68,9 +68,9 @@ int main(int argc, char *argv[]) {
 	void * mensaje = NULL;
     serialize_data(&operacion, sizeof(char), &mensaje, &mensaje_index);
     serialize_data(&file_length, sizeof(int), &mensaje, &mensaje_index);
-    serialize_data(prog, (size_t) file_length, &mensaje, &mensaje_index);
+    serialize_data(prog, (int) file_length, &mensaje, &mensaje_index);
 
-	send(kernelSocketClient, mensaje, (size_t) mensaje_index, 0);
+	send(kernelSocketClient, mensaje, (int) mensaje_index, 0);
 	log_info(console_log, "El tamanio del programa es %d, y se envio al kernel: %s", (int) file_length, prog);
 
 	free(prog);
@@ -122,8 +122,8 @@ int main(int argc, char *argv[]) {
                     textLen_index = 0;
                     free(kernelBuffer);
                     if(textLen > 0) {
-                        kernelBuffer = calloc(1, (size_t) textLen);
-                        recv(kernelSocketClient, kernelBuffer, (size_t) textLen, 0);
+                        kernelBuffer = calloc(1, (int) textLen);
+                        recv(kernelSocketClient, kernelBuffer, (int) textLen, 0);
                         log_info(console_log, "%s.", kernelBuffer);
                     } else {
                         log_error(console_log, "Se recibio un tamanio de texto invalido");

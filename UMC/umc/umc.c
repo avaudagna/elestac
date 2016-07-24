@@ -121,7 +121,7 @@ void finalizarProceso(int *socketBuff);
 void atenderKernel(int * socketBuff);
 void recibirYAlmacenarNuevoProceso(int * socketBuff, int cantidadPaginasSolicitadas, int pid_aux);
 void dividirEnPaginas(int pid_aux, int paginasDeCodigo, void *codigo, int code_size);
-void enviarPaginaAlSwap(void *trama, size_t sizeTrama);
+void enviarPaginaAlSwap(void *trama, int sizeTrama);
 void agregarPagina(int pid, PAGINA *pagina_aux);
 t_list *obtenerTablaDePaginasDePID(int pid);
 bool compararPid(PIDPAGINAS * data,int pid);
@@ -267,7 +267,7 @@ void setEstadoMarco(int indice, int nuevoEstado);
 void limpiarPidDeTLB(int pPid);
 void actualizarContadoresLRU(int pid , int pagina);
 
-void enviarMsgACPU(int *socketBuff, const char *mensaje, size_t size);
+void enviarMsgACPU(int *socketBuff, const char *mensaje, int size);
 
 int getPosicionCLockPid(int pPid);
 
@@ -824,8 +824,8 @@ void recibirYAlmacenarNuevoProceso(int * socketBuff,int cantidadPaginasSolicitad
 		// levanto el codigo
 		memcpy(&code_size,buffer,sizeof(int));
 		free(buffer);
-		buffer = calloc(1,(size_t)code_size);
-		if( (recv(*socketBuff, buffer, (size_t)code_size, 0)) <= 0){	// me almaceno todo el codigo
+		buffer = calloc(1,(int)code_size);
+		if( (recv(*socketBuff, buffer, (int)code_size, 0)) <= 0){	// me almaceno todo el codigo
 			free(buffer);
 			perror("recv");
 			printf("\n Error en la comunicacion con Kernel:[Recepcion de todo el Codigo] Finalizando.\n");
@@ -847,7 +847,7 @@ void dividirEnPaginas(int pid_aux, int paginasDeCodigo, void *codigo, int code_s
 			nroDePagina=0,
 			bytesSobrantes=0,
         	bytesDeUltimaPagina=0;
-	size_t	size_trama = (size_t)umcGlobalParameters.marcosSize+sizeof(pid_aux)+sizeof(nroDePagina)+sizeof(char),
+	int	intrama = (int)umcGlobalParameters.marcosSize+sizeof(pid_aux)+sizeof(nroDePagina)+sizeof(char),
 			j = 0;
 	void 	*aux_code = NULL,
 			*trama = NULL;
@@ -860,28 +860,28 @@ void dividirEnPaginas(int pid_aux, int paginasDeCodigo, void *codigo, int code_s
  * 2. Agrego a la tabla de paginas asociada a ese PID
  * */
 
-	for ( i=0,j=0; i < paginasDeCodigo ; i++ , nroDePagina++ , j+=((size_t)umcGlobalParameters.marcosSize) ){
-		aux_code = calloc(1,(size_t) umcGlobalParameters.marcosSize);
+	for ( i=0,j=0; i < paginasDeCodigo ; i++ , nroDePagina++ , j+=((int)umcGlobalParameters.marcosSize) ){
+		aux_code = calloc(1,(int) umcGlobalParameters.marcosSize);
 		if ( nroDePagina < (paginasDeCodigo - 1) ){
-			memcpy(aux_code, codigo+j, (size_t) umcGlobalParameters.marcosSize);
+			memcpy(aux_code, codigo+j, (int) umcGlobalParameters.marcosSize);
 		}else {    // ultima pagina
 			bytesSobrantes = (paginasDeCodigo * umcGlobalParameters.marcosSize) - code_size;
 			bytesDeUltimaPagina = umcGlobalParameters.marcosSize - bytesSobrantes;
 			if (!bytesSobrantes)    // si la cantidad de bytes es multiplo del tamaño de pagina , entonces la ultima pagina se llena x completo
-				memcpy(aux_code, codigo+j, (size_t) umcGlobalParameters.marcosSize);
+				memcpy(aux_code, codigo+j, (int) umcGlobalParameters.marcosSize);
 			else
-				memcpy(aux_code, codigo+j, (size_t) bytesDeUltimaPagina);    // LO QUE NO SE LLENA CON INFO, SE DEJA EN GARBAGE
+				memcpy(aux_code, codigo+j, (int) bytesDeUltimaPagina);    // LO QUE NO SE LLENA CON INFO, SE DEJA EN GARBAGE
 		}
 		// trama de escritura a swap : 1+pid+nroDePagina+aux_code
-		trama = calloc(1,size_trama);
+		trama = calloc(1,intrama);
 		memcpy(trama,&caracter,sizeof(char));
 		memcpy(trama+sizeof(char),&pid_aux,sizeof(int));
 		memcpy(trama+sizeof(char)+sizeof(int),&nroDePagina,sizeof(int));
-		memcpy(trama+((size_t)(size_trama - umcGlobalParameters.marcosSize)),aux_code,(size_t)umcGlobalParameters.marcosSize);
+		memcpy(trama+((int)(intrama - umcGlobalParameters.marcosSize)),aux_code,(int)umcGlobalParameters.marcosSize);
 
 		// envio al swap la pagina
 		pthread_mutex_lock(semSwap);	// Solo un hilo a la vez manda paginas y espera la actualizacion de cant pags disponibles
-		enviarPaginaAlSwap(trama,size_trama);
+		enviarPaginaAlSwap(trama,intrama);
 		// swap me responde dandome el OKEY y actualizandome con la cantidad_de_paginas_libres que le queda
 		swapUpdate();
 		pthread_mutex_unlock(semSwap);
@@ -918,7 +918,7 @@ void enviarPaginasDeStackAlSwap(int pPid, int nroDePaginaInicial) {
         	i = 0;
 	void 	*trama = NULL;
 	char	caracter='1';
-	size_t  tamanioTotalTrama = sizeof(char)+sizeof(int)+sizeof(int)+(size_t)umcGlobalParameters.marcosSize;
+	int  tamanioTotalTrama = sizeof(char)+sizeof(int)+sizeof(int)+(int)umcGlobalParameters.marcosSize;
 	// trama de escritura a swap : 1+pid+nroDePagina+aux_code
 	for(i =0 ,nroPaginaActual=nroDePaginaInicial; i<stack_size; i++, nroPaginaActual++) {
 		trama = calloc(1,tamanioTotalTrama);
@@ -935,7 +935,7 @@ void enviarPaginasDeStackAlSwap(int pPid, int nroDePaginaInicial) {
 
 }
 
-void enviarPaginaAlSwap(void *trama, size_t sizeTrama){
+void enviarPaginaAlSwap(void *trama, int sizeTrama){
 
 	if (send(socketClienteSwap,trama,sizeTrama, 0) == -1 ){
 		perror("send");
@@ -1201,9 +1201,9 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 
 
 
-void enviarMsgACPU(int *socketBuff, const char *mensaje, size_t size) {
+void enviarMsgACPU(int *socketBuff, const char *mensaje, int size) {
 
-	if ( send(*socketBuff,mensaje,(size_t )size,0) <= 0)
+	if ( send(*socketBuff,mensaje,(int )size,0) <= 0)
 		perror("send");
 
 }
@@ -1237,11 +1237,11 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 
 	// levanto bytes a almacenar
 
-	bytesAlmacenar = calloc(1,(size_t )tamanio);
+	bytesAlmacenar = calloc(1,(int )tamanio);
 	temp = (PAGINA *) calloc(1,sizeof(PAGINA));
 	temp->nroPagina = pagina;
 
-	if(recv(*socketBuff,bytesAlmacenar,(size_t )tamanio, 0) <= 0 ) {
+	if(recv(*socketBuff,bytesAlmacenar,(int )tamanio, 0) <= 0 ) {
 		free(bytesAlmacenar);
 		perror("recv");
 		printf("\nError al comunicarse con CPU,Finalizando\n");
@@ -1287,7 +1287,7 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 				}else{		// hay marcos disponibles
 
 					if  ( cantPagDisponiblesxPID(pid_actual) > 0){ // SI EL PROCESO TIENE MARGEN PARA ALMACENAR MAS PAGINAS EN MEMORIA
-						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, (size_t )umcGlobalParameters.marcosSize);
+						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, (int )umcGlobalParameters.marcosSize);
 						//guardarBytesEnPagina(pid_actual, pagina, offset, tamanio, bytesAlmacenar);
 						setBitDeUso(pid_actual,pagina,1);
 						enviarMsgACPU(socketBuff,OK,1);
@@ -1421,8 +1421,8 @@ void algoritmoClock(int *pPid, int numPagNueva, void *contenidoPagina, int *marc
 	setBitDePresencia(*pPid,numPagNueva,PRESENTE_MP);
 	setBitDePresencia(*pPid,pagina_victima->nroPagina,AUSENTE);
 
-	bufferContenidoPagina = calloc(1,(size_t )umcGlobalParameters.marcosSize);	// hago un calloc cosa de inicializar todo en \0 , puede que el tamaño de la pagina que venga a reemplazar NO ocupe todo el espacio asignado
-	memcpy(bufferContenidoPagina,contenidoPagina,(size_t )umcGlobalParameters.marcosSize);	// guardo el contenido de la nueva pagina
+	bufferContenidoPagina = calloc(1,(int )umcGlobalParameters.marcosSize);	// hago un calloc cosa de inicializar todo en \0 , puede que el tamaño de la pagina que venga a reemplazar NO ocupe todo el espacio asignado
+	memcpy(bufferContenidoPagina,contenidoPagina,(int )umcGlobalParameters.marcosSize);	// guardo el contenido de la nueva pagina
 	// Reemplazo en memoria principal
 	pthread_rwlock_wrlock(semMemPrin);
 	memcpy(vectorMarcos[pagina_nueva->nroDeMarco].comienzoMarco,bufferContenidoPagina,umcGlobalParameters.marcosSize);		// reemplace pagina
@@ -1544,11 +1544,11 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, void *contenidoPagina,
 	setBitDePresencia(*pPid,pagina_victima->nroPagina,AUSENTE);
 
 
-	bufferContenidoPagina = calloc(1,(size_t )umcGlobalParameters.marcosSize);	// hago un calloc cosa de inicializar todo en \0 , puede que el tamaño de la pagina que venga a reemplazar NO ocupe todo el espacio asignado
-	memcpy(bufferContenidoPagina,contenidoPagina,(size_t )umcGlobalParameters.marcosSize);	// guardo el contenido de la nueva pagina
+	bufferContenidoPagina = calloc(1,(int )umcGlobalParameters.marcosSize);	// hago un calloc cosa de inicializar todo en \0 , puede que el tamaño de la pagina que venga a reemplazar NO ocupe todo el espacio asignado
+	memcpy(bufferContenidoPagina,contenidoPagina,(int )umcGlobalParameters.marcosSize);	// guardo el contenido de la nueva pagina
 	// Reemplazo en memoria principal
 	pthread_rwlock_wrlock(semMemPrin);
-	memcpy(vectorMarcos[pagina_nueva->nroDeMarco].comienzoMarco,bufferContenidoPagina,(size_t )umcGlobalParameters.marcosSize);		// reemplace pagina
+	memcpy(vectorMarcos[pagina_nueva->nroDeMarco].comienzoMarco,bufferContenidoPagina,(int )umcGlobalParameters.marcosSize);		// reemplace pagina
 	pthread_rwlock_unlock(semMemPrin);
 	// Actualizo el nodo de la FIFO ( bit de uso + nro de pagina )
 	((CLOCK_PAGINA *)recorredor->data)->bitDeUso =1;
@@ -1567,10 +1567,10 @@ void PedidoPaginaASwap(int pid, int pagina, char operacion) {
 
 	void *trama = NULL;
 	PAGINA *pag = NULL;
-	size_t trama_size;
+	int trama_size;
 
 	if(operacion == ESCRITURA)
-		trama_size = (size_t )umcGlobalParameters.marcosSize +((sizeof(int)) * 2)+ sizeof(char);
+		trama_size = (int )umcGlobalParameters.marcosSize +((sizeof(int)) * 2)+ sizeof(char);
 	else
 		trama_size =  ((sizeof(int)) * 2)+ sizeof(char);
 
@@ -1581,7 +1581,7 @@ void PedidoPaginaASwap(int pid, int pagina, char operacion) {
 		pag = obtenerPagina(pid, pagina);
 		pthread_rwlock_rdlock(semMemPrin);
 		memcpy(trama + sizeof(char) + sizeof(int) + sizeof(int), vectorMarcos[pag->nroDeMarco].comienzoMarco,
-			   (size_t) umcGlobalParameters.marcosSize);
+			   (int) umcGlobalParameters.marcosSize);
 		pthread_rwlock_unlock(semMemPrin);
 		pthread_mutex_lock(semSwap);
 		enviarPaginaAlSwap(trama, trama_size);
@@ -1676,7 +1676,7 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 	// Le pido al swap la pagina : 3+pid+nroPagina
 	char 	caracter = PEDIR_PAGINA_SWAP;
 	int 	pid;
-	size_t 	tamanio = sizeof(char) + sizeof(pid) + sizeof(nroPagina);
+	int 	tamanio = sizeof(char) + sizeof(pid) + sizeof(nroPagina);
 	void 	*buffer = calloc(1, tamanio),
 			*contenidoPagina = NULL;
 
@@ -1695,10 +1695,10 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 	}
 	pthread_mutex_unlock(semSwap);
     free(buffer);
-	buffer=calloc(1,sizeof(int)+(size_t)umcGlobalParameters.marcosSize);	// PID+Contenido Pagina
+	buffer=calloc(1,sizeof(int)+(int)umcGlobalParameters.marcosSize);	// PID+Contenido Pagina
 	// respuesta swap : pid+PAGINA
 	pthread_mutex_lock(semSwap);
-	if (recv(socketClienteSwap,buffer,sizeof(int)+(size_t)umcGlobalParameters.marcosSize, 0) <= 0) {    // SWAP ME DEVUELVE LA PAGINA
+	if (recv(socketClienteSwap,buffer,sizeof(int)+(int)umcGlobalParameters.marcosSize, 0) <= 0) {    // SWAP ME DEVUELVE LA PAGINA
 		pthread_mutex_unlock(semSwap);
 		free(buffer);
 		perror("send");
@@ -1707,9 +1707,9 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 		exit(1);
 	}
 	pthread_mutex_unlock(semSwap);
-	contenidoPagina = calloc(1,(size_t )umcGlobalParameters.marcosSize);
+	contenidoPagina = calloc(1,(int )umcGlobalParameters.marcosSize);
 	memcpy(&pid,buffer,sizeof(pid));
-	memcpy(contenidoPagina,buffer+sizeof(pid),(size_t )umcGlobalParameters.marcosSize);
+	memcpy(contenidoPagina,buffer+sizeof(pid),(int )umcGlobalParameters.marcosSize);
     free(buffer);
     printf("\n[%04d]->SWAP answer pid : %d\n",*pid_actual,pid);
 
@@ -2025,12 +2025,12 @@ void *obtenerMarcoLibreEnMP(int *indice) {
 void resolverEnMP(int *socketBuff, PAGINA *pPagina, int offset, int tamanio) {
 // 1+CODIGO
 	char caracter='1';
-	void *buffer = calloc(1,(size_t)tamanio + sizeof(char) );
+	void *buffer = calloc(1,(int)tamanio + sizeof(char) );
 	memcpy(buffer,&caracter,sizeof(char));
 	pthread_rwlock_rdlock(semMemPrin);
-	memcpy(buffer+sizeof(char),(vectorMarcos[pPagina->nroDeMarco].comienzoMarco)+offset,(size_t )tamanio);
+	memcpy(buffer+sizeof(char),(vectorMarcos[pPagina->nroDeMarco].comienzoMarco)+offset,(int )tamanio);
 	pthread_rwlock_unlock(semMemPrin);
-	if (send(*socketBuff,buffer,(size_t )tamanio+sizeof(char),0) <= 0) {    // envio a CPU la pagina
+	if (send(*socketBuff,buffer,(int )tamanio+sizeof(char),0) <= 0) {    // envio a CPU la pagina
 		free(buffer);
 		perror("send");
 		printf("\nError en la comunicacion con CPU,Finalizando.\n");

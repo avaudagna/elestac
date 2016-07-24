@@ -99,10 +99,10 @@ int wait_coordination(int cpuID){
 	bool semWait=false;
 	int semaphore_trama_buffer_index = 0, SEM_ID_Size = 0;
 	char doWait, *SEM_ID = NULL;
-	size_t size_trama_semaphore = sizeof(char) + sizeof(int);
-	void * semaphore_trama_buffer = calloc(1, size_trama_semaphore);
+	int intrama_semaphore = sizeof(char) + sizeof(int);
+	void * semaphore_trama_buffer = calloc(1, intrama_semaphore);
 
-    recv(cpuID, semaphore_trama_buffer, size_trama_semaphore  , 0);
+    recv(cpuID, semaphore_trama_buffer, intrama_semaphore  , 0);
     deserialize_data(&doWait, sizeof(char), semaphore_trama_buffer,&semaphore_trama_buffer_index);
     deserialize_data(&SEM_ID_Size, sizeof(int), semaphore_trama_buffer,&semaphore_trama_buffer_index);
     SEM_ID = calloc(1, SEM_ID_Size);
@@ -117,8 +117,8 @@ int wait_coordination(int cpuID){
     if(semWait){
 		losDatosGlobales = NULL;
 		losDatosGlobales_index = 0;
-		serialize_data(&cpuID, (size_t) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
-		serialize_data(&semIndex, (size_t) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
+		serialize_data(&cpuID, (int) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
+		serialize_data(&semIndex, (int) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
 		pthread_t sem_thread;
 		pthread_create(&sem_thread, NULL, sem_wait_thread, losDatosGlobales);
 	}else{
@@ -221,9 +221,9 @@ int connect2UMC(){
 	int umcHandshakeResponse_index = 0;
 	log_info(kernel_log, "Connecting to UMC on %s:%d.", setup.IP_UMC, setup.PUERTO_UMC);
 	if (getClientSocket(&clientUMC, setup.IP_UMC, setup.PUERTO_UMC)) return (-1);
-	serialize_data(&umcProtocol, (size_t) sizeof(char), &umcHandshake, &umcHandshake_index);
-	serialize_data(&setup.STACK_SIZE, (size_t) sizeof(int), &umcHandshake, &umcHandshake_index);
-	send(clientUMC, umcHandshake, (size_t) umcHandshake_index, 0);
+	serialize_data(&umcProtocol, (int) sizeof(char), &umcHandshake, &umcHandshake_index);
+	serialize_data(&setup.STACK_SIZE, (int) sizeof(int), &umcHandshake, &umcHandshake_index);
+	send(clientUMC, umcHandshake, (int) umcHandshake_index, 0);
 	log_info(kernel_log, "Stack size (sent to UMC): %d.", setup.STACK_SIZE);
 	if (recv(clientUMC, umcHandshakeResponse, sizeof(int), 0) < 0) return (-1);
 	deserialize_data(&setup.PAGE_SIZE, sizeof(int), umcHandshakeResponse, &umcHandshakeResponse_index);
@@ -241,8 +241,8 @@ void *requestPages2UMC(void* request_buffer){
 	int deserialize_index = 0;
 	deserialize_data(&PID, sizeof(int), request_buffer, &deserialize_index);
 	deserialize_data(&ansisopLen, sizeof(int), request_buffer, &deserialize_index);
-	code = calloc(1,(size_t) ansisopLen);
-	deserialize_data(code, (size_t) ansisopLen, request_buffer, &deserialize_index);
+	code = calloc(1,(int) ansisopLen);
+	deserialize_data(code, (int) ansisopLen, request_buffer, &deserialize_index);
 	deserialize_data(&clientUMC, sizeof(int), request_buffer, &deserialize_index);
 
 	void* req2UMC = NULL;//1+PID+nbrOfPages+ansisopLen+code
@@ -254,10 +254,10 @@ void *requestPages2UMC(void* request_buffer){
 	serialize_data(&PID, sizeof(int), &req2UMC, &req2UMC_index);
 	serialize_data(&nbrOfPages, sizeof(int), &req2UMC, &req2UMC_index);
 	serialize_data(&ansisopLen, sizeof(int), &req2UMC, &req2UMC_index);
-	serialize_data(code, (size_t) ansisopLen, &req2UMC, &req2UMC_index);
+	serialize_data(code, (int) ansisopLen, &req2UMC, &req2UMC_index);
 	log_info(kernel_log, "Requesting %d pages to UMC.", nbrOfPages);
 
-	send(clientUMC, req2UMC, (size_t) req2UMC_index, 0);
+	send(clientUMC, req2UMC, (int) req2UMC_index, 0);
 	recv(clientUMC, req2UMC_response, sizeof(int), 0);
 	int code_pages;
 	int code_pages_index = 0;
@@ -297,8 +297,8 @@ t_pcb * recvPCB(int cpuID){
 	int pcb_size = 0, pcb_size_index = 0;
 	recv(cpuID, tmp_buff, sizeof(int), 0);
 	deserialize_data(&pcb_size, sizeof(int), tmp_buff, &pcb_size_index);
-	void *pcb_serializado = calloc(1, (size_t) pcb_size);
-	recv(cpuID, pcb_serializado, (size_t) pcb_size, 0);
+	void *pcb_serializado = calloc(1, (int) pcb_size);
+	recv(cpuID, pcb_serializado, (int) pcb_size, 0);
 	int pcb_serializado_index = 0;
 	t_pcb* incomingPCB = calloc(1, sizeof(t_pcb));
 	deserialize_pcb(&incomingPCB, pcb_serializado, &pcb_serializado_index);
@@ -348,9 +348,9 @@ void check_CPU_FD_ISSET(void *cpu){
 					io_op->pid = laCPU->pid;
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0); // size of the io_name
 					deserialize_data(&nameSize, sizeof(int), tmp_buff, &nameSize_index);
-					io_op->io_name = calloc(1, (size_t) nameSize);
+					io_op->io_name = calloc(1, (int) nameSize);
 					io_op->io_units = calloc(1, sizeof(int));
-					recv(laCPU->clientID, io_op->io_name, (size_t) nameSize, 0);
+					recv(laCPU->clientID, io_op->io_name, (int) nameSize, 0);
 					recv(laCPU->clientID, io_op->io_units, sizeof(int), 0);
 					io_op->io_index = getIOindex(io_op->io_name);
 					t_pcb *blockedPCB = recvPCB(laCPU->clientID);
@@ -377,8 +377,8 @@ void check_CPU_FD_ISSET(void *cpu){
                         setValue = 1;
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
 					deserialize_data(&nameSize, sizeof(int), tmp_buff, &nameSize_index);
-					char *theShared = calloc(1, (size_t) nameSize);
-					recv(laCPU->clientID, theShared, (size_t) nameSize, 0);
+					char *theShared = calloc(1, (int) nameSize);
+					recv(laCPU->clientID, theShared, (int) nameSize, 0);
 					int sharedIndex = getSharedIndex(theShared);
 					nameSize_index = 0; // for either serialization or deserialization
 					if (setValue == 1) {
@@ -388,7 +388,7 @@ void check_CPU_FD_ISSET(void *cpu){
 						setup.SHARED_VALUES[sharedIndex] = theVal;
 					} else {
 						void* sharedValue = calloc(1, sizeof(int));
-						serialize_data(&setup.SHARED_VALUES[sharedIndex], (size_t) sizeof(int), &sharedValue, &nameSize_index);
+						serialize_data(&setup.SHARED_VALUES[sharedIndex], (int) sizeof(int), &sharedValue, &nameSize_index);
 						send(laCPU->clientID, sharedValue, sizeof(int), 0); // send the value to the CPU
 						free(sharedValue);
 					}
@@ -402,16 +402,16 @@ void check_CPU_FD_ISSET(void *cpu){
                     void* text2Console = NULL;
 					int text2Console_index = 0;
 					char consoleProtocol = '1';
-					serialize_data(&consoleProtocol, (size_t) sizeof(char), &text2Console, &text2Console_index);
-					serialize_data(&value2console, (size_t) sizeof(int), &text2Console, &text2Console_index);
+					serialize_data(&consoleProtocol, (int) sizeof(char), &text2Console, &text2Console_index);
+					serialize_data(&value2console, (int) sizeof(int), &text2Console, &text2Console_index);
 					log_debug(kernel_log, "Console %d will print the value %d.", laCPU->pid, value2console);
-					send(laCPU->pid, text2Console, (size_t) text2Console_index, 0); // send the value to the console
+					send(laCPU->pid, text2Console, (int) text2Console_index, 0); // send the value to the console
                     free(text2Console);
 					break;
 				case '7':// imprimirTexto
 					log_debug(kernel_log, "Receving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
-					size_t txtSize;
+					int txtSize;
 					deserialize_data(&txtSize, sizeof(int), tmp_buff, &nameSize_index);
 					char *theTXT = calloc(1, txtSize);
 					recv(laCPU->clientID, theTXT, txtSize, 0);
@@ -419,10 +419,10 @@ void check_CPU_FD_ISSET(void *cpu){
 					void* txt2console = NULL;
 					char consoleProtocol2 = '2';
 					int txt2console_index = 0;
-					serialize_data(&consoleProtocol2, (size_t) sizeof(char), &txt2console, &txt2console_index);
-					serialize_data(&txtSize, (size_t) sizeof(int), &txt2console, &txt2console_index);
+					serialize_data(&consoleProtocol2, (int) sizeof(char), &txt2console, &txt2console_index);
+					serialize_data(&txtSize, (int) sizeof(int), &txt2console, &txt2console_index);
 					serialize_data(theTXT, txtSize, &txt2console, &txt2console_index);
-					send(laCPU->pid, txt2console, (size_t) txt2console_index, 0); // send the text to the console
+					send(laCPU->pid, txt2console, (int) txt2console_index, 0); // send the text to the console
 					free(theTXT);
 					free(txt2console);
 					break;
@@ -481,7 +481,7 @@ int control_clients(){
 	if (retval>0) {
 		if (FD_ISSET(configFileFD, &allSockets)) {
 			char configFileBuff[EVENT_BUF_LEN];
-			ssize_t limit = read(configFileFD, configFileBuff, EVENT_BUF_LEN);
+			int limit = read(configFileFD, configFileBuff, EVENT_BUF_LEN);
 			if (limit > 0 ){
 				int base = 0;
 				while (base < limit ) {
@@ -550,13 +550,13 @@ void accept_new_PCB(int newConsole){
 	log_info(kernel_log, "NEW (0) program with PID=%04d arriving.", newConsole);
 	recv(newConsole, ansisopLenBuff, sizeof(int), 0);
 	deserialize_data(&ansisopLen, sizeof(int), ansisopLenBuff, &ansisopLenBuff_index);
-	char *code = calloc(1,(size_t) ansisopLen);
-	recv(newConsole, code, (size_t) ansisopLen, 0);
+	char *code = calloc(1,(int) ansisopLen);
+	recv(newConsole, code, (int) ansisopLen, 0);
 	void* request_buffer = NULL;
 	int request_buffer_index = 0;
 	serialize_data(&newConsole, sizeof(int), &request_buffer, &request_buffer_index);
 	serialize_data(&ansisopLen, sizeof(int), &request_buffer, &request_buffer_index);
-	serialize_data(code, (size_t) ansisopLen, &request_buffer, &request_buffer_index);
+	serialize_data(code, (int) ansisopLen, &request_buffer, &request_buffer_index);
 	serialize_data(&clientUMC, sizeof(int), &request_buffer, &request_buffer_index);
 	pthread_t newPCB_thread;
 	pthread_create(&newPCB_thread, NULL, requestPages2UMC, request_buffer);
@@ -617,9 +617,9 @@ void round_robin(){
 	serialize_data(&setup.QUANTUM, sizeof(int), &tmp_buffer, &tmp_buffer_size);
 	serialize_data(&setup.QUANTUM_SLEEP, sizeof(int), &tmp_buffer, &tmp_buffer_size);
 	serialize_data(&pcb_buffer_size, sizeof(int), &tmp_buffer, &tmp_buffer_size);
-	serialize_data(pcb_buffer, (size_t ) pcb_buffer_size, &tmp_buffer, &tmp_buffer_size);
+	serialize_data(pcb_buffer, (int ) pcb_buffer_size, &tmp_buffer, &tmp_buffer_size);
 	log_info(kernel_log,"Submitting to CPU %d the PID=%04d.", laCPU->clientID, tuPCB->pid);
-	send(laCPU->clientID, tmp_buffer, (size_t) tmp_buffer_size, 0);
+	send(laCPU->clientID, tmp_buffer, (int) tmp_buffer_size, 0);
 	list_add(cpus_executing,laCPU);
 	free(tmp_buffer);
 	free(pcb_buffer);
@@ -693,7 +693,7 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 	if (pcb_found == true) {
 		serialize_data(&dos, sizeof(char), &umcKillProg, &umcKillProg_index);
 		serialize_data(&pid, sizeof(int), &umcKillProg, &umcKillProg_index);
-		send(clientUMC, umcKillProg, (size_t) umcKillProg_index, 0);
+		send(clientUMC, umcKillProg, (int) umcKillProg_index, 0);
 		log_info(kernel_log, "Program %04d has been terminated", pid);
 		free(umcKillProg);
         if (consoleStillOpen){

@@ -143,12 +143,12 @@ int return_pcb() {
     int serialized_buffer_index = 0;
     serialize_pcb(actual_pcb, &serialized_pcb, &serialized_buffer_index);
     testSerializedPCB(actual_pcb, serialized_pcb);
-    if( send(kernelSocketClient , &serialized_buffer_index, (size_t) sizeof(int), 0) < 0) {
+    if( send(kernelSocketClient , &serialized_buffer_index, (int) sizeof(int), 0) < 0) {
         log_error(cpu_log, "Send serialized_buffer_length to KERNEL failed");
         return ERROR;
     }
     log_info(cpu_log, "Pcb Size to send : %d", serialized_buffer_index);
-    if( send(kernelSocketClient , serialized_pcb, (size_t) serialized_buffer_index, 0) < 0) {
+    if( send(kernelSocketClient , serialized_pcb, (int) serialized_buffer_index, 0) < 0) {
         log_error(cpu_log, "Send serialized_pcb to KERNEL failed");
         return ERROR;
     }
@@ -354,7 +354,7 @@ int change_active_process() {
     char operacion = CAMBIO_PROCESO_ACTIVO;
     serialize_data(&operacion, sizeof(char), &buffer, &buffer_index);
     serialize_data(&actual_pcb->pid, sizeof(int), &buffer, &buffer_index);
-    if( send(umcSocketClient , buffer, (size_t) buffer_index, 0) < 0) {
+    if( send(umcSocketClient , buffer, (int) buffer_index, 0) < 0) {
         log_error(cpu_log, "Send pid %d to UMC failed", actual_pcb->pid);
         return ERROR;
     }
@@ -423,7 +423,7 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
             return ERROR;
         }
         //Recv response
-        recv_bytes_buffer = calloc(1, (size_t) element->tamanio);
+        recv_bytes_buffer = calloc(1, (int) element->tamanio);
         if(recv_bytes_buffer == NULL) {
             log_error(cpu_log, "get_instruction_line recv_bytes_buffer mem alloc failed");
             return ERROR;
@@ -438,20 +438,20 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
             exit(1);
         }
 
-        if( recv(umcSocketClient , recv_bytes_buffer , (size_t ) element->tamanio , 0) <= 0) {
+        if( recv(umcSocketClient , recv_bytes_buffer , (int ) element->tamanio , 0) <= 0) {
             log_error(cpu_log, "UMC bytes recv failed");
             return ERROR;
         }
         log_info(cpu_log, "Bytes Received: %s", (char*) recv_bytes_buffer);
 
-        *instruction_line = realloc(*instruction_line, (size_t) buffer_index+element->tamanio);
+        *instruction_line = realloc(*instruction_line, (int) buffer_index+element->tamanio);
 
-        memcpy(*instruction_line+buffer_index, recv_bytes_buffer, (size_t) element->tamanio);
+        memcpy(*instruction_line+buffer_index, recv_bytes_buffer, (int) element->tamanio);
         buffer_index += element->tamanio;
         free(recv_bytes_buffer);
         list_remove_and_destroy_element(instruction_addresses_list, 0, free);
     }
-    *instruction_line = realloc(*instruction_line, (size_t) (sizeof(char) + buffer_index));
+    *instruction_line = realloc(*instruction_line, (int) (sizeof(char) + buffer_index));
     * (char*)(*instruction_line+buffer_index) = '\0';
     return SUCCESS;
 }
@@ -470,8 +470,8 @@ int request_address_data(void ** buffer, logical_addr *address) {
     }
     //Recv response
     free(aux_buffer);
-    *buffer = calloc(1, (size_t) address->tamanio);
-    if( recv(umcSocketClient , *buffer , (size_t ) address->tamanio , 0) <= 0) {
+    *buffer = calloc(1, (int) address->tamanio);
+    if( recv(umcSocketClient , *buffer , (int ) address->tamanio , 0) <= 0) {
         log_error(cpu_log, "UMC bytes recv failed");
         return ERROR;
     }
@@ -526,12 +526,12 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
     log_info(cpu_log, "pcb_size: %d", kernel_data_buffer->pcb_size);
     free(buffer);
 
-    kernel_data_buffer->serialized_pcb = calloc(1, (size_t ) kernel_data_buffer->pcb_size);
+    kernel_data_buffer->serialized_pcb = calloc(1, (int ) kernel_data_buffer->pcb_size);
     if(kernel_data_buffer->serialized_pcb  == NULL) {
         log_error(cpu_log, "serialized_pcb mem alloc failed");
         return ERROR;
     }
-    if( recv(kernelSocketClient , kernel_data_buffer->serialized_pcb , (size_t )  kernel_data_buffer->pcb_size , 0) <= 0) {
+    if( recv(kernelSocketClient , kernel_data_buffer->serialized_pcb , (int )  kernel_data_buffer->pcb_size , 0) <= 0) {
         log_error(cpu_log, "serialized_pcb recv failed");
         return ERROR;
     }
@@ -561,7 +561,7 @@ t_list* armarDireccionesLogicasList(t_intructions *original_instruction) {
     list_add(address_list, addr);
     actual_instruction->offset = actual_instruction->offset - addr->tamanio;
 
-    //ojo que actual_instruction->offset es un size_t
+    //ojo que actual_instruction->offset es un int
     //cuando se lo decremente por debajo de 0, asumira su valor maximo
     while (actual_instruction->offset != 0) {
         addr = (logical_addr*) calloc(1,sizeof(logical_addr));
