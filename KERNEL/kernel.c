@@ -19,7 +19,7 @@ int losDatosGlobales_index;
 
 int main (int argc, char* *argv){
 	kernel_log = log_create("kernel.log", "Elestac-KERNEL", true, LOG_LEVEL_TRACE);
-    pthread_mutex_init(&mut_io_list, NULL);
+	pthread_mutex_init(&mut_io_list, NULL);
 	PCB_READY = list_create();
 	PCB_BLOCKED = list_create();
 	PCB_EXIT = list_create();
@@ -84,15 +84,15 @@ int start_kernel(int argc, char* configFile){
 void* sem_wait_thread(void* cpuData){
 	int semIndex, miID;
 	int cpuData_index = 0;
-    char kernel_response = '0';
-    deserialize_data(&miID, sizeof(int), cpuData, &cpuData_index);
-    deserialize_data(&semIndex, sizeof(int), cpuData, &cpuData_index);
+	char kernel_response = '0';
+	deserialize_data(&miID, sizeof(int), cpuData, &cpuData_index);
+	deserialize_data(&semIndex, sizeof(int), cpuData, &cpuData_index);
 	free(cpuData);
 	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started.", setup.SEM_ID[semIndex], miID);
 	sem_wait(&semaforo_ansisop[semIndex]);
 	send(miID, &kernel_response, sizeof(char), 0);
 	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished.", setup.SEM_ID[semIndex], miID);
-    pthread_exit(0);
+	pthread_exit(0);
 }
 
 int wait_coordination(int cpuID){
@@ -100,37 +100,36 @@ int wait_coordination(int cpuID){
 	int semaphore_trama_buffer_index = 0, SEM_ID_Size = 0;
 	char doWait, *SEM_ID = NULL;
 	size_t size_trama_semaphore = sizeof(char) + sizeof(int);
-	void * semaphore_trama_buffer = calloc(1, size_trama_semaphore);
+	void *semaphore_trama_buffer = calloc(1, size_trama_semaphore);
 
-    recv(cpuID, semaphore_trama_buffer, size_trama_semaphore  , 0);
-    deserialize_data(&doWait, sizeof(char), semaphore_trama_buffer,&semaphore_trama_buffer_index);
-    deserialize_data(&SEM_ID_Size, sizeof(int), semaphore_trama_buffer,&semaphore_trama_buffer_index);
-    SEM_ID = calloc(1, SEM_ID_Size);
-    recv(cpuID, SEM_ID, SEM_ID_Size, 0);
+	recv(cpuID, semaphore_trama_buffer, size_trama_semaphore, 0);
+	deserialize_data(&doWait, sizeof(char), semaphore_trama_buffer,&semaphore_trama_buffer_index);
+	deserialize_data(&SEM_ID_Size, sizeof(int), semaphore_trama_buffer,&semaphore_trama_buffer_index);
+	SEM_ID = calloc(1, (size_t) SEM_ID_Size);
+	recv(cpuID, SEM_ID, (size_t) SEM_ID_Size, 0);
 
 	int semIndex = getSEMindex(SEM_ID);
-
-
-    if (doWait == '0')
-        semWait=true;
-
-    if(semWait){
+	free(SEM_ID);
+	if(doWait == '0') semWait=true;
+	if(semWait){
 		losDatosGlobales = NULL;
 		losDatosGlobales_index = 0;
 		serialize_data(&cpuID, (size_t) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
 		serialize_data(&semIndex, (size_t) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
 		pthread_t sem_thread;
 		pthread_create(&sem_thread, NULL, sem_wait_thread, losDatosGlobales);
+		return 1;
 	}else{
 		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d.", setup.SEM_ID[semIndex], cpuID);
 		sem_post(&semaforo_ansisop[semIndex]);
+		return 2;
 	}
-	free(SEM_ID);
-	return 1;
 }
 void* do_work(void *p){
 	int tmp = *((int *) p);
 	int miID = tmp;
+	int io_units_index;
+	int io_units;
 	bool esTrue = true;
 	log_info(kernel_log, "do_work: Starting the device %s with a sleep of %s milliseconds.", setup.IO_ID[miID], setup.IO_SLEEP[miID]);
 	while(esTrue){
@@ -140,9 +139,11 @@ void* do_work(void *p){
 			pthread_mutex_lock(&mut_io_list);
 			io_op = list_remove(solicitudes_io[miID], 0);
 			pthread_mutex_unlock(&mut_io_list);
+			io_units_index = 0;
+			deserialize_data(&io_units, sizeof(int), io_op->io_units,&io_units_index);
 			if (io_op->pid > 0) {
-				log_info(kernel_log, "%s will perform %d operations.", setup.IO_ID[miID], atoi(io_op->io_units));
-				int processing_io = atoi(setup.IO_SLEEP[miID]) * atoi(io_op->io_units) * 1000;
+				log_info(kernel_log, "%s will perform %d operations.", setup.IO_ID[miID], io_units);
+				int processing_io = atoi(setup.IO_SLEEP[miID]) * io_units * 1000;
 				usleep((useconds_t) processing_io);
 				bool match_PCB(void *pcb) {
 					t_pcb *unPCB = pcb;
@@ -155,8 +156,7 @@ void* do_work(void *p){
 					elPCB->status = READY;
 					list_add(PCB_READY, elPCB);
 				} // Else -> The PCB was killed by end_program while performing I/O
-				log_info(kernel_log, "do_work: Finished an io operation on device %s requested by PID %d.",
-						 setup.IO_ID[miID], io_op->pid);
+				log_info(kernel_log, "do_work: Finished an io operation on device %s requested by PID %d.", setup.IO_ID[miID], io_op->pid);
 				free(io_op);
 			}
 		}
@@ -264,7 +264,7 @@ void *requestPages2UMC(void* request_buffer){
 	deserialize_data(&code_pages, sizeof(int), req2UMC_response, &code_pages_index);
 	log_info(kernel_log, "UMC replied.");
 	free(req2UMC);
-    free(req2UMC_response);
+	free(req2UMC_response);
 	createNewPCB(PID, code_pages, code);
 }
 void tratarSeniales(int senial){
@@ -321,7 +321,7 @@ void restoreCPU(t_Client *laCPU){
 }
 
 void check_CPU_FD_ISSET(void *cpu){
-    char cpu_protocol = '\0';
+	char cpu_protocol = '\0';
 	char* tmp_buff = calloc(1, sizeof(int));
 	int setValue = 0;
 	int nameSize;
@@ -329,7 +329,7 @@ void check_CPU_FD_ISSET(void *cpu){
 	t_Client* laCPU = (t_Client*) cpu;
 	if (laCPU != NULL && FD_ISSET(laCPU->clientID, &allSockets)) {
 		log_debug(kernel_log,"CPU %d has something to say.", laCPU->clientID);
-		    if (recv(laCPU->clientID, &cpu_protocol, sizeof(char), MSG_DONTWAIT) > 0){
+		if (recv(laCPU->clientID, &cpu_protocol, sizeof(char), MSG_DONTWAIT) > 0){
 			switch (cpu_protocol){
 				case '1':// Quantum end
 				case '2':// Program END
@@ -367,14 +367,17 @@ void check_CPU_FD_ISSET(void *cpu){
 					break;
 				case '4':// semaforo
 					log_debug(kernel_log, "Receving a semaphore operation from CPU %d", laCPU->clientID);
-					if (wait_coordination(laCPU->clientID) == 1)
-						log_debug(kernel_log, "Semaphore operation successfully handled.");
+					if (wait_coordination(laCPU->clientID) == 1){
+						log_debug(kernel_log, "WAIT successfully handled for CPU %d.",laCPU->clientID);
+					}else{
+						log_debug(kernel_log, "SIGNAL successfully handled for CPU %d.",laCPU->clientID);
+					}
 					break;
 				case '5':// var compartida
 					log_debug(kernel_log, "Receving a shared var operation from CPU %d", laCPU->clientID);
 					recv(laCPU->clientID, tmp_buff, sizeof(char), 0);
 					if (*tmp_buff == '1')
-                        setValue = 1;
+						setValue = 1;
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
 					deserialize_data(&nameSize, sizeof(int), tmp_buff, &nameSize_index);
 					char *theShared = calloc(1, (size_t) nameSize);
@@ -399,14 +402,14 @@ void check_CPU_FD_ISSET(void *cpu){
 					int value2console;
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
 					deserialize_data(&value2console, sizeof(int), tmp_buff, &nameSize_index);
-                    void* text2Console = NULL;
+					void* text2Console = NULL;
 					int text2Console_index = 0;
 					char consoleProtocol = '1';
 					serialize_data(&consoleProtocol, (size_t) sizeof(char), &text2Console, &text2Console_index);
 					serialize_data(&value2console, (size_t) sizeof(int), &text2Console, &text2Console_index);
 					log_debug(kernel_log, "Console %d will print the value %d.", laCPU->pid, value2console);
 					send(laCPU->pid, text2Console, (size_t) text2Console_index, 0); // send the value to the console
-                    free(text2Console);
+					free(text2Console);
 					break;
 				case '7':// imprimirTexto
 					log_debug(kernel_log, "Receving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
@@ -451,7 +454,7 @@ void check_CPU_FD_ISSET(void *cpu){
 
 void destroy_PCB(void *pcb){
 	t_pcb *unPCB = pcb;
-    free(unPCB->etiquetas);
+	free(unPCB->etiquetas);
 	free(unPCB);
 }
 
@@ -516,8 +519,8 @@ int control_clients(){
 	return 1;
 }
 
-int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista){
-	int aceptado=0;
+int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista) {
+	int aceptado = 0;
 	char newBuff[1];
 	if (FD_ISSET(*server, &*sockets)){
 		if ((aceptado=acceptConnection(*server)) < 1){
@@ -531,7 +534,7 @@ int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista){
 					cliente->pid = 0;
 					cliente->status = 0;
 					list_add(lista, cliente);
-					log_info(kernel_log, "New %s arriving (Total %s connections: %d).", what, what, list_size(lista));
+					log_info(kernel_log, "New %s arriving (%d)", what, list_size(lista));
 				}
 			}else{
 				log_error(kernel_log,"Error while trying to read from a newly accepted %s.",what);
@@ -581,9 +584,9 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 		newPCB->instrucciones_size = metadata->instrucciones_size;
 		newPCB->instrucciones_serializado = metadata->instrucciones_serializado;
 		newPCB->etiquetas_size = metadata->etiquetas_size;
-        newPCB->etiquetas = calloc(1, metadata->etiquetas_size);
+		newPCB->etiquetas = calloc(1, metadata->etiquetas_size);
 		memcpy(newPCB->etiquetas, metadata->etiquetas, metadata->etiquetas_size);
-        free(metadata);
+		free(metadata);
 		list_add(PCB_READY, newPCB);
 		log_info(kernel_log, "The program with PID=%04d is now READY (%d).", newPCB->pid, newPCB->status);
 	} else {
@@ -592,11 +595,11 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 		send(newConsole, PIDserializado, sizeof(int), 0);
 		log_error(kernel_log, "The program with PID=%04d could not be started. System run out of memory.", newConsole);
 		close(newConsole);
-        bool getConsoleIndex(void *nbr) {
-            t_Client *unCliente = nbr;
-            return (newConsole == unCliente->clientID);
-        }
-        list_remove_by_condition(consolas_conectadas, getConsoleIndex);
+		bool getConsoleIndex(void *nbr) {
+			t_Client *unCliente = nbr;
+			return (newConsole == unCliente->clientID);
+		}
+		list_remove_by_condition(consolas_conectadas, getConsoleIndex);
 	}
 	free(PIDserializado);
 }
@@ -623,7 +626,7 @@ void round_robin(){
 	list_add(cpus_executing,laCPU);
 	free(tmp_buffer);
 	free(pcb_buffer);
-    free(tuPCB->etiquetas);
+	free(tuPCB->etiquetas);
 	free(tuPCB);
 }
 
@@ -696,17 +699,17 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 		send(clientUMC, umcKillProg, (size_t) umcKillProg_index, 0);
 		log_info(kernel_log, "Program %04d has been terminated", pid);
 		free(umcKillProg);
-        if (consoleStillOpen){
-            char finalizar = '0';
-            void* consoleKillProg = NULL;
-            int consoleKillProg_index = 0;
-            if(status == BROKEN) finalizar = '3';
-            log_info(kernel_log, "Program status was %d. Console will inform this properly to the user.", status);
-            serialize_data(&finalizar, sizeof(char), &consoleKillProg, &consoleKillProg_index);
-            send(pid, consoleKillProg, sizeof(char), 0); // send exit code to console
-            free(consoleKillProg);
-        }
-        close(pid); // close console socket
+		if (consoleStillOpen){
+			char finalizar = '0';
+			void* consoleKillProg = NULL;
+			int consoleKillProg_index = 0;
+			if(status == BROKEN) finalizar = '3';
+			log_info(kernel_log, "Program status was %d. Console will inform this properly to the user.", status);
+			serialize_data(&finalizar, sizeof(char), &consoleKillProg, &consoleKillProg_index);
+			send(pid, consoleKillProg, sizeof(char), 0); // send exit code to console
+			free(consoleKillProg);
+		}
+		close(pid); // close console socket
 	}
 	bool getConsoleIndex(void *nbr) {
 		t_Client *unCliente = nbr;
