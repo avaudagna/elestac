@@ -623,6 +623,7 @@ void atenderCPU(int *socketBuff){
 			break;
 		case FIN_COMUNICACION_CPU:
 		default:
+			printf("Identificador de operacion invalido con CPU.Finalizando Modulo\n");
 			estado = EXIT;
 			break;
 		}
@@ -699,7 +700,7 @@ void atenderKernel(int * socketBuff){
 			estado = IDENTIFICADOR_OPERACION;
 			break;
 		default:
-			printf("Identificador de operacion invalido\n");
+			printf("Identificador de operacion invalido con KERNEL. Finalizando Modulo\n");
 			estado=EXIT;
 			break;
 
@@ -1688,7 +1689,7 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 		pthread_mutex_unlock(semSwap);
 		free(buffer);
 		perror("send");
-		printf("\nError en la comunicacion con SWAP,Finalizando\n");
+		printf("\nError en la comunicacion con SWAP,Finalizando Modulo\n");
 		liberarRecursos();
 		exit(1);
 	}
@@ -1701,7 +1702,7 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 		pthread_mutex_unlock(semSwap);
 		free(buffer);
 		perror("send");
-		printf("\nError en la comunicacion con SWAP,Finalizando\n");
+		printf("\nError en la comunicacion con SWAP,Finalizando Modulo\n");
 		liberarRecursos();
 		exit(1);
 	}
@@ -1716,7 +1717,7 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 		return contenidoPagina;
 	}
 	else{
-		printf("\nError en la comunicacion con SWAP, Devolvio una pagina INVALIDA,Finalizando\n");
+		printf("\nError en la comunicacion con SWAP, Devolvio una pagina INVALIDA,Finalizando Modulo\n");
 		liberarRecursos();
 		exit(1);
 	}
@@ -2329,7 +2330,7 @@ int getPosicionListaPids(int pPid) {
 void retardo(void){
 
 	pthread_rwlock_rdlock(semRetardo);
-	usleep(umcGlobalParameters.retardo * 1000000);
+	usleep(umcGlobalParameters.retardo);
 	pthread_rwlock_unlock(semRetardo);
 }
 
