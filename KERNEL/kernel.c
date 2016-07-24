@@ -522,7 +522,7 @@ int control_clients(){
 int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista) {
 	int aceptado = 0;
 	char newBuff[1];
-}	if (FD_ISSET(*server, &*sockets)){
+	if (FD_ISSET(*server, &*sockets)){
 		if ((aceptado=acceptConnection(*server)) < 1){
 			log_error(kernel_log,"Error while trying to Accept() a new %s.",what);
 		} else {
