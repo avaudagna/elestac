@@ -25,14 +25,13 @@ int main(int argc, char *argv[]) {
 
 	int kernelSocketClient;
 	void * kernel_reply = NULL;
-	//create kernel client
-	if (argc != 3) {
-		puts("usage: console console.config ansisopFile");
+	if (argc != 2) {
+		puts("usage: console ansisopFile");
 		return -1;
 	}
 
-    if (loadConfig(argv[1]) < 0){
-        log_error(console_log, "No se encontró el archivo de configuración");
+    if (loadConfig("/usr/share/ansisop/console.config") < 0){
+			log_error(console_log, "No se encontró el archivo de configuración");
         return -1;
     }
 
@@ -43,7 +42,7 @@ int main(int argc, char *argv[]) {
 	y me va a devolver el client_id (un número) que me represente con el cual él me conoce*/
 
 	FILE *fp;
-	fp = fopen(argv[2], "r");
+	fp = fopen(argv[1], "r");
 	if (!fp) {
 		log_error(console_log, "No se puedo abrir el ansisop.");
 		exit(1);
