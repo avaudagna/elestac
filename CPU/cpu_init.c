@@ -108,8 +108,9 @@ void tratarSeniales(int senial){
             signal (SIGPIPE, tratarSeniales);
             break;
         case SIGUSR1:
-            printf("On next Quantum CPU will disconnect");
-
+            printf("SIGUSR1 signal received\n");
+            printf("On next Quantum CPU will disconnect\n");
+            LAST_QUANTUM_FLAG = 1;
             break;
         default:
             printf("Other signal received\n");
