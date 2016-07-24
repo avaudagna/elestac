@@ -128,6 +128,8 @@ int wait_coordination(int cpuID){
 void* do_work(void *p){
 	int tmp = *((int *) p);
 	int miID = tmp;
+	int io_units_index;
+	int io_units;
 	bool esTrue = true;
 	log_info(kernel_log, "do_work: Starting the device %s with a sleep of %s milliseconds.", setup.IO_ID[miID], setup.IO_SLEEP[miID]);
 	while(esTrue){
@@ -137,9 +139,11 @@ void* do_work(void *p){
 			pthread_mutex_lock(&mut_io_list);
 			io_op = list_remove(solicitudes_io[miID], 0);
 			pthread_mutex_unlock(&mut_io_list);
+			io_units_index = 0;
+			deserialize_data(&io_units, sizeof(int), io_op->io_units,&io_units_index);
 			if (io_op->pid > 0) {
-				log_info(kernel_log, "%s will perform %d operations.", setup.IO_ID[miID], atoi(io_op->io_units));
-				int processing_io = atoi(setup.IO_SLEEP[miID]) * atoi(io_op->io_units) * 1000;
+				log_info(kernel_log, "%s will perform %d operations.", setup.IO_ID[miID], io_units);
+				int processing_io = atoi(setup.IO_SLEEP[miID]) * io_units * 1000;
 				usleep((useconds_t) processing_io);
 				bool match_PCB(void *pcb) {
 					t_pcb *unPCB = pcb;
@@ -152,8 +156,7 @@ void* do_work(void *p){
 					elPCB->status = READY;
 					list_add(PCB_READY, elPCB);
 				} // Else -> The PCB was killed by end_program while performing I/O
-				log_info(kernel_log, "do_work: Finished an io operation on device %s requested by PID %d.",
-						 setup.IO_ID[miID], io_op->pid);
+				log_info(kernel_log, "do_work: Finished an io operation on device %s requested by PID %d.", setup.IO_ID[miID], io_op->pid);
 				free(io_op);
 			}
 		}
@@ -516,10 +519,10 @@ int control_clients(){
 	return 1;
 }
 
-int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista){
-	int aceptado=0;
+int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista) {
+	int aceptado = 0;
 	char newBuff[1];
-	if (FD_ISSET(*server, &*sockets)){
+}	if (FD_ISSET(*server, &*sockets)){
 		if ((aceptado=acceptConnection(*server)) < 1){
 			log_error(kernel_log,"Error while trying to Accept() a new %s.",what);
 		} else {
