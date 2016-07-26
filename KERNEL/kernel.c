@@ -107,7 +107,7 @@ void* sem_wait_thread(void* cpuData){
 	pthread_exit(0);
 }
 
-int wait_coordination(int cpuID int lePid){
+int wait_coordination(int cpuID, int lePid){
 	bool semWait=false;
 	int semaphore_trama_buffer_index = 0, SEM_ID_Size = 0;
 	char doWait, *SEM_ID = NULL;
