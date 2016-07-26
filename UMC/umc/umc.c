@@ -164,10 +164,7 @@ pthread_rwlock_t 	*semListaPids = NULL,
 					*semMemPrin	  = NULL,
 				    *semRetardo	  = NULL,
 					*semClockPtrs = NULL;
-pthread_mutex_t * semSwap = NULL;
-
-
-
+pthread_mutex_t 	*semSwap 	  = NULL;
 
 
 /*FUNCIONES DE INICIALIZACION*/
@@ -671,7 +668,7 @@ char cambioProcesoActivo(int *socket, int *pid){
 	}
 	memcpy(pid,buffer,sizeof(int));
 	free(buffer);
-	printf("Cambio de Proceso activo , nuevo PID = [%d]\n",*pid);
+	printf("\e[31;1mCambio de Proceso activo , nuevo PID = [%d]\e[0m\n",*pid);
 	return ((char)IDENTIFICADOR_OPERACION);
 }
 
@@ -1130,21 +1127,20 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 	memcpy(&offset,buffer+sizeof(int),sizeof(int));
 	memcpy(&tamanio,buffer+sizeof(int)+sizeof(int),sizeof(int));
 	free(buffer);
-
-	printf("[%04d]Pedido Bytes : (%d,%d,%d) --> ",*pid_actual,pPagina,offset,tamanio);
-
+	printf("[%04d]Pedido Bytes : (%d,%d,%d)-->",*pid_actual,pPagina,offset,tamanio);
 	if((umcGlobalParameters.entradasTLB > 0 ) && (consultarTLB(pid_actual,pPagina,&indice_buff))){	// ¿Se usa TLB ? y.. ¿Esta en TLB?
 		// si esta en la tabla,  ya tengo el nroDeMarco y de ahi me voy a vectorMarcos[nroDeMarco]
 		temp = (PAGINA *) calloc(1,sizeof(PAGINA));
 		temp->nroDeMarco = indice_buff;
 		temp->nroPagina=pPagina;
 		resolverEnMP(socketBuff,temp,offset,tamanio);	// lo hago asi para poder reutilizar resolverEnMP , que al fin y al cabo es lo que se termina haciendo
-		actualizarTlb(pid_actual,temp);
+		//actualizarTlb(pid_actual,temp);
+		actualizarContadoresLRU(pid_actual,pPagina);
 		free(temp);
 		printf("[TLB HIT]\n");
 	}
 	else {	// No esta en TLB o no se usa TLB
-		printf("[TLB MISS] --> ");
+		printf("[TLB MISS]-->");
 		pthread_rwlock_rdlock(semListaPids);
 		headerTablaDePaginas = obtenerTablaDePaginasDePID(*pid_actual);
 
@@ -1152,24 +1148,25 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 		pthread_rwlock_unlock(semListaPids);
 
 		if (aux == NULL) {	// valido pedido de pagina
+			printf("\e[31;1mSTACK OVERFLOW\e[0m");
 			pedidoDePaginaInvalida(socketBuff);
 			return ((char)EXIT);
 		}
 		else {
 
 			if (aux->presencia == AUSENTE) {    // La pagina NO se encuentra en memoria principal
-				printf("[PAGE FAULT] --> ");
+				printf("[PAGE FAULT]-->");
 				contenidoPagina = pedirPaginaSwap(pid_actual, aux->nroPagina); //1- Pedir pagina a Swap
 
 				if ( marcosDisponiblesEnMP() == 0){	// NO HAY MARCOS LIBRES EN MEMORIA
 					if( cantPagDisponiblesxPID(pid_actual) == umcGlobalParameters.marcosXProc ){// si el proceso no tiene asignado ningun marco
-						printf("Proceso sin marcos asignados y tampoco hay libres.\n");
+						printf("\e[31;4mProceso sin marcos asignados y tampoco hay libres.\e[0m\n");
 						enviarMsgACPU(socketBuff,ABORTAR_PROCESO,sizeof(char));
 						return ((char)EXIT);
 					}
 					else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo
 						//algoritmoClock(*pid_actual,pPagina,tamanioContenidoPagina,contenidoPagina);
-						printf("Algoritmo %s --> ",umcGlobalParameters.algoritmo);
+						printf("Algoritmo [%s]-->",umcGlobalParameters.algoritmo);
 						punteroAlgoritmo(pid_actual,pPagina,contenidoPagina,&marcoVictima);
 						actualizarTlb(pid_actual,aux);
 						resolverEnMP(socketBuff, aux, offset, tamanio);
@@ -1184,7 +1181,7 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 					}
 					else{	// el proceso llego a la maxima cantidad de marcos proceso
 						//algoritmoClock(*pid_actual,pPagina,tamanioContenidoPagina,contenidoPagina);
-						printf("Algoritmo %s --> ",umcGlobalParameters.algoritmo);
+						printf("Algoritmo [%s]-->",umcGlobalParameters.algoritmo);
 						punteroAlgoritmo(pid_actual,pPagina,contenidoPagina,&marcoVictima);
 						resolverEnMP(socketBuff, aux, offset, tamanio);
 						actualizarTlb(pid_actual,aux);
@@ -1193,9 +1190,9 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 			}
 			else { // La pagina se encuentra en memoria principal
 				resolverEnMP(socketBuff, aux, offset, tamanio); // pagina en memoria principal , se la mando de una al CPU :)
+				printf("[PAGE TABLE HIT]-->");
 				actualizarTlb(pid_actual,aux);
 				setBitDeUso(pid_actual,pPagina,1);
-				printf("[PAGE TABLE HIT]\n");
 			}
 		}
 	}
@@ -2085,15 +2082,18 @@ void limpiarPidDeTLB(int pPid) {
 
 void reemplazarPaginaTLB(int pPid, PAGINA *pPagina, int indice) {
 
-	TLB * aux = NULL;
+	TLB *reemplazo = NULL,
+		*victima   = NULL;
 
-	aux = (TLB *) calloc(1,sizeof(TLB));
-	aux->pid=pPid;
-	aux->nroPagina=pPagina->nroPagina;
-	aux->nroDeMarco = pPagina->nroDeMarco;
-	aux->contadorLRU=0;	// va en 0 porque acaba de ser referenciado
+	reemplazo = (TLB *) calloc(1,sizeof(TLB));
+	reemplazo->pid=pPid;
+	reemplazo->nroPagina=pPagina->nroPagina;
+	reemplazo->nroDeMarco = pPagina->nroDeMarco;
+	reemplazo->contadorLRU=0;	// va en 0 porque acaba de ser referenciado
+	victima = list_get(headerTLB,indice);
+	printf("[TLB](Pag,Mar)Victima:(%d,%d)->Reemplazo(%d,%d)\n",victima->nroPagina,victima->nroDeMarco,reemplazo->nroPagina,reemplazo->nroDeMarco);
 	pthread_rwlock_wrlock(semTLB);
-	list_replace_and_destroy_element(headerTLB,indice,aux,free);	// hago el reemplazo
+	list_replace_and_destroy_element(headerTLB,indice,reemplazo,free);	// hago el reemplazo
 	pthread_rwlock_unlock(semTLB);
 }
 
@@ -2337,7 +2337,7 @@ int getPosicionListaPids(int pPid) {
 void retardo(void){
 
 	pthread_rwlock_rdlock(semRetardo);
-	usleep(umcGlobalParameters.retardo);
+	usleep(umcGlobalParameters.retardo * 1000);
 	pthread_rwlock_unlock(semRetardo);
 }
 
