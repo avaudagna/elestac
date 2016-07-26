@@ -277,7 +277,7 @@ void *requestPages2UMC(void* request_buffer){
 	void* req2UMC = NULL;//1+PID+nbrOfPages+ansisopLen+code
 	void* req2UMC_response = calloc(1, sizeof(int));
 	char umcProtocol = '1';
-	int nbrOfPages = ansisopLen/setup.PAGE_SIZE + 1;// +1 since ceil() does not work
+	int nbrOfPages = ansisopLen/setup.PAGE_SIZE + 1;
 	int req2UMC_index = 0;
 	serialize_data(&umcProtocol, sizeof(char), &req2UMC, &req2UMC_index);
 	serialize_data(&PID, sizeof(int), &req2UMC, &req2UMC_index);
@@ -364,7 +364,7 @@ void check_CPU_FD_ISSET(void *cpu){
 				case '2':// Program END
 					log_debug(kernel_log, "Receving a PCB from CPU %d", laCPU->clientID);
 					t_pcb* incomingPCB = recvPCB(laCPU->clientID);
-					if (laCPU->status == EXIT || incomingPCB->status==EXIT || incomingPCB->status == BROKEN){
+					if (laCPU->status == EXIT || incomingPCB->status==EXIT || incomingPCB->status == BROKEN || incomingPCB->status == ABORTED){
 						list_add(PCB_EXIT, incomingPCB);
 					}else{
 						list_add(PCB_READY, incomingPCB);
@@ -410,7 +410,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					}
 					break;
 				case '5':// var compartida
-					log_debug(kernel_log, "Receving a shared var operation from CPU %d", laCPU->clientID);
+					log_debug(kernel_log, "Receiving a shared var operation from CPU %d", laCPU->clientID);
 					recv(laCPU->clientID, tmp_buff, sizeof(char), 0);
 					if (*tmp_buff == '1')
 						setValue = 1;
@@ -434,32 +434,32 @@ void check_CPU_FD_ISSET(void *cpu){
 					free(theShared);
 					break;
 				case '6':// imprimirValor
-					log_debug(kernel_log, "Receving a value to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
+					log_debug(kernel_log, "Receiving a value to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
 					int value2console;
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
 					deserialize_data(&value2console, sizeof(int), tmp_buff, &nameSize_index);
 					void* text2Console = NULL;
 					int text2Console_index = 0;
-					char consoleProtocol = '1';
-					serialize_data(&consoleProtocol, (size_t) sizeof(char), &text2Console, &text2Console_index);
+					int consoleProtocol = 1;
+					serialize_data(&consoleProtocol, (size_t) sizeof(int), &text2Console, &text2Console_index);
 					serialize_data(&value2console, (size_t) sizeof(int), &text2Console, &text2Console_index);
 					log_debug(kernel_log, "Console %d will print the value %d.", laCPU->pid, value2console);
 					send(laCPU->pid, text2Console, (size_t) text2Console_index, 0); // send the value to the console
 					free(text2Console);
 					break;
 				case '7':// imprimirTexto
-					log_debug(kernel_log, "Receving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
+					log_debug(kernel_log, "Receiving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
-					size_t txtSize;
+					int txtSize;
 					deserialize_data(&txtSize, sizeof(int), tmp_buff, &nameSize_index);
-					char *theTXT = calloc(1, txtSize);
-					recv(laCPU->clientID, theTXT, txtSize, 0);
+					char *theTXT = calloc(1, (size_t) txtSize);
+					recv(laCPU->clientID, theTXT, (size_t) txtSize, 0);
 					log_debug(kernel_log, "Console %d will print this text: %s.", laCPU->pid, theTXT);
 					void* txt2console = NULL;
-					char consoleProtocol2 = '2';
+					int consoleProtocol2 = 2;
 					int txt2console_index = 0;
-					serialize_data(&consoleProtocol2, (size_t) sizeof(char), &txt2console, &txt2console_index);
-					serialize_data(&txtSize, (size_t) sizeof(int), &txt2console, &txt2console_index);
+					serialize_data(&consoleProtocol2, sizeof(int), &txt2console, &txt2console_index);
+					serialize_data(&txtSize, sizeof(int), &txt2console, &txt2console_index);
 					serialize_data(theTXT, txtSize, &txt2console, &txt2console_index);
 					send(laCPU->pid, txt2console, (size_t) txt2console_index, 0); // send the text to the console
 					free(theTXT);
@@ -608,7 +608,7 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 	int PIDserializado_index = 0;
 	if (code_pages>0){
 		serialize_data(&newConsole, sizeof(int), &PIDserializado, &PIDserializado_index);
-		log_info(kernel_log, "Pages of code + stack = %d.", code_pages);
+		log_info(kernel_log, "Pages of code + stack = %d.", code_pages + setup.STACK_SIZE);
 		send(newConsole, PIDserializado, sizeof(int), 0);
 		t_metadata_program* metadata = metadata_desde_literal(code);
 		t_pcb *newPCB = calloc(1, sizeof(t_pcb));
@@ -738,12 +738,13 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 		log_info(kernel_log, "Program %04d has been terminated", pid);
 		free(umcKillProg);
 		if (consoleStillOpen){
-			char finalizar = '0';
+			int finalizar = 0;
 			void* consoleKillProg = NULL;
 			int consoleKillProg_index = 0;
-			if(status == BROKEN) finalizar = '3';
+			if(status == BROKEN) finalizar = 3;
+			if(status == ABORTED) finalizar = 4;
 			log_info(kernel_log, "Program status was %d. Console will inform this properly to the user.", status);
-			serialize_data(&finalizar, sizeof(char), &consoleKillProg, &consoleKillProg_index);
+			serialize_data(&finalizar, sizeof(int), &consoleKillProg, &consoleKillProg_index);
 			send(pid, consoleKillProg, sizeof(char), 0); // send exit code to console
 			free(consoleKillProg);
 		}
