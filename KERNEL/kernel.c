@@ -1,4 +1,5 @@
 /* Kernel.c by pacevedo */
+#include <libs/pcb.h>
 #include "libs/pcb.h"
 #include "kernel.h"
 
@@ -9,7 +10,7 @@ int maxSocket=0;
 char* configFileName;
 char* configFilePath;
 t_log   *kernel_log;
-t_list  *PCB_READY, *PCB_BLOCKED, *PCB_EXIT;
+t_list  *PCB_READY, *PCB_BLOCKED, *PCB_EXIT, *PCB_WAITING, *PCB_EXIT_WAITING;
 t_list  *consolas_conectadas, *cpus_conectadas, *cpus_executing;
 t_list **solicitudes_io;
 fd_set 	 allSockets;
@@ -23,6 +24,8 @@ int main (int argc, char* *argv){
 	PCB_READY = list_create();
 	PCB_BLOCKED = list_create();
 	PCB_EXIT = list_create();
+	PCB_WAITING = list_create();
+	PCB_EXIT_WAITING = list_create();
 	cpus_conectadas = list_create();
 	cpus_executing = list_create();
 	consolas_conectadas = list_create();
@@ -82,20 +85,45 @@ int start_kernel(int argc, char* configFile){
 }
 
 void* sem_wait_thread(void* cpuData){
-	int semIndex, miID;
+	bool listo = true;
+	int semIndex, miID, elPid;
 	int cpuData_index = 0;
 	char kernel_response = '0';
 	deserialize_data(&miID, sizeof(int), cpuData, &cpuData_index);
 	deserialize_data(&semIndex, sizeof(int), cpuData, &cpuData_index);
+	deserialize_data(&elPid, sizeof(int), cpuData, &cpuData_index);
 	free(cpuData);
-	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started.", setup.SEM_ID[semIndex], miID);
+	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started (PID %04d).", setup.SEM_ID[semIndex], miID, elPid);
 	sem_wait(&semaforo_ansisop[semIndex]);
-	send(miID, &kernel_response, sizeof(char), 0);
-	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished.", setup.SEM_ID[semIndex], miID);
+
+	bool match_PCB(void *pcb) {
+		t_pcb *unPCB = pcb;
+		bool matchea = (elPid == unPCB->pid);
+		return matchea;
+	}
+	while(listo){
+		t_pcb *elPCB;
+		if(list_size(PCB_WAITING) > 0){
+			elPCB = list_remove_by_condition(PCB_WAITING, match_PCB);
+			if(elPCB != NULL && elPCB->pid > 1){
+				elPCB->status = READY;
+				list_add(PCB_READY, elPCB);
+				listo = false;
+			}
+		}
+		if(list_size(PCB_EXIT_WAITING) > 0){
+			elPCB = list_remove_by_condition(PCB_EXIT_WAITING, match_PCB);
+			if(elPCB != NULL && elPCB->pid > 1){
+				list_add(PCB_EXIT, elPCB);
+				listo = false;
+			}
+		}
+	}
+	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished (PID %04d).", setup.SEM_ID[semIndex], miID, elPid);
 	pthread_exit(0);
 }
 
-int wait_coordination(int cpuID){
+int wait_coordination(int cpuID, int lePid){
 	bool semWait=false;
 	int semaphore_trama_buffer_index = 0, SEM_ID_Size = 0;
 	char doWait, *SEM_ID = NULL;
@@ -116,11 +144,12 @@ int wait_coordination(int cpuID){
 		losDatosGlobales_index = 0;
 		serialize_data(&cpuID, (size_t) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
 		serialize_data(&semIndex, (size_t) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
+		serialize_data(&lePid, (size_t) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
 		pthread_t sem_thread;
 		pthread_create(&sem_thread, NULL, sem_wait_thread, losDatosGlobales);
 		return 1;
 	}else{
-		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d.", setup.SEM_ID[semIndex], cpuID);
+		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d (PID %04d).", setup.SEM_ID[semIndex], cpuID, lePid);
 		sem_post(&semaforo_ansisop[semIndex]);
 		return 2;
 	}
@@ -329,11 +358,11 @@ void check_CPU_FD_ISSET(void *cpu){
 	t_Client* laCPU = (t_Client*) cpu;
 	if (laCPU != NULL && FD_ISSET(laCPU->clientID, &allSockets)) {
 		log_debug(kernel_log,"CPU %d has something to say.", laCPU->clientID);
-		if (recv(laCPU->clientID, &cpu_protocol, sizeof(char), MSG_DONTWAIT) > 0){
+		if (recv(laCPU->clientID, &cpu_protocol, sizeof(char), 0) > 0){
 			switch (cpu_protocol){
 				case '1':// Quantum end
 				case '2':// Program END
-					log_debug(kernel_log, "Receving a PCB");
+					log_debug(kernel_log, "Receving a PCB from CPU %d", laCPU->clientID);
 					t_pcb* incomingPCB = recvPCB(laCPU->clientID);
 					if (laCPU->status == EXIT || incomingPCB->status==EXIT || incomingPCB->status == BROKEN){
 						list_add(PCB_EXIT, incomingPCB);
@@ -343,7 +372,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					restoreCPU(laCPU);
 					break;
 				case '3':// IO
-					log_debug(kernel_log, "Receving an Input/Output request + a PCB");
+					log_debug(kernel_log, "Receiving an Input/Output request + a PCB");
 					t_io *io_op = calloc(1,sizeof(t_io));
 					io_op->pid = laCPU->pid;
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0); // size of the io_name
@@ -366,9 +395,16 @@ void check_CPU_FD_ISSET(void *cpu){
 					restoreCPU(laCPU);
 					break;
 				case '4':// semaforo
-					log_debug(kernel_log, "Receving a semaphore operation from CPU %d", laCPU->clientID);
-					if (wait_coordination(laCPU->clientID) == 1){
+					log_debug(kernel_log, "Receiving a semaphore operation from CPU %d + a PCB", laCPU->clientID);
+					if(wait_coordination(laCPU->clientID, laCPU->pid) == 1){
 						log_debug(kernel_log, "WAIT successfully handled for CPU %d.",laCPU->clientID);
+						t_pcb* semPCB = recvPCB(laCPU->clientID);
+						if(laCPU->status == EXIT){
+							list_add(PCB_EXIT_WAITING, semPCB);
+						}else{
+							list_add(PCB_WAITING, semPCB);
+						}
+						restoreCPU(laCPU);
 					}else{
 						log_debug(kernel_log, "SIGNAL successfully handled for CPU %d.",laCPU->clientID);
 					}
@@ -634,10 +670,12 @@ void RoundRobinReport(){
 	log_info(kernel_log, "Round Robin report:");
 	int nBLOCKED = list_size(PCB_BLOCKED);
 	int nEXIT = list_size(PCB_EXIT);
+	int nWAITING = list_size(PCB_WAITING);
+	int nEW = list_size(PCB_EXIT_WAITING);
 	int nEXEC = list_size(cpus_executing);
 	int nREADY = list_size(PCB_READY);
-	int nNEW = list_size(consolas_conectadas) - nREADY - nEXEC - nBLOCKED - nEXIT;
-	log_info(kernel_log, "NEW=%d, READY=%d, EXECUTING=%d, BLOCKED=%d, EXIT=%d.", nNEW, nREADY, nEXEC, nBLOCKED, nEXIT);
+	int nNEW = list_size(consolas_conectadas) - nREADY - nEXEC - nBLOCKED - nEXIT - nWAITING - nEW;
+	log_info(kernel_log, "NEW=%d, READY=%d, EXECUTING=%d, BLOCKED=%d, EXIT=%d.", nNEW, nREADY, nEXEC, nBLOCKED+nWAITING+nEW, nEXIT);
 }
 
 void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) { /* Search everywhere for the PID and kill it ! */

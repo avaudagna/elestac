@@ -65,7 +65,7 @@ int 	accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista);
 int     getIOindex(char *io_name);
 int     getSharedIndex(char *shared_name);
 int     getSEMindex(char *sem_id);
-int		wait_coordination(int cpuID);
+int		wait_coordination(int cpuID, int unPID);
 void    call_handlers();
 void	RoundRobinReport();
 void 	tratarSeniales(int);

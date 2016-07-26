@@ -1,5 +1,4 @@
-#!/usr/bin/ansisop
-begin
+begin 
 	io HDD1 250
 #YOLO
 end

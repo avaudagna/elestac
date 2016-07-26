@@ -17,7 +17,7 @@
 #define PAGINA_INVALIDA_ID '2'
 #define PAGINA_VALIDA_ID '1'
 #define STACK_OVERFLOW_ID '3'
-#define OPERACION_EXITOSA_ID '1'
+#define OPERACION_EXITOSA_ID 1
 
 #define SHARED_VAR_ID '5'
 #define GET_VAR '0'

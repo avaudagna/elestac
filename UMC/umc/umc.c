@@ -164,7 +164,10 @@ pthread_rwlock_t 	*semListaPids = NULL,
 					*semMemPrin	  = NULL,
 				    *semRetardo	  = NULL,
 					*semClockPtrs = NULL;
-pthread_mutex_t 	*semSwap 	  = NULL;
+pthread_mutex_t * semSwap = NULL;
+
+
+
 
 
 /*FUNCIONES DE INICIALIZACION*/
@@ -595,7 +598,7 @@ void atenderCPU(int *socketBuff){
 
 	int pid_actual;
 	char estado=HANDSHAKE_CPU;
-	printf("Se abre conexion con CPU:[%04d]\n",process_get_thread_id());
+
 	while(estado != EXIT ){
 		switch(estado){
 
@@ -781,7 +784,7 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 		}
 		else {
 			free(buffer);
-			printf("\nNuevo Proceso en Memoria :[%04d] , Paginas de Codigo :[%d] \n", pid_aux,cantidadDePaginasSolicitadas);
+			printf("\nNuevo Proceso en Memoria :[%04d] , Paginas de Codigo :[%d]\n", pid_aux,cantidadDePaginasSolicitadas);
 		}
 
 	}else {
@@ -1140,7 +1143,7 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 		printf("[TLB HIT]\n");
 	}
 	else {	// No esta en TLB o no se usa TLB
-		printf("[TLB MISS]-->");
+		printf("[TLB MISS] --> ");
 		pthread_rwlock_rdlock(semListaPids);
 		headerTablaDePaginas = obtenerTablaDePaginasDePID(*pid_actual);
 
@@ -1148,7 +1151,6 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 		pthread_rwlock_unlock(semListaPids);
 
 		if (aux == NULL) {	// valido pedido de pagina
-			printf("\e[31;1mSTACK OVERFLOW\e[0m");
 			pedidoDePaginaInvalida(socketBuff);
 			return ((char)EXIT);
 		}
@@ -1193,6 +1195,7 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 				printf("[PAGE TABLE HIT]-->");
 				actualizarTlb(pid_actual,aux);
 				setBitDeUso(pid_actual,pPagina,1);
+				printf("[PAGE TABLE HIT]\n");
 			}
 		}
 	}

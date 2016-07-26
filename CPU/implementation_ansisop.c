@@ -4,7 +4,13 @@
 static const int CONTENIDO_VARIABLE = 20;
 static const int POSICION_MEMORIA = 0x10;
 
+int check_umc_response(char status);
+
+void process_aborted_exit();
+
 t_posicion definirVariable(t_nombre_variable variable) {
+    if(status_check() == BROKEN)
+        return ERROR;
 
     //1) Obtener el stack index actual
     t_stack* actual_stack_index = actual_pcb->stack_index;
@@ -42,15 +48,8 @@ t_posicion definirVariable(t_nombre_variable variable) {
             log_error(cpu_log, "UMC expected addr send failed");
             return ERROR;
         }
-        if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) <= 0) {
-            log_error(cpu_log, "UMC response recv failed");
-            return ERROR;
-        }
-        if(*umc_response_buffer != UMC_OK_RESPONSE) {
-            log_error(cpu_log, "STACK OVERFLOW");
-            stack_overflow_exit();
-            return STACK_OVERFLOW;
-        }
+
+        check_umc_response(recv_umc_response_status());
 
     }
 
@@ -78,7 +77,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
 }
 
 void stack_overflow_exit() {
-    log_info(cpu_log, "=== STACK OVERFLOW EXIT ===");
+    log_info(cpu_log, "=== STACK OVERFLOW ===");
     status_update(BROKEN);
 }
 
@@ -124,6 +123,8 @@ void armar_pedidos_escritura(t_list ** pedidos, t_list *direcciones, int valor) 
 
 
 t_posicion obtenerPosicionVariable(t_nombre_variable variable) {
+    if(status_check() == BROKEN)
+        return ERROR;
 
     logical_addr * direccion_logica = NULL;
 	int i = 0;
@@ -142,6 +143,9 @@ t_posicion obtenerPosicionVariable(t_nombre_variable variable) {
 }
 
 t_valor_variable dereferenciar(t_posicion direccion_variable) {
+    if(status_check() == BROKEN)
+        return ERROR;
+
     //Hacemos el request a la UMC con el codigo 2
     t_list *pedidos = NULL;
     construir_operaciones_lectura(&pedidos, direccion_variable);
@@ -168,13 +172,8 @@ t_valor_variable dereferenciar(t_posicion direccion_variable) {
             return ERROR;
         }
 
-        response_status = recv_umc_response_status();
-        if(response_status == '1') {
-            log_info(cpu_log, "UMC_RESPONSE_OK");
-        } else if (response_status == '2') {
-            log_error(cpu_log, "=== STACK OVERFLOW ===");
-            exit(1);
-        }
+        check_umc_response(recv_umc_response_status());
+
         if( recv(umcSocketClient , ((char*) variable_buffer) + variable_buffer_index , (size_t) current_address->tamanio, 0) <= 0) {
             log_error(cpu_log, "UMC response recv failed");
             break;
@@ -185,6 +184,26 @@ t_valor_variable dereferenciar(t_posicion direccion_variable) {
 	free(umc_request_buffer);
     log_info(cpu_log, "Valor variable obtained : %d", *(int*)variable_buffer);
     return (t_valor_variable) *(t_valor_variable*)variable_buffer;
+}
+
+int check_umc_response(char status) {
+    if(status == '1') {
+        log_info(cpu_log, "UMC_RESPONSE_OK");
+        return OPERACION_EXITOSA_ID;
+    } else {
+        if (status == '2') {
+            stack_overflow_exit();
+            return STACK_OVERFLOW;
+        } else if (status == '6') {
+            process_aborted_exit();
+            return ABORTED;
+        }
+    }
+}
+
+void process_aborted_exit() {
+    log_error(cpu_log, "=== PROCESS ABORTED ===");
+    status_update(ABORTED);
 }
 
 char recv_umc_response_status() {
@@ -207,6 +226,9 @@ void construir_operaciones_lectura(t_list **pedidos, t_posicion posicion_variabl
 }
 
 void asignar(t_posicion direccion_variable, t_valor_variable valor) {
+    if(status_check() == BROKEN)
+        return;
+
     t_list * pedidos = NULL;
     obtener_lista_operaciones_escritura(&pedidos, direccion_variable, ANSISOP_VAR_SIZE, valor);
 
@@ -234,20 +256,8 @@ void asignar(t_posicion direccion_variable, t_valor_variable valor) {
                 break;
             }
 
-            //Obtenemos la respuesta de la UMC de un byte
-            if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) <= 0) {
-                log_error(cpu_log, "UMC response recv failed");
-                break;
-            }
-
-            //StackOverflow: 3
-            if(*umc_response_buffer == STACK_OVERFLOW_ID){
-                log_error(cpu_log, "UMC raised Exception: STACKOVERFLOW");
-                break;
-            }
-
             //EXITO (Se podria loggear de que la operacion fue exitosa)
-            if(*umc_response_buffer == OPERACION_EXITOSA_ID){
+            if(check_umc_response(recv_umc_response_status()) == OPERACION_EXITOSA_ID){
                 log_info(cpu_log, "Asignar variable operation to UMC with value %d was successful", valor);
             } else {
                 log_error(cpu_log, "Asignar variable operation to UMC with value %d failed", valor);
@@ -262,6 +272,9 @@ void asignar(t_posicion direccion_variable, t_valor_variable valor) {
 }
 
 t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
+    if(status_check() == BROKEN)
+        return ERROR;
+
     //5 + 0 + nameSize + name (1+1+4+nameSize bytes)
     void* buffer = NULL;
     int value = 0, variable_name_length = (int) strlen(variable), buffer_index = 0;
@@ -293,6 +306,9 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
 }
 
 t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor){
+    if(status_check() == BROKEN)
+        return ERROR;
+
     //5 + 1 + nameSize + name + value (1+1+4+nameSize+4 bytes)
     void* buffer = NULL;
     int buffer_index = 0, variable_length = (int) strlen(variable);
@@ -314,11 +330,17 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
 }
 
 void irAlLabel(t_nombre_etiqueta etiqueta) {
+    if(status_check() == BROKEN)
+        return;
+
     actual_pcb->program_counter = metadata_buscar_etiqueta(etiqueta, actual_pcb->etiquetas, (size_t) actual_pcb->etiquetas_size) - 1;
 }
 
 
 void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar) {
+    if(status_check() == BROKEN)
+        return;
+
     t_ret_var * ret_var_addr = calloc(1, sizeof(t_ret_var));
     //1) Obtengo la direccion a donde apunta la variable de retorno
     ret_var_addr = armar_direccion_logica_variable(donde_retornar, setup->PAGE_SIZE);
@@ -338,6 +360,9 @@ void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar) {
 }
 
 void llamarSinRetorno (t_nombre_etiqueta etiqueta){
+    if(status_check() == BROKEN)
+        return;
+
     t_ret_var * ret_var_addr = calloc(1, sizeof(t_ret_var));
     t_stack * stack_index = actual_pcb->stack_index;
     //1) Creo la nueva entrada del stack
@@ -353,6 +378,9 @@ void llamarSinRetorno (t_nombre_etiqueta etiqueta){
 
 
 void retornar(t_valor_variable retorno) {
+    if(status_check() == BROKEN)
+        return;
+
     //1) Obtengo el stack index
     t_stack * actual_stack_index = actual_pcb->stack_index;
     //2) Obtengo la entrada actual
@@ -369,6 +397,9 @@ t_posicion  obtener_t_posicion(logical_addr *address) {
     return (t_posicion) address->page_number * setup->PAGE_SIZE + address->offset;
 }
 void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
+    if(status_check() == BROKEN)
+        return;
+
     //cambio el estado del pcb
     status_update(BLOCKED);
     //3+ ioNameSize + ioName + io_units (1+4+ioNameSize+4 bytes)
@@ -390,6 +421,9 @@ void entradaSalida(t_nombre_dispositivo dispositivo, int tiempo) {
 }
 
 void imprimir(t_valor_variable valor) {
+    if(status_check() == BROKEN)
+        return;
+
     void * buffer = NULL;
     int buffer_index = 0;
     char operation = IMPRIMIR_ID;
@@ -405,6 +439,8 @@ void imprimir(t_valor_variable valor) {
 }
 
 void imprimirTexto(char* texto) {
+    if(status_check() == BROKEN)
+        return;
 
     void * buffer = NULL;
     int texto_len = (int) strlen(texto), buffer_index = 0;
@@ -422,6 +458,9 @@ void imprimirTexto(char* texto) {
     free(buffer);
 }
 void la_wait (t_nombre_semaforo identificador_semaforo){
+    if(status_check() == BROKEN)
+        return;
+
     void * buffer = NULL, *response_buffer = calloc(1,sizeof(char));
     int buffer_index = 0, identificador_semaforo_length = (int) strlen(identificador_semaforo);
     char operation = SEMAPHORE_ID, action = WAIT_ID;
@@ -435,16 +474,20 @@ void la_wait (t_nombre_semaforo identificador_semaforo){
         log_error(cpu_log, "wait(%s) failed", identificador_semaforo);
         return;
     }
+    status_update(WAITING);
     log_info(cpu_log, "Starting wait");
     //me quedo esperando activamente a que kernel me responda
-    recv(kernelSocketClient, response_buffer, sizeof(char), 0);
+//    recv(kernelSocketClient, response_buffer, sizeof(char), 0);
     //kernel_response debería ser '0'
-    log_info(cpu_log, "Finished wait");
+//    log_info(cpu_log, "Finished wait");
     free(buffer);
     free(response_buffer);
 }
 
 void la_signal (t_nombre_semaforo identificador_semaforo){
+    if(status_check() == BROKEN)
+        return;
+
     void * buffer = NULL;
     int buffer_index = 0, identificador_semaforo_length = (int) strlen(identificador_semaforo);
     char operation = SEMAPHORE_ID, action = SIGNAL_ID;
