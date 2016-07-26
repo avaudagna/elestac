@@ -1162,7 +1162,7 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 		if (aux == NULL) {	// valido pedido de pagina
 			pedidoDePaginaInvalida(socketBuff);
 			printf(ANSI_COLOR_YELLOW"[STACK OVERFLOW]\n"ANSI_COLOR_RESET);
-			return ((char)EXIT);
+			return ((char)IDENTIFICADOR_OPERACION);
 		}
 		else {
 
@@ -1174,7 +1174,7 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 					if( cantPagDisponiblesxPID(pid_actual) == umcGlobalParameters.marcosXProc ){// si el proceso no tiene asignado ningun marco
 						printf("\e[31;4mProceso sin marcos asignados y tampoco hay libres.\e[0m\n");
 						enviarMsgACPU(socketBuff,ABORTAR_PROCESO,sizeof(char));
-						return ((char)EXIT);
+						return ((char)IDENTIFICADOR_OPERACION);
 					}
 					else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo
 						//algoritmoClock(*pid_actual,pPagina,tamanioContenidoPagina,contenidoPagina);
@@ -1246,7 +1246,7 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 	memcpy(&offset,buffer+sizeof(int),sizeof(int));
 	memcpy(&tamanio,buffer+sizeof(int)+sizeof(int),sizeof(int));
 	free(buffer);
-	printf("[%04d]Almacenar Bytes : (%d,%d,%d) --> ",*pid_actual,pagina,offset,tamanio);
+	printf("[%04d]Almacenar Bytes : (%d,%d,%d)-->",*pid_actual,pagina,offset,tamanio);
 
 	// levanto bytes a almacenar
 
@@ -1272,13 +1272,13 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 		printf("[TLB HIT]\n");
 	}
 	else{
-		printf("[TLB MISS] -->");
+		printf("[TLB MISS]-->");
 		headerTablaDePaginas = obtenerTablaDePaginasDePID(*pid_actual);
 		aux = obtenerPaginaDeTablaDePaginas(headerTablaDePaginas, pagina);
 		if (aux == NULL) {	// valido pedido de pagina
 			pedidoDePaginaInvalida(socketBuff);	// Finaliza la ejecucion
 			printf(ANSI_COLOR_YELLOW"[STACK OVERFLOW]\n"ANSI_COLOR_RESET);
-			return (EXIT);
+			return ((char)IDENTIFICADOR_OPERACION);
 		}
 		else {
 			if (aux->presencia == AUSENTE) {    // La pagina NO se encuentra en memoria principal
@@ -1288,7 +1288,7 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 					if( cantPagDisponiblesxPID(pid_actual) == umcGlobalParameters.marcosXProc ){// si el proceso no tiene asignado ningun marco
 						printf("Proceso sin marcos asignados y tampoco hay libres.\n");
 						enviarMsgACPU(socketBuff,ABORTAR_PROCESO,1);
-						return (EXIT);
+						return ((char)IDENTIFICADOR_OPERACION);
 					}
 					else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo , y una vez que ya se trajo la pagina a MP,  ahi si guardo los bytes
 						//algoritmoClock(*pid_actual,pagina,tamanioContenidoPagina,contenidoPagina);
