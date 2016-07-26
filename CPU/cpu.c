@@ -253,7 +253,7 @@ int execute_line(void *instruction_line) {
         return EXIT;
     }
     analizadorLinea((char*) instruction_line, &funciones_generales_ansisop, &funciones_kernel_ansisop);
-    log_info(cpu_log, "Finished line %d execution successfuly", actual_pcb->program_counter);
+    log_info(cpu_log, "Finished line %d execution", actual_pcb->program_counter);
     return SUCCESS;
 }
 
