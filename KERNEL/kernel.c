@@ -1,6 +1,5 @@
 /* Kernel.c by pacevedo */
-#include <libs/pcb.h>
-#include "libs/pcb.h"
+
 #include "kernel.h"
 
 /* BEGIN OF GLOBAL STUFF I NEED EVERYWHERE */
@@ -338,12 +337,12 @@ t_pcb * recvPCB(int cpuID){
 }
 
 void restoreCPU(t_Client *laCPU){
-	bool getCPUIndex(void *nbr){
+	bool restoreCPUIndex(void *nbr){
 		t_Client *unaCPU = nbr;
 		bool matchea = (laCPU->clientID == unaCPU->clientID);
 		return matchea;
 	}
-	list_remove_by_condition(cpus_executing, getCPUIndex);
+	list_remove_by_condition(cpus_executing, restoreCPUIndex);
 	laCPU->status = READY;
 	laCPU->pid = 0;
 	list_add(cpus_conectadas, laCPU); /* return the CPU to the queue */
@@ -471,7 +470,7 @@ void check_CPU_FD_ISSET(void *cpu){
 		}else{
 			log_info(kernel_log,"CPU %d has closed the connection.", laCPU->clientID);
 			close(laCPU->clientID);
-			bool getCPUIndex(void *nbr){
+			bool getIndexCPU(void *nbr){
 				t_Client *unCliente = nbr;
 				bool matchea = (laCPU->clientID == unCliente->clientID);
 				if (matchea && laCPU->pid > 0)
@@ -479,9 +478,9 @@ void check_CPU_FD_ISSET(void *cpu){
 				return matchea;
 			}
 			if (list_size(cpus_conectadas) > 0)
-				list_remove_by_condition(cpus_conectadas, getCPUIndex);
+				list_remove_by_condition(cpus_conectadas, getIndexCPU);
 			if (list_size(cpus_executing) > 0)
-				list_remove_by_condition(cpus_executing, getCPUIndex);
+				list_remove_by_condition(cpus_executing, getIndexCPU);
 		}
 		RoundRobinReport();
 	}
