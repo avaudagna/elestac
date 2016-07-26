@@ -18,7 +18,7 @@ extern int umcSocketClient;
 extern int kernelSocketClient;
 extern t_setup* setup;
 extern t_log* cpu_log;
-
+extern int LAST_QUANTUM_FLAG;
 int cpu_init(int argc, char *config_file);
 
 int setup_config_init(char* config_file);
