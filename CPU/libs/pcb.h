@@ -8,7 +8,7 @@
 #include "serialize.h"
 #include "stack.h"
 
-typedef enum {NEW, READY, EXECUTING, BLOCKED, EXIT, BROKEN} enum_queue;
+typedef enum {NEW, READY, EXECUTING, BLOCKED, EXIT, BROKEN, WAITING} enum_queue;
 typedef struct {
     int pid;
     int program_counter;

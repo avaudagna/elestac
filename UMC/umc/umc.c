@@ -603,6 +603,7 @@ void atenderCPU(int *socketBuff){
 		switch(estado){
 
 		case IDENTIFICADOR_OPERACION:
+			printf("Esperando solicitud CPU\n");
 			estado = identificarOperacion(socketBuff);
 			break;
 		case HANDSHAKE_CPU:
@@ -683,6 +684,7 @@ void atenderKernel(int * socketBuff){
 		switch(estado)
 		{
 		case IDENTIFICADOR_OPERACION:
+			printf("Esperando solicitud KERNEL\n");
 			estado = identificarOperacion(socketBuff);
 			break;
 		case HANDSHAKE:	// K0

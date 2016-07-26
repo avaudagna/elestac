@@ -169,8 +169,6 @@ int execute_state_machine() {
                         break;
                     case EXIT:
                         return SUCCESS;
-                    case BLOCKED:
-                        return BLOCKED;
                     default:
                         execution_state = ERROR;
                         break;
@@ -266,7 +264,7 @@ int check_execution_state() {
         program_end_notification();
         return EXIT;
     }
-    if(status_check() == BLOCKED) {
+    if(status_check() == BLOCKED || status_check() == WAITING) {
         //Just return PCB
         return EXIT;
     }
@@ -297,6 +295,8 @@ enum_queue status_check() {
             return BLOCKED;
         case EXECUTING:
             return EXECUTING;
+        case WAITING:
+            return WAITING;
         case EXIT:
             return EXIT;
         default:
