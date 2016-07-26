@@ -84,6 +84,7 @@ int start_kernel(int argc, char* configFile){
 }
 
 void* sem_wait_thread(void* cpuData){
+	bool listo = true;
 	int semIndex, miID, elPid;
 	int cpuData_index = 0;
 	char kernel_response = '0';
@@ -99,10 +100,17 @@ void* sem_wait_thread(void* cpuData){
 		bool matchea = (elPid == unPCB->pid);
 		return matchea;
 	}
-	t_pcb *elPCB;
-	elPCB = list_remove_by_condition(PCB_WAITING, match_PCB);
-	elPCB->status = READY;
-	list_add(PCB_READY, elPCB);
+	while(listo){
+		if(list_size(PCB_WAITING) > 0){
+			t_pcb *elPCB;
+			elPCB = list_remove_by_condition(PCB_WAITING, match_PCB);
+			if(elPCB != NULL && elPCB->pid > 1){
+				elPCB->status = READY;
+				list_add(PCB_READY, elPCB);
+				listo = false;
+			}
+		}
+	}
 	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished (PID %04d).", setup.SEM_ID[semIndex], miID, elPid);
 	pthread_exit(0);
 }
@@ -133,7 +141,7 @@ int wait_coordination(int cpuID, int lePid){
 		pthread_create(&sem_thread, NULL, sem_wait_thread, losDatosGlobales);
 		return 1;
 	}else{
-		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d.", setup.SEM_ID[semIndex], cpuID);
+		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d (PID %04d).", setup.SEM_ID[semIndex], cpuID, lePid);
 		sem_post(&semaforo_ansisop[semIndex]);
 		return 2;
 	}
@@ -342,22 +350,14 @@ void check_CPU_FD_ISSET(void *cpu){
 	t_Client* laCPU = (t_Client*) cpu;
 	if (laCPU != NULL && FD_ISSET(laCPU->clientID, &allSockets)) {
 		log_debug(kernel_log,"CPU %d has something to say.", laCPU->clientID);
-		if (recv(laCPU->clientID, &cpu_protocol, sizeof(char), MSG_DONTWAIT) > 0){
+		if (recv(laCPU->clientID, &cpu_protocol, sizeof(char), 0) > 0){
 			switch (cpu_protocol){
 				case '1':// Quantum end
 				case '2':// Program END
-					log_debug(kernel_log, "Receving a PCB");
+					log_debug(kernel_log, "Receving a PCB from CPU %d", laCPU->clientID);
 					t_pcb* incomingPCB = recvPCB(laCPU->clientID);
 					if (laCPU->status == EXIT || incomingPCB->status==EXIT || incomingPCB->status == BROKEN){
 						list_add(PCB_EXIT, incomingPCB);
-					}else if(incomingPCB->status == WAITING){
-						log_debug(kernel_log, "Receiving a PCB and a semaphore operation from CPU %d (WAIT)", laCPU->clientID);
-						list_add(PCB_WAITING, incomingPCB);
-						if(wait_coordination(laCPU->clientID, incomingPCB->pid) == 1){
-							log_debug(kernel_log, "WAIT successfully handled for CPU %d.",laCPU->clientID);
-						}else{
-							log_debug(kernel_log, "WAIT error. Blame CPU %d.",laCPU->clientID);
-						}
 					}else{
 						list_add(PCB_READY, incomingPCB);
 					}
@@ -386,12 +386,20 @@ void check_CPU_FD_ISSET(void *cpu){
 					}
 					restoreCPU(laCPU);
 					break;
-				case '4':// semaforo->signal
-					log_debug(kernel_log, "Receiving a semaphore operation from CPU %d (SIGNAL)", laCPU->clientID);
-					if (wait_coordination(laCPU->clientID, 0) == 2){
-						log_debug(kernel_log, "SIGNAL successfully handled for CPU %d.",laCPU->clientID);
+				case '4':// semaforo
+					log_debug(kernel_log, "Receiving a semaphore operation from CPU %d + a PCB", laCPU->clientID);
+					if(wait_coordination(laCPU->clientID, laCPU->pid) == 1){
+						log_debug(kernel_log, "WAIT successfully handled for CPU %d.",laCPU->clientID);
+						t_pcb* semPCB = recvPCB(laCPU->clientID);
+						if(laCPU->status == EXIT){
+							list_add(PCB_EXIT, semPCB); // TODO This breaks because in the thread I'm looking for the PCB in PCB_WAITING
+							//TODO Consider using a list PBC_EXIT_YOLO
+						}else{
+							list_add(PCB_WAITING, semPCB);
+						}
+						restoreCPU(laCPU);
 					}else{
-						log_debug(kernel_log, "SIGNAL error. Blame CPU %d.",laCPU->clientID);
+						log_debug(kernel_log, "SIGNAL successfully handled for CPU %d.",laCPU->clientID);
 					}
 					break;
 				case '5':// var compartida
