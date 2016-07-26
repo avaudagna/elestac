@@ -214,7 +214,9 @@ int post_process_operations() {
         return EXIT;
     }
     actual_kernel_data->Q--;
-    log_info(cpu_log, "Remaining Quantum : %d", actual_kernel_data->Q);
+    if(status_check() != WAITING && status_check() != BROKEN) {
+        log_info(cpu_log, "Remaining Quantum : %d", actual_kernel_data->Q);
+    }
     actual_pcb->program_counter++;
     log_info(cpu_log, "Next execution line :%d", actual_pcb->program_counter);
     return SUCCESS;
@@ -260,13 +262,16 @@ void status_update(int status) {
 }
 
 int check_execution_state() {
-    if(status_check() == EXIT || status_check() == BROKEN){
-        program_end_notification();
-        return EXIT;
-    }
-    if(status_check() == BLOCKED || status_check() == WAITING) {
-        //Just return PCB
-        return EXIT;
+    switch(status_check()) {
+        case EXIT:
+        case BROKEN:
+            program_end_notification();
+            return EXIT;
+        case BLOCKED:
+        case WAITING:
+            return EXIT;
+        default:
+            break;
     }
     return SUCCESS;
 }
@@ -285,24 +290,7 @@ void program_end_notification() {
 
 
 enum_queue status_check() {
-    switch (actual_pcb->status) {
-        case READY:
-            return READY;
-        case BLOCKED:
-            //check if io has finished
-            //and waste Q
-//            return BLOCKED;
-            return BLOCKED;
-        case EXECUTING:
-            return EXECUTING;
-        case WAITING:
-            return WAITING;
-        case EXIT:
-            return EXIT;
-        default:
-            break;
-
-    }
+    return actual_pcb->status;
 }
 
 int get_execution_line(void ** instruction_line) {
