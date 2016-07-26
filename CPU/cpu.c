@@ -265,6 +265,7 @@ int check_execution_state() {
     switch(status_check()) {
         case EXIT:
         case BROKEN:
+        case ABORTED:
             program_end_notification();
             return EXIT;
         case BLOCKED:

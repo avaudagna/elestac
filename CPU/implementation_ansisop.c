@@ -4,6 +4,10 @@
 static const int CONTENIDO_VARIABLE = 20;
 static const int POSICION_MEMORIA = 0x10;
 
+int check_umc_response(char status);
+
+void process_aborted_exit();
+
 t_posicion definirVariable(t_nombre_variable variable) {
     if(status_check() == BROKEN)
         return ERROR;
@@ -44,15 +48,8 @@ t_posicion definirVariable(t_nombre_variable variable) {
             log_error(cpu_log, "UMC expected addr send failed");
             return ERROR;
         }
-        if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) <= 0) {
-            log_error(cpu_log, "UMC response recv failed");
-            return ERROR;
-        }
-        if(*umc_response_buffer != UMC_OK_RESPONSE) {
-            log_error(cpu_log, "STACK OVERFLOW");
-            stack_overflow_exit();
-            return STACK_OVERFLOW;
-        }
+
+        check_umc_response(recv_umc_response_status());
 
     }
 
@@ -80,7 +77,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
 }
 
 void stack_overflow_exit() {
-    log_info(cpu_log, "=== STACK OVERFLOW EXIT ===");
+    log_info(cpu_log, "=== STACK OVERFLOW ===");
     status_update(BROKEN);
 }
 
@@ -175,13 +172,8 @@ t_valor_variable dereferenciar(t_posicion direccion_variable) {
             return ERROR;
         }
 
-        response_status = recv_umc_response_status();
-        if(response_status == '1') {
-            log_info(cpu_log, "UMC_RESPONSE_OK");
-        } else if (response_status == '2') {
-            log_error(cpu_log, "=== STACK OVERFLOW ===");
-            exit(1);
-        }
+        check_umc_response(recv_umc_response_status());
+
         if( recv(umcSocketClient , ((char*) variable_buffer) + variable_buffer_index , (size_t) current_address->tamanio, 0) <= 0) {
             log_error(cpu_log, "UMC response recv failed");
             break;
@@ -192,6 +184,26 @@ t_valor_variable dereferenciar(t_posicion direccion_variable) {
 	free(umc_request_buffer);
     log_info(cpu_log, "Valor variable obtained : %d", *(int*)variable_buffer);
     return (t_valor_variable) *(t_valor_variable*)variable_buffer;
+}
+
+int check_umc_response(char status) {
+    if(status == '1') {
+        log_info(cpu_log, "UMC_RESPONSE_OK");
+        return OPERACION_EXITOSA_ID;
+    } else {
+        if (status == '2') {
+            stack_overflow_exit();
+            return STACK_OVERFLOW;
+        } else if (status == '6') {
+            process_aborted_exit();
+            return ABORTED;
+        }
+    }
+}
+
+void process_aborted_exit() {
+    log_error(cpu_log, "=== PROCESS ABORTED ===");
+    status_update(ABORTED);
 }
 
 char recv_umc_response_status() {
@@ -244,20 +256,8 @@ void asignar(t_posicion direccion_variable, t_valor_variable valor) {
                 break;
             }
 
-            //Obtenemos la respuesta de la UMC de un byte
-            if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) <= 0) {
-                log_error(cpu_log, "UMC response recv failed");
-                break;
-            }
-
-            //StackOverflow: 3
-            if(*umc_response_buffer == STACK_OVERFLOW_ID){
-                log_error(cpu_log, "UMC raised Exception: STACKOVERFLOW");
-                break;
-            }
-
             //EXITO (Se podria loggear de que la operacion fue exitosa)
-            if(*umc_response_buffer == OPERACION_EXITOSA_ID){
+            if(check_umc_response(recv_umc_response_status()) == OPERACION_EXITOSA_ID){
                 log_info(cpu_log, "Asignar variable operation to UMC with value %d was successful", valor);
             } else {
                 log_error(cpu_log, "Asignar variable operation to UMC with value %d failed", valor);
