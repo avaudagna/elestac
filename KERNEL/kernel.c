@@ -10,7 +10,7 @@ int maxSocket=0;
 char* configFileName;
 char* configFilePath;
 t_log   *kernel_log;
-t_list  *PCB_READY, *PCB_BLOCKED, *PCB_EXIT, *PCB_WAITING;
+t_list  *PCB_READY, *PCB_BLOCKED, *PCB_EXIT, *PCB_WAITING, *PCB_EXIT_WAITING;
 t_list  *consolas_conectadas, *cpus_conectadas, *cpus_executing;
 t_list **solicitudes_io;
 fd_set 	 allSockets;
@@ -25,6 +25,7 @@ int main (int argc, char* *argv){
 	PCB_BLOCKED = list_create();
 	PCB_EXIT = list_create();
 	PCB_WAITING = list_create();
+	PCB_EXIT_WAITING = list_create();
 	cpus_conectadas = list_create();
 	cpus_executing = list_create();
 	consolas_conectadas = list_create();
@@ -101,12 +102,19 @@ void* sem_wait_thread(void* cpuData){
 		return matchea;
 	}
 	while(listo){
+		t_pcb *elPCB;
 		if(list_size(PCB_WAITING) > 0){
-			t_pcb *elPCB;
 			elPCB = list_remove_by_condition(PCB_WAITING, match_PCB);
 			if(elPCB != NULL && elPCB->pid > 1){
 				elPCB->status = READY;
 				list_add(PCB_READY, elPCB);
+				listo = false;
+			}
+		}
+		if(list_size(PCB_EXIT_WAITING) > 0){
+			elPCB = list_remove_by_condition(PCB_EXIT_WAITING, match_PCB);
+			if(elPCB != NULL && elPCB->pid > 1){
+				list_add(PCB_EXIT, elPCB);
 				listo = false;
 			}
 		}
@@ -392,8 +400,7 @@ void check_CPU_FD_ISSET(void *cpu){
 						log_debug(kernel_log, "WAIT successfully handled for CPU %d.",laCPU->clientID);
 						t_pcb* semPCB = recvPCB(laCPU->clientID);
 						if(laCPU->status == EXIT){
-							list_add(PCB_EXIT, semPCB); // TODO This breaks because in the thread I'm looking for the PCB in PCB_WAITING
-							//TODO Consider using a list PBC_EXIT_YOLO
+							list_add(PCB_EXIT_WAITING, semPCB);
 						}else{
 							list_add(PCB_WAITING, semPCB);
 						}
@@ -664,10 +671,11 @@ void RoundRobinReport(){
 	int nBLOCKED = list_size(PCB_BLOCKED);
 	int nEXIT = list_size(PCB_EXIT);
 	int nWAITING = list_size(PCB_WAITING);
+	int nEW = list_size(PCB_EXIT_WAITING);
 	int nEXEC = list_size(cpus_executing);
 	int nREADY = list_size(PCB_READY);
-	int nNEW = list_size(consolas_conectadas) - nREADY - nEXEC - nBLOCKED - nEXIT;
-	log_info(kernel_log, "NEW=%d, READY=%d, EXECUTING=%d, BLOCKED=%d, EXIT=%d.", nNEW, nREADY, nEXEC, nBLOCKED+nWAITING, nEXIT);
+	int nNEW = list_size(consolas_conectadas) - nREADY - nEXEC - nBLOCKED - nEXIT - nWAITING - nEW;
+	log_info(kernel_log, "NEW=%d, READY=%d, EXECUTING=%d, BLOCKED=%d, EXIT=%d.", nNEW, nREADY, nEXEC, nBLOCKED+nWAITING+nEW, nEXIT);
 }
 
 void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) { /* Search everywhere for the PID and kill it ! */
