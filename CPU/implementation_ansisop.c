@@ -42,7 +42,7 @@ t_posicion definirVariable(t_nombre_variable variable) {
             log_error(cpu_log, "UMC expected addr send failed");
             return ERROR;
         }
-        if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
+        if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) <= 0) {
             log_error(cpu_log, "UMC response recv failed");
             return ERROR;
         }
@@ -175,7 +175,7 @@ t_valor_variable dereferenciar(t_posicion direccion_variable) {
             log_error(cpu_log, "=== STACK OVERFLOW ===");
             exit(1);
         }
-        if( recv(umcSocketClient , ((char*) variable_buffer) + variable_buffer_index , (size_t) current_address->tamanio, 0) < 0) {
+        if( recv(umcSocketClient , ((char*) variable_buffer) + variable_buffer_index , (size_t) current_address->tamanio, 0) <= 0) {
             log_error(cpu_log, "UMC response recv failed");
             break;
         }
@@ -191,7 +191,7 @@ char recv_umc_response_status() {
     void * umc_response_status_buffer = calloc(1, sizeof(char));
     char umc_response_status;
     int umc_response_status_buffer_index = 0;
-    if( recv(umcSocketClient , umc_response_status_buffer, sizeof(char), 0) < 0) {
+    if( recv(umcSocketClient , umc_response_status_buffer, sizeof(char), 0) <= 0) {
         log_error(cpu_log, "UMC bytes recv failed");
         return ERROR;
     }
@@ -235,7 +235,7 @@ void asignar(t_posicion direccion_variable, t_valor_variable valor) {
             }
 
             //Obtenemos la respuesta de la UMC de un byte
-            if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) < 0) {
+            if( recv(umcSocketClient , umc_response_buffer , sizeof(char) , 0) <= 0) {
                 log_error(cpu_log, "UMC response recv failed");
                 break;
             }
@@ -280,7 +280,7 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
     }
     free(buffer);
     buffer = calloc(1, sizeof(int));
-    if(recv(kernelSocketClient, buffer, sizeof(int),  0) < 0) {
+    if(recv(kernelSocketClient, buffer, sizeof(int),  0) <= 0) {
         log_error(cpu_log, "recv of obtener variable compartida failed");
         return ERROR;
     }
@@ -452,7 +452,7 @@ void la_signal (t_nombre_semaforo identificador_semaforo){
     serialize_data(&operation, sizeof(char), &buffer, &buffer_index);
     serialize_data(&action, sizeof(char), &buffer, &buffer_index);
     serialize_data(&identificador_semaforo_length, sizeof(int), &buffer, &buffer_index);
-    serialize_data(identificador_semaforo, (size_t) identificador_semaforo_length, &buffer, &buffer_index);
+    serialize_data(identificador_semaforo, identificador_semaforo_length, &buffer, &buffer_index);
 
     if(send(kernelSocketClient, buffer, (size_t) buffer_index, 0) < 0) {
         log_error(cpu_log, "signal(%s) failed", identificador_semaforo);

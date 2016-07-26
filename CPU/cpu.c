@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
 //				return 1;
 //		}
 //		//Wait for response from UMC handshake
-//		if( recv(umcSocketClient , umcMessage , PACKAGE_SIZE , 0) < 0) {
+//		if( recv(umcSocketClient , umcMessage , PACKAGE_SIZE , 0) <= 0) {
 //				puts("recv failed");
 //				break;
 //		}
@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
 //		}
 //
 //		//Wait for response from UMC
-//		if( recv(umcSocketClient , umcMessage , PACKAGE_SIZE , 0) < 0) {
+//		if( recv(umcSocketClient , umcMessage , PACKAGE_SIZE , 0) <= 0) {
 //				puts("recv failed");
 //				break;
 //		}
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
 		//de lo que me devuelva el parser, devuelvo el resultado para imprimir al kernel
 
 		//Send message to the Kernel
-//		if( send(kernelSocketClient , "Elestac"  , PACKAGE_SIZE , 0) < 0) {
+//		if( send(kernelSocketClient , "Elestac"  , PACKAGE_SIZE , 0) <= 0) {
 //				puts("Send failed");
 //				return 1;
 //		}
@@ -367,7 +367,7 @@ int get_pcb() {
     //Pido por kernel process data
     actual_kernel_data = calloc(1, sizeof(t_kernel_data));
     log_info(cpu_log, "Waiting for kernel PCB and Quantum data");
-    if (recibir_pcb(kernelSocketClient, actual_kernel_data) < 0) {
+    if (recibir_pcb(kernelSocketClient, actual_kernel_data) <= 0) {
         log_error(cpu_log, "Error receiving PCB and Quantum data from KERNEL");
         return ERROR;
     }
@@ -438,7 +438,7 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
             exit(1);
         }
 
-        if( recv(umcSocketClient , recv_bytes_buffer , (size_t ) element->tamanio , 0) < 0) {
+        if( recv(umcSocketClient , recv_bytes_buffer , (size_t ) element->tamanio , 0) <= 0) {
             log_error(cpu_log, "UMC bytes recv failed");
             return ERROR;
         }
@@ -471,7 +471,7 @@ int request_address_data(void ** buffer, logical_addr *address) {
     //Recv response
     free(aux_buffer);
     *buffer = calloc(1, (size_t) address->tamanio);
-    if( recv(umcSocketClient , *buffer , (size_t ) address->tamanio , 0) < 0) {
+    if( recv(umcSocketClient , *buffer , (size_t ) address->tamanio , 0) <= 0) {
         log_error(cpu_log, "UMC bytes recv failed");
         return ERROR;
     }
@@ -491,7 +491,7 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
     }
 
     printf(" .:: Waiting PCB from Kernel ::.\n");
-    if( recv(kernelSocketClient , kernel_operation , sizeof(char) , 0) < 0) {
+    if( recv(kernelSocketClient , kernel_operation , sizeof(char) , 0) <= 0) {
         log_error(cpu_log, "KERNEL handshake response receive failed");
         return ERROR;
     }
@@ -502,14 +502,14 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
     free(kernel_operation);
 
     //Quantum data
-    if( recv(kernelSocketClient , buffer , sizeof(int) , 0) < 0) {
+    if( recv(kernelSocketClient , buffer , sizeof(int) , 0) <= 0) {
         log_error(cpu_log, "Q recv failed");
         return ERROR;
     }
     deserialize_data(&kernel_data_buffer->Q , sizeof(int), buffer, &deserialized_data_index);
     log_info(cpu_log, "Q: %d", kernel_data_buffer->Q);
 
-    if( recv(kernelSocketClient , buffer , sizeof(int) , 0) < 0) {
+    if( recv(kernelSocketClient , buffer , sizeof(int) , 0) <= 0) {
         log_error(cpu_log, "QSleep recv failed");
         return ERROR;
     }
@@ -517,7 +517,7 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
     deserialize_data(&kernel_data_buffer->QSleep , sizeof(int), buffer, &deserialized_data_index);
     log_info(cpu_log, "QSleep: %d", kernel_data_buffer->QSleep);
 
-    if( recv(kernelSocketClient ,buffer , sizeof(int) , 0) < 0) {
+    if( recv(kernelSocketClient ,buffer , sizeof(int) , 0) <= 0) {
         log_error(cpu_log, "pcb_size recv failed");
         return ERROR;
     }
@@ -531,7 +531,7 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
         log_error(cpu_log, "serialized_pcb mem alloc failed");
         return ERROR;
     }
-    if( recv(kernelSocketClient , kernel_data_buffer->serialized_pcb , (size_t )  kernel_data_buffer->pcb_size , 0) < 0) {
+    if( recv(kernelSocketClient , kernel_data_buffer->serialized_pcb , (size_t )  kernel_data_buffer->pcb_size , 0) <= 0) {
         log_error(cpu_log, "serialized_pcb recv failed");
         return ERROR;
     }
