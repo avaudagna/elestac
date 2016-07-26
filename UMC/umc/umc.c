@@ -530,21 +530,20 @@ void procesarConexiones(void)
     pthread_t *thread_id;				// pthread pointer, por cada nueva conexion , creo uno nuevo
     FunctionPointer ConnectionHandler;
 
-      if( ( socketBuffer = accept(socketServidor, (struct sockaddr *) &addr, &addrlen) ) == -1 ) {
+	if( ( socketBuffer = accept(socketServidor, (struct sockaddr *) &addr, &addrlen) ) == -1 ) {
     	  perror("accept");
     	  exit(1);
-		}
+	}
 
 	    socketCliente = (int *) calloc(1,sizeof(int));
 	    *socketCliente = socketBuffer;
 	    thread_id = (pthread_t * ) calloc(1,sizeof(pthread_t));	// new thread
-
 	    ConnectionHandler = QuienSos(socketCliente);
 
 	if( pthread_create( thread_id , NULL , (boid_function_boid_pointer) ConnectionHandler , (void*) socketCliente) < 0) {
 			perror("pthread_create");
 			exit(1);
-		}
+	}
 		//pthread_join(thread_id,NULL);
 
 
@@ -635,14 +634,13 @@ void atenderCPU(int *socketBuff){
 			break;
 		case FIN_COMUNICACION_CPU:
 		default:
-			printf("Identificador de operacion invalido con CPU.Finalizando Modulo\n");
+			printf("Identificador de operacion invalido con CPU.Finalizando Thread y Socket.\n");
 			estado = EXIT;
 			break;
 		}
 
 	}
 	contConexionesCPU--;
-	liberarRecursos();
 	close(*socketBuff);		// cierro socket
 	pthread_exit(0);		// chau thread
 }
@@ -713,18 +711,17 @@ void atenderKernel(int * socketBuff){
 			estado = IDENTIFICADOR_OPERACION;
 			break;
 		default:
-			printf("Identificador de operacion invalido con KERNEL. Finalizando Modulo\n");
+			printf(ANSI_COLOR_BLUE"Identificador de operacion invalido con KERNEL.Finalizando modulo.\n"ANSI_COLOR_RESET);
 			estado=EXIT;
 			break;
 
 		}
 	}
-
 	contConexionesNucleo--; // finaliza la comunicacion con el socket
 	liberarRecursos();
 	close(*socketBuff); // cierro socket
-	pthread_exit(0);	// chau thread
-
+	//pthread_exit(0);	// chau thread
+	exit(1);
 }
 
 
@@ -805,7 +802,7 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 		if (send(*socketBuff,buffer, sizeof(int), 0) == -1){	// Mando un 0 , indicando que no hay espacio para nuevo PID
 			free(buffer);
 			perror("send");
-			printf("\n Error en la comunicacion con Kernel:[Envio comienzo STACK] Finalizando.\n");
+			printf(ANSI_COLOR_BLUE"\nError en la comunicacion con Kernel:[Envio comienzo STACK] Finalizando.\n"ANSI_COLOR_RESET);
 			liberarRecursos();
 			exit(1);
 		}
@@ -952,7 +949,7 @@ void enviarPaginaAlSwap(void *trama, size_t sizeTrama){
 
 	if (send(socketClienteSwap,trama,sizeTrama, 0) == -1 ){
 		perror("send");
-		printf("\n Error al comunicarse con Swap. Finalizando\n");
+		printf(ANSI_COLOR_BLUE"\n Error al comunicarse con Swap. Finalizando\n"ANSI_COLOR_RESET);
 		liberarRecursos();
 		exit(1);
 	}
@@ -1043,8 +1040,7 @@ void swapUpdate(void){
 
 	if ( recv(socketClienteSwap, buffer, sizeof(char)+sizeof(int), 0) <= 0 ||  *((char*)buffer) != '1' ){
 		free(buffer);
-		perror("recv");
-		printf("\nError comunicacion con SWAP en SwapUpdate,Finalizando\n");
+		printf(ANSI_COLOR_BLUE"\nError comunicacion con SWAP en SwapUpdate,Finalizando\n"ANSI_COLOR_RESET);
 		liberarRecursos();
 		exit(1);
 	}
@@ -1703,7 +1699,7 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 	memcpy(buffer+sizeof(char)+sizeof(int),&nroPagina,sizeof(int));
     printf(" [%04d]->Sending request to SWAP --> ",*pid_actual);
 	pthread_mutex_lock(semSwap);	// La idea es que solo 1 hilo a la vez utilice el socket
-	if (send(socketClienteSwap, buffer, tamanio, 0) <= 0) {
+	if (send(socketClienteSwap, buffer, tamanio, 0) == -1) {
 		pthread_mutex_unlock(semSwap);
 		free(buffer);
 		perror("send");
@@ -2048,11 +2044,12 @@ void resolverEnMP(int *socketBuff, PAGINA *pPagina, int offset, int tamanio) {
 	pthread_rwlock_rdlock(semMemPrin);
 	memcpy(buffer+sizeof(char),(vectorMarcos[pPagina->nroDeMarco].comienzoMarco)+offset,(size_t )tamanio);
 	pthread_rwlock_unlock(semMemPrin);
-	if (send(*socketBuff,buffer,(size_t )tamanio+sizeof(char),0) <= 0) {    // envio a CPU la pagina
+	if (send(*socketBuff,buffer,(size_t )tamanio+sizeof(char),0) == -1) {    // envio a CPU la pagina
 		free(buffer);
 		perror("send");
-		printf(ANSI_COLOR_BLUE"Error en la comunicacion con CPU,Finalizando.\n"ANSI_COLOR_RESET);
-		exit(1);
+		printf(ANSI_COLOR_BLUE"Error en la comunicacion con CPU,Finalizando hilo y socket.\n"ANSI_COLOR_RESET);
+		close(*socketBuff);
+		pthread_exit(0);
 	}
 	free(buffer);
 }
@@ -2501,23 +2498,21 @@ void liberarRecursos(void){
 		list_clean_and_destroy_elements(headerTLB,free);
 	}
 	// 4)
-	if(!semFifosxPid)
+	if(semFifosxPid != NULL)
 		free(semFifosxPid);
-	if(!semMemPrin)
+	if(semMemPrin != NULL)
 		free(semMemPrin);
-	if(!semSwap)
+	if(semSwap != NULL)
 		free(semSwap);
-	if(!semClockPtrs)
+	if(semClockPtrs != NULL)
 		free(semClockPtrs);
-	if(!semListaPids)
+	if(semListaPids != NULL)
 		free(semListaPids);
-	if(!semRetardo)
+	if(semRetardo != NULL)
 		free(semRetardo);
-	if(!semTLB)
+	if(semTLB != NULL)
 		free(semTLB);
-	if(!memoriaPrincipal)
+	if(memoriaPrincipal != NULL)
 		free(memoriaPrincipal);
-
-		pthread_exit(0);
 
 }
