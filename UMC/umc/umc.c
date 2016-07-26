@@ -59,6 +59,17 @@
 #define FINALIZAR_PROCESO '3'
 
 #define STACK_OVERFLOW "2"
+
+
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
+
 typedef struct umc_parametros {
      int	listenningPort,
 			marcos,
@@ -308,7 +319,7 @@ void imprimirTlb(void *entradaTlb);
 int main(int argc , char **argv){
 
 	if(argc != 2){
-		printf("Error cantidad de argumentos, finalizando...\n");
+		printf(ANSI_COLOR_BLUE"Error cantidad de argumentos, finalizando...\n"ANSI_COLOR_RESET);
 		exit(1);
 	}
 
@@ -650,7 +661,7 @@ char handShakeCpu(int *socketBuff) {
 	if ( send(*socketBuff,buffer,(sizeof(char)+sizeof(int)),0) == -1 ) {
 		free(buffer);
 		perror("send");
-		printf("\nError al comunicarse con nueva CPU:[HANDSHAKE].\nSe finaliza thread y socket.\n");
+		printf(ANSI_COLOR_BLUE"\nError al comunicarse con nueva CPU:[HANDSHAKE].\nSe finaliza thread y socket.\n"ANSI_COLOR_RESET);
 		return ((char)EXIT);
 	}
 	free(buffer);
@@ -732,7 +743,7 @@ char handShakeKernel(int *socketBuff){
 	void * buffHsk = calloc(1,sizeof(int));
 	if(recv(*socketBuff, buffHsk, sizeof(int), 0) <= 0 ){ // levanto los 4 bytes q son del stack_size
 		perror("recv");
-		printf("\nError en Handshake con KERNEL\nFinalizando.\n");
+		printf(ANSI_COLOR_BLUE"\nError en Handshake con KERNEL\nFinalizando.\n"ANSI_COLOR_RESET);
 		return ((char)EXIT);
 	}
 	memcpy(&stack_size,buffHsk,sizeof(int));
@@ -744,7 +755,7 @@ char handShakeKernel(int *socketBuff){
 
 	if ( send(*socketBuff,buffHsk, sizeof(int),0) == -1 ) {
 		perror("send");
-		printf("\nError en Handshake con KERNEL\nFinalizando.\n");
+		printf(ANSI_COLOR_BLUE"\nError en Handshake con KERNEL\nFinalizando.\n"ANSI_COLOR_RESET);
 		return ((char)EXIT);
 	}
 	return ((char)IDENTIFICADOR_OPERACION);
@@ -762,7 +773,7 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 	if ( recv(*socketBuff,buffer,(sizeof(int)*2), 0) <= 0 ) { // levanto PID y Cantidad de Paginas de Codigo
 		free(buffer);
 		perror("recv");
-		printf("\n Error en la comunicacion con KERNEL:[Recepcion nuevo PID Y CANT PAGINAS].Finalizando.\n");
+		printf(ANSI_COLOR_BLUE"\n Error en la comunicacion con KERNEL:[Recepcion nuevo PID Y CANT PAGINAS].Finalizando.\n"ANSI_COLOR_RESET);
 		liberarRecursos();
 		exit(1);
 	}
@@ -778,13 +789,13 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 		if ( send(*socketBuff,buffer,sizeof(int),0) == -1) {	// Respondo Pagina donde comienza el Stack
 			free(buffer);
 			perror("recv");
-			printf("\n Error en la comunicacion con Kernel:[Envio comienzo STACK] Finalizando.\n");
+			printf(ANSI_COLOR_BLUE"\n Error en la comunicacion con Kernel:[Envio comienzo STACK] Finalizando.\n");
 			liberarRecursos();
 			exit(1);
 		}
 		else {
 			free(buffer);
-			printf("\nNuevo Proceso en Memoria :[%04d] , Paginas de Codigo :[%d]\n", pid_aux,cantidadDePaginasSolicitadas);
+			printf(ANSI_COLOR_RED"\nNuevo Proceso en Memoria :[%04d] , Paginas de Codigo :[%d]\n"ANSI_COLOR_RESET, pid_aux,cantidadDePaginasSolicitadas);
 		}
 
 	}else {
@@ -1123,7 +1134,7 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 	if(recv(*socketBuff,buffer,(sizeof(int)*3), 0) <= 0 ) {
 		free(buffer);
 		perror("recv");
-		printf("\nError en comunicacion con CPU :[Recepcion trama Pedido Bytes],Finalizando.\n");
+		printf(ANSI_COLOR_BLUE"\nError en comunicacion con CPU :[Recepcion trama Pedido Bytes],Finalizando.\n"ANSI_COLOR_RESET);
 		return ((char)EXIT);
 	}
 	memcpy(&pPagina,buffer,sizeof(int));
@@ -1138,20 +1149,19 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 		temp->nroPagina=pPagina;
 		resolverEnMP(socketBuff,temp,offset,tamanio);	// lo hago asi para poder reutilizar resolverEnMP , que al fin y al cabo es lo que se termina haciendo
 		//actualizarTlb(pid_actual,temp);
-		actualizarContadoresLRU(pid_actual,pPagina);
+		actualizarContadoresLRU(*pid_actual,pPagina);
 		free(temp);
 		printf("[TLB HIT]\n");
 	}
 	else {	// No esta en TLB o no se usa TLB
-		printf("[TLB MISS] --> ");
+		printf("[TLB MISS]-->");
 		pthread_rwlock_rdlock(semListaPids);
 		headerTablaDePaginas = obtenerTablaDePaginasDePID(*pid_actual);
-
 		aux = obtenerPaginaDeTablaDePaginas(headerTablaDePaginas, pPagina);
 		pthread_rwlock_unlock(semListaPids);
-
 		if (aux == NULL) {	// valido pedido de pagina
 			pedidoDePaginaInvalida(socketBuff);
+			printf(ANSI_COLOR_YELLOW"[STACK OVERFLOW]\n"ANSI_COLOR_RESET);
 			return ((char)EXIT);
 		}
 		else {
@@ -1229,7 +1239,7 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 	if(recv(*socketBuff,buffer,sizeof(int)*3, 0) <= 0 ) {
 		free(buffer);
 		perror("recv");
-		printf("\nError en comunicacion con CPU :[Recepcion trama Almacenar Bytes],Finalizando.\n");
+		printf(ANSI_COLOR_BLUE"\nError en comunicacion con CPU :[Recepcion trama Almacenar Bytes],Finalizando.\n"ANSI_COLOR_RESET);
 		return ((char)EXIT);
 	}
 	memcpy(&pagina,buffer,sizeof(int));
@@ -1247,7 +1257,7 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 	if(recv(*socketBuff,bytesAlmacenar,(size_t )tamanio, 0) <= 0 ) {
 		free(bytesAlmacenar);
 		perror("recv");
-		printf("\nError al comunicarse con CPU,Finalizando\n");
+		printf(ANSI_COLOR_BLUE"Error al comunicarse con CPU,Finalizando\n"ANSI_COLOR_RESET);
 		return ((char)EXIT);
 	}
 
@@ -1257,16 +1267,17 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 		setBitDeUso(pid_actual,pagina,1);
 		setBitModificado(*pid_actual,pagina,1);
 		temp->nroDeMarco = indice_buff;
-		actualizarTlb(pid_actual,temp);
+		actualizarContadoresLRU(*pid_actual,temp->nroPagina);
 		enviarMsgACPU(socketBuff,OK,1);
 		printf("[TLB HIT]\n");
 	}
 	else{
-		printf("[TLB MISS] --> ");
+		printf("[TLB MISS] -->");
 		headerTablaDePaginas = obtenerTablaDePaginasDePID(*pid_actual);
 		aux = obtenerPaginaDeTablaDePaginas(headerTablaDePaginas, pagina);
 		if (aux == NULL) {	// valido pedido de pagina
 			pedidoDePaginaInvalida(socketBuff);	// Finaliza la ejecucion
+			printf(ANSI_COLOR_YELLOW"[STACK OVERFLOW]\n"ANSI_COLOR_RESET);
 			return (EXIT);
 		}
 		else {
@@ -1281,7 +1292,7 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 					}
 					else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo , y una vez que ya se trajo la pagina a MP,  ahi si guardo los bytes
 						//algoritmoClock(*pid_actual,pagina,tamanioContenidoPagina,contenidoPagina);
-						printf("Algoritmo [%s] --> ",umcGlobalParameters.algoritmo);
+						printf("Algoritmo [%s]-->",umcGlobalParameters.algoritmo);
 						punteroAlgoritmo(pid_actual,pagina,contenidoPagina,&marcoVictima);
 						guardarBytesEnPagina(pid_actual, pagina, offset, tamanio, bytesAlmacenar);
 						setBitDeUso(pid_actual,pagina,1);
@@ -1301,7 +1312,7 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 					}
 					else{	// el proceso llego a la maxima cantidad de marcos proceso
 						//algoritmoClock(*pid_actual,pagina,tamanioContenidoPagina,contenidoPagina);
-						printf("Algoritmo [%s] --> ",umcGlobalParameters.algoritmo);
+						printf("Algoritmo [%s]-->",umcGlobalParameters.algoritmo);
 						punteroAlgoritmo(pid_actual,pagina,contenidoPagina,&marcoVictima);
 						guardarBytesEnPagina(pid_actual, pagina, offset, tamanio, bytesAlmacenar);
 						setBitDeUso(pid_actual,pagina,1);
@@ -1696,7 +1707,7 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 		pthread_mutex_unlock(semSwap);
 		free(buffer);
 		perror("send");
-		printf("\nError en la comunicacion con SWAP,Finalizando Modulo\n");
+		printf(ANSI_COLOR_BLUE"Error en la comunicacion con SWAP,Finalizando Modulo\n"ANSI_COLOR_RESET);
 		liberarRecursos();
 		exit(1);
 	}
@@ -1709,7 +1720,7 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 		pthread_mutex_unlock(semSwap);
 		free(buffer);
 		perror("send");
-		printf("\nError en la comunicacion con SWAP,Finalizando Modulo\n");
+		printf(ANSI_COLOR_BLUE"Error en la comunicacion con SWAP,Finalizando Modulo\n"ANSI_COLOR_RESET);
 		liberarRecursos();
 		exit(1);
 	}
@@ -1724,7 +1735,7 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 		return contenidoPagina;
 	}
 	else{
-		printf("\nError en la comunicacion con SWAP, Devolvio una pagina INVALIDA,Finalizando Modulo\n");
+		printf(ANSI_COLOR_BLUE"Error en la comunicacion con SWAP, Devolvio una pagina INVALIDA,Finalizando Modulo\n"ANSI_COLOR_RESET);
 		liberarRecursos();
 		exit(1);
 	}
@@ -2040,7 +2051,7 @@ void resolverEnMP(int *socketBuff, PAGINA *pPagina, int offset, int tamanio) {
 	if (send(*socketBuff,buffer,(size_t )tamanio+sizeof(char),0) <= 0) {    // envio a CPU la pagina
 		free(buffer);
 		perror("send");
-		printf("\nError en la comunicacion con CPU,Finalizando.\n");
+		printf(ANSI_COLOR_BLUE"Error en la comunicacion con CPU,Finalizando.\n"ANSI_COLOR_RESET);
 		exit(1);
 	}
 	free(buffer);
@@ -2245,7 +2256,7 @@ void finalizarProceso(int *socketBuff){
 	if(recv(*socketBuff,buffer, sizeof(int), 0) <= 0 ) {
 		free(buffer);
 		perror("recv");
-		printf("Error en la comunicacion con Kernel [Finalizar Proceso], Finalizando.\n");
+		printf(ANSI_COLOR_BLUE"Error en la comunicacion con Kernel [Finalizar Proceso], Finalizando.\n"ANSI_COLOR_RESET);
 		liberarRecursos();
 		exit(1);
 	}
