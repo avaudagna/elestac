@@ -17,6 +17,7 @@
 #include <pthread.h>
 #include <commons/collections/list.h>
 #include <commons/config.h>
+#include <commons/process.h>
 
 
 #define IDENTIFICADOR_MODULO 1
@@ -522,7 +523,6 @@ void procesarConexiones(void)
     	  perror("accept");
     	  exit(1);
 		}
-	    printf("\nConnected..\n");
 
 	    socketCliente = (int *) calloc(1,sizeof(int));
 	    *socketCliente = socketBuffer;
@@ -571,7 +571,7 @@ FunctionPointer QuienSos(int * socketBuff) {
 	if ( package == '0' ) {	// KERNEL
 		contConexionesNucleo++;
 
-		printf("\n.: Se abre conexion con KERNEL :. \n");
+		printf(".: Se abre conexion con KERNEL :. \n");
 
 		if ( contConexionesNucleo == 1 ) {
 
@@ -598,11 +598,12 @@ void atenderCPU(int *socketBuff){
 
 	int pid_actual;
 	char estado=HANDSHAKE_CPU;
-
+	printf("Se abre conexion con CPU:[%04d]\n",process_get_thread_id());
 	while(estado != EXIT ){
 		switch(estado){
 
 		case IDENTIFICADOR_OPERACION:
+			printf("Esperando solicitud CPU\n");
 			estado = identificarOperacion(socketBuff);
 			break;
 		case HANDSHAKE_CPU:
@@ -665,7 +666,7 @@ char cambioProcesoActivo(int *socket, int *pid){
 	if ( (recv(*socket,buffer,sizeof(int), 0)) <= 0 ) {		// levanto el nuevo PID que esta ejecutando el CPU
 		free(buffer);
 		perror("recv");
-		printf("\nCambio de Proceso Activo fallido\nFinalizando Thread CPU.\n");
+		printf("Cambio de Proceso Activo fallido\nFinalizando Thread CPU.\n");
 		return ((char)EXIT);
 	}
 	memcpy(pid,buffer,sizeof(int));
@@ -683,6 +684,7 @@ void atenderKernel(int * socketBuff){
 		switch(estado)
 		{
 		case IDENTIFICADOR_OPERACION:
+			printf("Esperando solicitud KERNEL\n");
 			estado = identificarOperacion(socketBuff);
 			break;
 		case HANDSHAKE:	// K0
@@ -734,7 +736,7 @@ char handShakeKernel(int *socketBuff){
 		return ((char)EXIT);
 	}
 	memcpy(&stack_size,buffHsk,sizeof(int));
-	printf("\n[KERNEL]:Stack Size=%d\n",stack_size);
+	printf("[KERNEL]:Stack Size=%d\n",stack_size);
 	free(buffHsk);
 
 	buffHsk = calloc(1,sizeof(int));
@@ -782,7 +784,7 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 		}
 		else {
 			free(buffer);
-			printf("\n Nuevo Proceso en Memoria :[%04d] , Paginas de Codigo :[%d] \n ", pid_aux,cantidadDePaginasSolicitadas);
+			printf("\nNuevo Proceso en Memoria :[%04d] , Paginas de Codigo :[%d] \n", pid_aux,cantidadDePaginasSolicitadas);
 		}
 
 	}else {
@@ -1031,7 +1033,7 @@ void swapUpdate(void){
 	if ( recv(socketClienteSwap, buffer, sizeof(char)+sizeof(int), 0) <= 0 ||  *((char*)buffer) != '1' ){
 		free(buffer);
 		perror("recv");
-		printf("\nError comunicacion con SWAP,Finalizando\n");
+		printf("\nError comunicacion con SWAP en SwapUpdate,Finalizando\n");
 		liberarRecursos();
 		exit(1);
 	}
@@ -1129,7 +1131,7 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 	memcpy(&tamanio,buffer+sizeof(int)+sizeof(int),sizeof(int));
 	free(buffer);
 
-	printf("Pedido Bytes : (%d,%d,%d)\n",pPagina,offset,tamanio);
+	printf("[%04d]Pedido Bytes : (%d,%d,%d) --> ",*pid_actual,pPagina,offset,tamanio);
 
 	if((umcGlobalParameters.entradasTLB > 0 ) && (consultarTLB(pid_actual,pPagina,&indice_buff))){	// ¿Se usa TLB ? y.. ¿Esta en TLB?
 		// si esta en la tabla,  ya tengo el nroDeMarco y de ahi me voy a vectorMarcos[nroDeMarco]
@@ -1139,10 +1141,10 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 		resolverEnMP(socketBuff,temp,offset,tamanio);	// lo hago asi para poder reutilizar resolverEnMP , que al fin y al cabo es lo que se termina haciendo
 		actualizarTlb(pid_actual,temp);
 		free(temp);
-		printf("\n[ TLB HIT ]\n");
+		printf("[TLB HIT]\n");
 	}
 	else {	// No esta en TLB o no se usa TLB
-
+		printf("[TLB MISS] --> ");
 		pthread_rwlock_rdlock(semListaPids);
 		headerTablaDePaginas = obtenerTablaDePaginasDePID(*pid_actual);
 
@@ -1156,17 +1158,18 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 		else {
 
 			if (aux->presencia == AUSENTE) {    // La pagina NO se encuentra en memoria principal
-
+				printf("[PAGE FAULT] --> ");
 				contenidoPagina = pedirPaginaSwap(pid_actual, aux->nroPagina); //1- Pedir pagina a Swap
 
 				if ( marcosDisponiblesEnMP() == 0){	// NO HAY MARCOS LIBRES EN MEMORIA
 					if( cantPagDisponiblesxPID(pid_actual) == umcGlobalParameters.marcosXProc ){// si el proceso no tiene asignado ningun marco
+						printf("Proceso sin marcos asignados y tampoco hay libres.\n");
 						enviarMsgACPU(socketBuff,ABORTAR_PROCESO,sizeof(char));
 						return ((char)EXIT);
 					}
 					else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo
 						//algoritmoClock(*pid_actual,pPagina,tamanioContenidoPagina,contenidoPagina);
-						printf("\n[ PAGE FAULT ]:\nAplicando Algoritmo %s \n",umcGlobalParameters.algoritmo);
+						printf("Algoritmo %s --> ",umcGlobalParameters.algoritmo);
 						punteroAlgoritmo(pid_actual,pPagina,contenidoPagina,&marcoVictima);
 						actualizarTlb(pid_actual,aux);
 						resolverEnMP(socketBuff, aux, offset, tamanio);
@@ -1174,14 +1177,14 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 				}else{		// hay marcos disponibles
 
 					if  ( cantPagDisponiblesxPID(pid_actual) > 0){ // SI EL PROCESO TIENE MARGEN PARA ALMACENAR MAS PAGINAS EN MEMORIA
-						printf("\n[ PAGE FAULT ]: el proceso tiene disponible marcos en memoria\n");
+						printf("Hay marcos disponibles para el proceso.\n");
 						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, umcGlobalParameters.marcosSize);
 						actualizarTlb(pid_actual,aux);
                         resolverEnMP(socketBuff, aux, offset, tamanio);
 					}
 					else{	// el proceso llego a la maxima cantidad de marcos proceso
 						//algoritmoClock(*pid_actual,pPagina,tamanioContenidoPagina,contenidoPagina);
-						printf("\n[ PAGE FAULT ]: Aplicando Algoritmo %s \n",umcGlobalParameters.algoritmo);
+						printf("Algoritmo %s --> ",umcGlobalParameters.algoritmo);
 						punteroAlgoritmo(pid_actual,pPagina,contenidoPagina,&marcoVictima);
 						resolverEnMP(socketBuff, aux, offset, tamanio);
 						actualizarTlb(pid_actual,aux);
@@ -1192,7 +1195,7 @@ char pedidoBytes(int *socketBuff, int *pid_actual){
 				resolverEnMP(socketBuff, aux, offset, tamanio); // pagina en memoria principal , se la mando de una al CPU :)
 				actualizarTlb(pid_actual,aux);
 				setBitDeUso(pid_actual,pPagina,1);
-				printf("\n[ PAGE TABLE HIT ]\n");
+				printf("[PAGE TABLE HIT]\n");
 			}
 		}
 	}
@@ -1233,7 +1236,7 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 	memcpy(&offset,buffer+sizeof(int),sizeof(int));
 	memcpy(&tamanio,buffer+sizeof(int)+sizeof(int),sizeof(int));
 	free(buffer);
-	printf("Almacenar Bytes : (%d,%d,%d)\n",pagina,offset,tamanio);
+	printf("[%04d]Almacenar Bytes : (%d,%d,%d) --> ",*pid_actual,pagina,offset,tamanio);
 
 	// levanto bytes a almacenar
 
@@ -1256,9 +1259,10 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 		temp->nroDeMarco = indice_buff;
 		actualizarTlb(pid_actual,temp);
 		enviarMsgACPU(socketBuff,OK,1);
-		printf("[ TLB HIT ]\n");
+		printf("[TLB HIT]\n");
 	}
 	else{
+		printf("[TLB MISS] --> ");
 		headerTablaDePaginas = obtenerTablaDePaginasDePID(*pid_actual);
 		aux = obtenerPaginaDeTablaDePaginas(headerTablaDePaginas, pagina);
 		if (aux == NULL) {	// valido pedido de pagina
@@ -1267,16 +1271,17 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 		}
 		else {
 			if (aux->presencia == AUSENTE) {    // La pagina NO se encuentra en memoria principal
-				printf("[ PAGE TABLE MISS ]\n");
+				printf("[PAGE FAULT] --> ");
 				contenidoPagina = pedirPaginaSwap(pid_actual, aux->nroPagina); //1- Pedir pagina a Swap
 				if ( marcosDisponiblesEnMP() == 0){	// NO HAY MARCOS LIBRES EN MEMORIA
 					if( cantPagDisponiblesxPID(pid_actual) == umcGlobalParameters.marcosXProc ){// si el proceso no tiene asignado ningun marco
+						printf("Proceso sin marcos asignados y tampoco hay libres.\n");
 						enviarMsgACPU(socketBuff,ABORTAR_PROCESO,1);
 						return (EXIT);
 					}
 					else{ // no hay marcos disponibles y el proceso tiene asignado por lo menos 1 marco en memoria x lo que se aplica algoritmo , y una vez que ya se trajo la pagina a MP,  ahi si guardo los bytes
 						//algoritmoClock(*pid_actual,pagina,tamanioContenidoPagina,contenidoPagina);
-						printf("Aplicando %s\n",umcGlobalParameters.algoritmo);
+						printf("Algoritmo [%s] --> ",umcGlobalParameters.algoritmo);
 						punteroAlgoritmo(pid_actual,pagina,contenidoPagina,&marcoVictima);
 						guardarBytesEnPagina(pid_actual, pagina, offset, tamanio, bytesAlmacenar);
 						setBitDeUso(pid_actual,pagina,1);
@@ -1287,6 +1292,7 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 				}else{		// hay marcos disponibles
 
 					if  ( cantPagDisponiblesxPID(pid_actual) > 0){ // SI EL PROCESO TIENE MARGEN PARA ALMACENAR MAS PAGINAS EN MEMORIA
+						printf("Hay marcos disponibles para el proceso.\n");
 						almacenoPaginaEnMP(pid_actual, aux->nroPagina, contenidoPagina, (size_t )umcGlobalParameters.marcosSize);
 						//guardarBytesEnPagina(pid_actual, pagina, offset, tamanio, bytesAlmacenar);
 						setBitDeUso(pid_actual,pagina,1);
@@ -1295,6 +1301,7 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 					}
 					else{	// el proceso llego a la maxima cantidad de marcos proceso
 						//algoritmoClock(*pid_actual,pagina,tamanioContenidoPagina,contenidoPagina);
+						printf("Algoritmo [%s] --> ",umcGlobalParameters.algoritmo);
 						punteroAlgoritmo(pid_actual,pagina,contenidoPagina,&marcoVictima);
 						guardarBytesEnPagina(pid_actual, pagina, offset, tamanio, bytesAlmacenar);
 						setBitDeUso(pid_actual,pagina,1);
@@ -1310,6 +1317,7 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 				setBitModificado(*pid_actual,pagina,1);
 				enviarMsgACPU(socketBuff,OK,1);
 				actualizarTlb(pid_actual,aux);
+				printf("[PAGE TABLE HIT]\n");
 			}
 		}
 	}
@@ -1446,7 +1454,6 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, void *contenidoPagina,
  *	En la 2da vuelta : busco U=0 y M=1 . Durante el recorrido seteo U=0 ( para todos los marcos que no se elijan).
  *	Si falla la 2da vuelta, vuelvo a la primera, y asi sucesivamente.
  */
-
 	t_list *fifoPID = NULL;
 	FIFO_INDICE *punteroPIDClock = NULL;
 	t_link_element *recorredor = NULL;
@@ -1532,6 +1539,7 @@ void algoritmoClockModificado(int *pPid, int numPagNueva, void *contenidoPagina,
 
 	pagina_victima = obtenerPagina(*pPid, ((CLOCK_PAGINA *) recorredor->data)->nroPagina);
 	*marcoVictima = pagina_victima->nroDeMarco;
+	printf(" Reemplazo Pagina:%d en Marco:%d por Pagina:%d\n",pagina_victima->nroPagina,pagina_victima->nroDeMarco,numPagNueva);
 
 	if (pagina_victima->modificado == 1)  {   // pagina modificada, enviarla a swap antes de reemplazarla
 		PedidoPaginaASwap(*pPid,pagina_victima->nroPagina,ESCRITURA);
@@ -1580,8 +1588,7 @@ void PedidoPaginaASwap(int pid, int pagina, char operacion) {
 		memcpy(trama + sizeof(char) + sizeof(int), &pagina, sizeof(int));
 		pag = obtenerPagina(pid, pagina);
 		pthread_rwlock_rdlock(semMemPrin);
-		memcpy(trama + sizeof(char) + sizeof(int) + sizeof(int), vectorMarcos[pag->nroDeMarco].comienzoMarco,
-			   (size_t) umcGlobalParameters.marcosSize);
+		memcpy(trama + sizeof(char) + sizeof(int) + sizeof(int), vectorMarcos[pag->nroDeMarco].comienzoMarco,(size_t) umcGlobalParameters.marcosSize);
 		pthread_rwlock_unlock(semMemPrin);
 		pthread_mutex_lock(semSwap);
 		enviarPaginaAlSwap(trama, trama_size);
@@ -1683,7 +1690,7 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 	memcpy(buffer,&caracter,sizeof(char));
 	memcpy(buffer+sizeof(char),pid_actual,sizeof(int));
 	memcpy(buffer+sizeof(char)+sizeof(int),&nroPagina,sizeof(int));
-    printf("\n[%04d]->Sending request to SWAP : %s \n",*pid_actual,(char*)buffer);
+    printf(" [%04d]->Sending request to SWAP --> ",*pid_actual);
 	pthread_mutex_lock(semSwap);	// La idea es que solo 1 hilo a la vez utilice el socket
 	if (send(socketClienteSwap, buffer, tamanio, 0) <= 0) {
 		pthread_mutex_unlock(semSwap);
@@ -1711,7 +1718,7 @@ void *pedirPaginaSwap(int *pid_actual, int nroPagina) {
 	memcpy(&pid,buffer,sizeof(pid));
 	memcpy(contenidoPagina,buffer+sizeof(pid),(size_t )umcGlobalParameters.marcosSize);
     free(buffer);
-    printf("\n[%04d]->SWAP answer pid : %d\n",*pid_actual,pid);
+    printf(" [%04d]->SWAP answer pid : %d --> ",*pid_actual,pid);
 
 	if (pid == *pid_actual) {  // valido que la pagina que me respondio swap se corresponda a la que pedi
 		return contenidoPagina;
@@ -2242,7 +2249,7 @@ void finalizarProceso(int *socketBuff){
 	memcpy(&pPid,buffer,sizeof(int));
 	free(buffer);
 
-	printf("\n Eliminando PID[%d] de Memoria.\n",pPid);
+	printf("Eliminando PID[%d] de Memoria.\n",pPid);
 
 	buffer=calloc(1,sizeof(char)+sizeof(int));
 	memcpy(buffer,&caracter,sizeof(char));
@@ -2287,7 +2294,7 @@ void finalizarProceso(int *socketBuff){
 		pthread_rwlock_unlock(semListaPids);
 
 	}
-	printf("\n PID[%d] eliminado de memoria.\nCantidad de Marcos libres en Swap:%d\n",pPid,paginasLibresEnSwap);
+	printf("\n PID[%d] eliminado de memoria.Cantidad de Marcos libres en Swap:%d\n",pPid,paginasLibresEnSwap);
 }
 
 
