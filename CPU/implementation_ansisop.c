@@ -435,11 +435,12 @@ void la_wait (t_nombre_semaforo identificador_semaforo){
         log_error(cpu_log, "wait(%s) failed", identificador_semaforo);
         return;
     }
+    status_update(WAITING);
     log_info(cpu_log, "Starting wait");
     //me quedo esperando activamente a que kernel me responda
-    recv(kernelSocketClient, response_buffer, sizeof(char), 0);
+//    recv(kernelSocketClient, response_buffer, sizeof(char), 0);
     //kernel_response debería ser '0'
-    log_info(cpu_log, "Finished wait");
+//    log_info(cpu_log, "Finished wait");
     free(buffer);
     free(response_buffer);
 }
