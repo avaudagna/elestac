@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include "libs/pcb.h"
+#include "libs/stack.h"
 #include "cpu.h"
 #include "cpu_structs.h"
 #include <parser/metadata_program.h>
@@ -16,8 +17,9 @@
 
 #define PAGINA_INVALIDA_ID '2'
 #define PAGINA_VALIDA_ID '1'
-#define STACK_OVERFLOW_ID '3'
-#define OPERACION_EXITOSA_ID 1
+#define OPERACION_EXITOSA_ID '1'
+#define STACK_OVERFLOW_ID '2'
+#define PROCESS_ABORTED_ID '6'
 
 #define SHARED_VAR_ID '5'
 #define GET_VAR '0'
@@ -33,7 +35,7 @@
 #define SIGNAL_ID '1'
 
 #define STACK_OVERFLOW -2
-
+#define PROCESS_ABORTED -3
 
 //UMC Interface
 #define HANDSHAKE_CPU 1
@@ -111,5 +113,7 @@ typedef struct {
 
     void stack_overflow_exit();
     char recv_umc_response_status();
+    int check_umc_response(char status);
+
 
 #endif

@@ -1,6 +1,5 @@
 /* Kernel.c by pacevedo */
-#include <libs/pcb.h>
-#include "libs/pcb.h"
+
 #include "kernel.h"
 
 /* BEGIN OF GLOBAL STUFF I NEED EVERYWHERE */
@@ -11,7 +10,7 @@ char* configFileName;
 char* configFilePath;
 t_log   *kernel_log;
 t_list  *PCB_READY, *PCB_BLOCKED, *PCB_EXIT, *PCB_WAITING, *PCB_EXIT_WAITING;
-t_list  *consolas_conectadas, *cpus_conectadas, *cpus_executing;
+t_list  *consolas_conectadas, *cpus_conectadas, *cpus_executing, *dying_pids;
 t_list **solicitudes_io;
 fd_set 	 allSockets;
 void* losDatosGlobales = NULL;
@@ -28,6 +27,7 @@ int main (int argc, char* *argv){
 	PCB_EXIT_WAITING = list_create();
 	cpus_conectadas = list_create();
 	cpus_executing = list_create();
+	dying_pids = list_create();
 	consolas_conectadas = list_create();
 	if (start_kernel(argc, argv[1])<0) return 0; //load settings
 	clientUMC=connect2UMC();
@@ -127,10 +127,10 @@ int wait_coordination(int cpuID, int lePid){
 	bool semWait=false;
 	int semaphore_trama_buffer_index = 0, SEM_ID_Size = 0;
 	char doWait, *SEM_ID = NULL;
-	size_t size_trama_semaphore = sizeof(char) + sizeof(int);
-	void *semaphore_trama_buffer = calloc(1, size_trama_semaphore);
+	int size_trama_semaphore = sizeof(char) + sizeof(int);
+	void *semaphore_trama_buffer = calloc(1, (size_t) size_trama_semaphore);
 
-	recv(cpuID, semaphore_trama_buffer, size_trama_semaphore, 0);
+	recv(cpuID, semaphore_trama_buffer, (size_t) size_trama_semaphore, 0);
 	deserialize_data(&doWait, sizeof(char), semaphore_trama_buffer,&semaphore_trama_buffer_index);
 	deserialize_data(&SEM_ID_Size, sizeof(int), semaphore_trama_buffer,&semaphore_trama_buffer_index);
 	SEM_ID = calloc(1, (size_t) SEM_ID_Size);
@@ -179,9 +179,9 @@ void* do_work(void *p){
 					bool matchea = (io_op->pid == unPCB->pid);
 					return matchea;
 				}
-				t_pcb *elPCB;
+				t_pcb *elPCB = NULL;
 				elPCB = list_remove_by_condition(PCB_BLOCKED, match_PCB);
-				if (elPCB->pid > 0) {
+				if (elPCB != NULL && elPCB->pid > 0) {
 					elPCB->status = READY;
 					list_add(PCB_READY, elPCB);
 				} // Else -> The PCB was killed by end_program while performing I/O
@@ -338,12 +338,12 @@ t_pcb * recvPCB(int cpuID){
 }
 
 void restoreCPU(t_Client *laCPU){
-	bool getCPUIndex(void *nbr){
+	bool restoreCPUIndex(void *nbr){
 		t_Client *unaCPU = nbr;
 		bool matchea = (laCPU->clientID == unaCPU->clientID);
 		return matchea;
 	}
-	list_remove_by_condition(cpus_executing, getCPUIndex);
+	list_remove_by_condition(cpus_executing, restoreCPUIndex);
 	laCPU->status = READY;
 	laCPU->pid = 0;
 	list_add(cpus_conectadas, laCPU); /* return the CPU to the queue */
@@ -471,17 +471,19 @@ void check_CPU_FD_ISSET(void *cpu){
 		}else{
 			log_info(kernel_log,"CPU %d has closed the connection.", laCPU->clientID);
 			close(laCPU->clientID);
-			bool getCPUIndex(void *nbr){
+			bool getIndexCPU(void *nbr){
 				t_Client *unCliente = nbr;
-				bool matchea = (laCPU->clientID == unCliente->clientID);
-				if (matchea && laCPU->pid > 0)
-					end_program(laCPU->pid, true, false, laCPU->status);
-				return matchea;
+				if (unCliente != NULL && unCliente->clientID > 0){
+					bool matchea = (laCPU->clientID == unCliente->clientID);
+					if (matchea && laCPU->pid > 0)
+						end_program(laCPU->pid, true, false, laCPU->status);
+					return matchea;
+				}
 			}
 			if (list_size(cpus_conectadas) > 0)
-				list_remove_by_condition(cpus_conectadas, getCPUIndex);
+				list_remove_by_condition(cpus_conectadas, getIndexCPU);
 			if (list_size(cpus_executing) > 0)
-				list_remove_by_condition(cpus_executing, getCPUIndex);
+				list_remove_by_condition(cpus_executing, getIndexCPU);
 		}
 		RoundRobinReport();
 	}
@@ -500,6 +502,10 @@ void check_CONSOLE_FD_ISSET(void *console){
 	if (FD_ISSET(cliente->clientID, &allSockets)) {
 		if (recv(cliente->clientID, ConBuff, 1, 0) == 0){
 			log_info(kernel_log,"A console has closed the connection, the associated PID %04d will be terminated.", cliente->clientID);
+			void *elPID = calloc(1, sizeof(int));
+			int elPID_index = 0;
+			serialize_data(&cliente->clientID, sizeof(int), &elPID, &elPID_index);
+			list_add(dying_pids, elPID);
 			end_program(cliente->clientID, false, true, BROKEN);
 		}
 	}
@@ -656,7 +662,7 @@ void round_robin(){
 	serialize_data(&setup.QUANTUM, sizeof(int), &tmp_buffer, &tmp_buffer_size);
 	serialize_data(&setup.QUANTUM_SLEEP, sizeof(int), &tmp_buffer, &tmp_buffer_size);
 	serialize_data(&pcb_buffer_size, sizeof(int), &tmp_buffer, &tmp_buffer_size);
-	serialize_data(pcb_buffer, (size_t ) pcb_buffer_size, &tmp_buffer, &tmp_buffer_size);
+	serialize_data(pcb_buffer, pcb_buffer_size, &tmp_buffer, &tmp_buffer_size);
 	log_info(kernel_log,"Submitting to CPU %d the PID=%04d.", laCPU->clientID, tuPCB->pid);
 	send(laCPU->clientID, tmp_buffer, (size_t) tmp_buffer_size, 0);
 	list_add(cpus_executing,laCPU);
@@ -716,6 +722,13 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 		list_remove_and_destroy_by_condition(PCB_BLOCKED,match_PCB,destroy_PCB);
 	if (list_size(PCB_EXIT) > 0)
 		list_remove_and_destroy_by_condition(PCB_EXIT,match_PCB,destroy_PCB);
+	if (list_size(PCB_WAITING) > 0){
+		t_pcb *wPCB = NULL;
+		wPCB = list_remove_by_condition(PCB_WAITING, match_PCB);
+		if(wPCB != NULL && wPCB->pid > 1){
+			list_add(PCB_EXIT_WAITING, wPCB);
+		}
+	}
 
 	if (cpuStillOpen) {
 		if (list_size(cpus_executing) > 0) {
@@ -723,11 +736,13 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 				t_Client *aCPU = nbr;
 				return (pid == aCPU->pid);
 			}
-			t_Client *theCPU;
+			t_Client *theCPU = NULL;
 			theCPU = list_find(cpus_executing, getCPUIndex);
-			theCPU->status = EXIT;
+			if(theCPU != NULL && theCPU->status == EXECUTING){
+				theCPU->status = EXIT;
+			}
 		}
-	} else {
+	}else{
 		pcb_found = true;
 	}
 
@@ -741,20 +756,20 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 			int finalizar = 0;
 			void* consoleKillProg = NULL;
 			int consoleKillProg_index = 0;
-			if(status == BROKEN) finalizar = 3;
-			if(status == ABORTED) finalizar = 4;
+			if (status == BROKEN) finalizar = 3;
+			if (status == ABORTED) finalizar = 4;
 			log_info(kernel_log, "Program status was %d. Console will inform this properly to the user.", status);
 			serialize_data(&finalizar, sizeof(int), &consoleKillProg, &consoleKillProg_index);
 			send(pid, consoleKillProg, sizeof(char), 0); // send exit code to console
 			free(consoleKillProg);
+			close(pid); // close console socket
+			bool getConsoleIndex(void *nbr) {
+				t_Client *unCliente = nbr;
+				return (pid == unCliente->clientID);
+			}
+			list_remove_by_condition(consolas_conectadas, getConsoleIndex);
 		}
-		close(pid); // close console socket
 	}
-	bool getConsoleIndex(void *nbr) {
-		t_Client *unCliente = nbr;
-		return (pid == unCliente->clientID);
-	}
-	list_remove_by_condition(consolas_conectadas, getConsoleIndex);
 }
 
 void process_io() {
