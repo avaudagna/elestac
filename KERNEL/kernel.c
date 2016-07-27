@@ -473,10 +473,12 @@ void check_CPU_FD_ISSET(void *cpu){
 			close(laCPU->clientID);
 			bool getIndexCPU(void *nbr){
 				t_Client *unCliente = nbr;
-				bool matchea = (laCPU->clientID == unCliente->clientID);
-				if (matchea && laCPU->pid > 0)
-					end_program(laCPU->pid, true, false, laCPU->status);
-				return matchea;
+				if (unCliente != NULL && unCliente->clientID > 0){
+					bool matchea = (laCPU->clientID == unCliente->clientID);
+					if (matchea && laCPU->pid > 0)
+						end_program(laCPU->pid, true, false, laCPU->status);
+					return matchea;
+				}
 			}
 			if (list_size(cpus_conectadas) > 0)
 				list_remove_by_condition(cpus_conectadas, getIndexCPU);
@@ -754,20 +756,20 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 			int finalizar = 0;
 			void* consoleKillProg = NULL;
 			int consoleKillProg_index = 0;
-			if(status == BROKEN) finalizar = 3;
-			if(status == ABORTED) finalizar = 4;
+			if (status == BROKEN) finalizar = 3;
+			if (status == ABORTED) finalizar = 4;
 			log_info(kernel_log, "Program status was %d. Console will inform this properly to the user.", status);
 			serialize_data(&finalizar, sizeof(int), &consoleKillProg, &consoleKillProg_index);
 			send(pid, consoleKillProg, sizeof(char), 0); // send exit code to console
 			free(consoleKillProg);
+			close(pid); // close console socket
+			bool getConsoleIndex(void *nbr) {
+				t_Client *unCliente = nbr;
+				return (pid == unCliente->clientID);
+			}
+			list_remove_by_condition(consolas_conectadas, getConsoleIndex);
 		}
-		close(pid); // close console socket
 	}
-	bool getConsoleIndex(void *nbr) {
-		t_Client *unCliente = nbr;
-		return (pid == unCliente->clientID);
-	}
-	list_remove_by_condition(consolas_conectadas, getConsoleIndex);
 }
 
 void process_io() {
