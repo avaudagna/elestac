@@ -1278,11 +1278,11 @@ char almacenarBytes(int *socketBuff, int *pid_actual) {
 		}
 		else {
 			if (aux->presencia == AUSENTE) {    // La pagina NO se encuentra en memoria principal
-				printf("[PAGE FAULT] --> ");
+				printf("[PAGE FAULT]-->");
 				contenidoPagina = pedirPaginaSwap(pid_actual, aux->nroPagina); //1- Pedir pagina a Swap
 				if ( marcosDisponiblesEnMP() == 0){	// NO HAY MARCOS LIBRES EN MEMORIA
 					if( cantPagDisponiblesxPID(pid_actual) == umcGlobalParameters.marcosXProc ){// si el proceso no tiene asignado ningun marco
-						printf("Proceso sin marcos asignados y tampoco hay libres.\n");
+						printf("\e[31;4mProceso sin marcos asignados y tampoco hay libres.\e[0m\n");
 						enviarMsgACPU(socketBuff,ABORTAR_PROCESO,1);
 						return ((char)IDENTIFICADOR_OPERACION);
 					}
@@ -1894,7 +1894,7 @@ bool pidEstaEnListaFIFOxPID(int pPid) {
 t_list *obtenerHeaderFifoxPid(int pPid) {
 	t_link_element * aux  = NULL;
 
-	if(headerFIFOxPID->head == NULL)
+	if(headerFIFOxPID == NULL || headerFIFOxPID->head == NULL)
 		return NULL;
 	pthread_rwlock_rdlock(semFifosxPid);
 	aux = headerFIFOxPID->head ;
