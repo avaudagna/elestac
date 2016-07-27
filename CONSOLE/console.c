@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
 					break;
 				case 3:
 					continua = false;
-					log_error(console_log, "You are a raper. There is a segmentation fault");
+					log_error(console_log, "El programa no finalizó su ejecución correctamente.");
 					break;
 				case 4:
 					continua = false;

@@ -476,7 +476,7 @@ void check_CPU_FD_ISSET(void *cpu){
 				if (unCliente != NULL && unCliente->clientID > 0){
 					bool matchea = (laCPU->clientID == unCliente->clientID);
 					if (matchea && laCPU->pid > 0)
-						end_program(laCPU->pid, true, false, laCPU->status);
+						end_program(laCPU->pid, true, false, BROKEN);
 					return matchea;
 				}
 			}
@@ -821,8 +821,9 @@ void call_handlers() {
 
 void list_iterate_papoteado(t_list* self, void(*closure)(void*)) {
 	t_link_element *element = self->head;
+	t_link_element *aux = NULL;
 	while (element != NULL) {
-		t_link_element *aux = element->next;
+		aux = element->next;
 		closure(element->data);
 		element = aux;
 	}
