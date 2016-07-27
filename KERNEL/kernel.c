@@ -519,9 +519,9 @@ int control_clients(){
 	FD_SET(cpuServer, &allSockets);
 	FD_SET(consoleServer, &allSockets);
 	FD_SET(configFileFD, &allSockets);
-	list_iterate(consolas_conectadas,add2FD_SET);
-	list_iterate(cpus_conectadas,add2FD_SET);
-	list_iterate(cpus_executing,add2FD_SET);
+	list_iterate_papoteado(consolas_conectadas,add2FD_SET);
+	list_iterate_papoteado(cpus_conectadas,add2FD_SET);
+	list_iterate_papoteado(cpus_executing,add2FD_SET);
 	int retval = select(maxSocket+1, &allSockets, NULL, NULL, &timeout); // (retval < 0) <=> signal
 	if (retval>0) {
 		if (FD_ISSET(configFileFD, &allSockets)) {
@@ -545,11 +545,11 @@ int control_clients(){
 			}
 		}
 		if (list_size(consolas_conectadas) > 0)
-			list_iterate(consolas_conectadas, check_CONSOLE_FD_ISSET);
+			list_iterate_papoteado(consolas_conectadas, check_CONSOLE_FD_ISSET);
 		if (list_size(cpus_conectadas) > 0)
-			list_iterate(cpus_conectadas, check_CPU_FD_ISSET);
+			list_iterate_papoteado(cpus_conectadas, check_CPU_FD_ISSET);
 		if (list_size(cpus_executing) > 0)
-			list_iterate(cpus_executing, check_CPU_FD_ISSET);
+			list_iterate_papoteado(cpus_executing, check_CPU_FD_ISSET);
 		if ((newConsole=accept_new_client("console", &consoleServer, &allSockets, consolas_conectadas)) > 1){
 			accept_new_PCB(newConsole);
 			RoundRobinReport();
@@ -817,6 +817,15 @@ void call_handlers() {
 	}
 	if (list_size(PCB_BLOCKED) > 0) process_io();
 	while (list_size(cpus_conectadas) > 0 && list_size(PCB_READY) > 0 ) round_robin();
+}
+
+void list_iterate_papoteado(t_list* self, void(*closure)(void*)) {
+	t_link_element *element = self->head;
+	while (element != NULL) {
+		t_link_element *aux = element->next;
+		closure(element->data);
+		element = aux;
+	}
 }
 
 // C'est tout

@@ -80,6 +80,7 @@ void    restoreCPU(t_Client *laCPU);
 void    *requestPages2UMC(void* request_buffer);
 void    *do_work(void *p);
 void	*sem_wait_thread(void *p);
+void	list_iterate_papoteado(t_list* self, void(*closure)(void*));
 t_pcb*  recvPCB(int cpuID);
 pthread_mutex_t mut_io_list;
 sem_t *semaforo_io;
