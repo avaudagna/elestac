@@ -109,8 +109,9 @@ void tratarSeniales(int senial){
             break;
         case SIGUSR1:
             printf("SIGUSR1 signal received\n");
-            printf("On next Quantum CPU will disconnect\n");
+            printf("At the end of the Quantum, this CPU will disconnect\n");
             LAST_QUANTUM_FLAG = 1;
+            signal (SIGUSR1, tratarSeniales);
             break;
         default:
             printf("Other signal received\n");

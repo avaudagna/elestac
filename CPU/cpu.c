@@ -126,7 +126,7 @@ int cpu_state_machine() {
                 if (execute_state_machine() == SUCCESS) { state = S4_RETURN_PCB; } else { state = ERROR; }
                 break;
             case S4_RETURN_PCB:
-                if (return_pcb() == SUCCESS) { state = S1_GET_PCB; } else { state = ERROR; }
+                if (return_pcb() == SUCCESS) { if(LAST_QUANTUM_FLAG) { return SUCCESS; }  state = S1_GET_PCB; } else { state = ERROR; }
                 break;
             default:
             case ERROR:
@@ -177,7 +177,7 @@ int execute_state_machine() {
                 if (get_execution_line(&instruction_line) == SUCCESS) {
                     execution_state = S2_EXECUTE_LINE;
                 } else {
-                    execution_state = ERROR;
+                    execution_state = S0_CHECK_EXECUTION_STATE;
                 } break;
             case S2_EXECUTE_LINE:
                 switch(execute_line(instruction_line)) {
@@ -207,12 +207,6 @@ int execute_state_machine() {
 }
 
 int post_process_operations() {
-    log_info(cpu_log, "Starting delay of : %d seconds", actual_kernel_data->QSleep/1000);
-    usleep(actual_kernel_data->QSleep * 1000);
-    if(LAST_QUANTUM_FLAG) {
-        //Signal for exiting CPU was sent
-        return EXIT;
-    }
     actual_kernel_data->Q--;
     if(status_check() != WAITING && status_check() != BROKEN) {
         log_info(cpu_log, "Remaining Quantum : %d", actual_kernel_data->Q);
@@ -227,7 +221,7 @@ void finished_quantum_post_process() {
     if(status_check() == EXECUTING) {
         status_update(READY);
     }
-    if(status_check() == BLOCKED) {
+    if(status_check() == BLOCKED || status_check() == WAITING) {
         return;
     }
     send_quantum_end_notif();
@@ -252,6 +246,9 @@ int execute_line(void *instruction_line) {
         status_update(EXIT);
         return EXIT;
     }
+    log_info(cpu_log, "Starting delay of : %d seconds", actual_kernel_data->QSleep/1000);
+    usleep(actual_kernel_data->QSleep * 1000);
+
     analizadorLinea((char*) instruction_line, &funciones_generales_ansisop, &funciones_kernel_ansisop);
     log_info(cpu_log, "Finished line %d execution", actual_pcb->program_counter);
     return SUCCESS;
@@ -298,7 +295,9 @@ int get_execution_line(void ** instruction_line) {
 
     t_list * instruction_addresses_list = armarDireccionesLogicasList(
             actual_pcb->instrucciones_serializado + actual_pcb->program_counter);
-    get_instruction_line(instruction_addresses_list, instruction_line);
+    if(get_instruction_line(instruction_addresses_list, instruction_line) != SUCCESS) {
+        return ERROR;
+    }
     strip_string(*instruction_line);
     log_info(cpu_log, "Next execution line: %s", *instruction_line);
     return SUCCESS;
@@ -392,7 +391,6 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
 
     void * recv_bytes_buffer = NULL;
     int buffer_index = 0;
-    char response_status;
     while(list_size(instruction_addresses_list) > 0) {
 
         logical_addr * element = list_get(instruction_addresses_list, 0);
@@ -418,13 +416,8 @@ int get_instruction_line(t_list *instruction_addresses_list, void ** instruction
             return ERROR;
         }
 
-        //TODO: Esto lo tengo que hacer en check_umc_response_status y validar que no sea 2 (STACK_OVERFLOW)
-        response_status = recv_umc_response_status();
-        if(response_status == '1') {
-            log_info(cpu_log, "UMC_RESPONSE_OK");
-        } else if (response_status == '2') {
-            log_error(cpu_log, "=== STACK OVERFLOW ===");
-            exit(1);
+        if(check_umc_response(recv_umc_response_status()) != SUCCESS) {
+            return ERROR;
         }
 
         if( recv(umcSocketClient , recv_bytes_buffer , (size_t ) element->tamanio , 0) <= 0) {
