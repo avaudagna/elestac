@@ -583,7 +583,7 @@ FunctionPointer QuienSos(int * socketBuff) {
 	if ( package == '0' ) {	// KERNEL
 		contConexionesNucleo++;
 
-		printf(".: Se abre conexion con KERNEL :. \n");
+		printf(ANSI_COLOR_CYAN".: Se abre conexion con KERNEL :. \n"ANSI_COLOR_RESET);
 
 		if ( contConexionesNucleo == 1 ) {
 
@@ -610,7 +610,7 @@ void atenderCPU(int *socketBuff){
 
 	int pid_actual;
 	char estado=HANDSHAKE_CPU;
-
+	printf(ANSI_COLOR_CYAN"Nueva CPU conectada[%04d]\n"ANSI_COLOR_RESET,process_get_thread_id());
 	while(estado != EXIT ){
 		switch(estado){
 
@@ -2276,36 +2276,42 @@ void finalizarProceso(int *socketBuff){
 
 	fifo = obtenerHeaderFifoxPid(pPid);
 
-	if ( fifo != NULL){
+	if ( fifo != NULL) {
 		aux = fifo->head;
-	// Libero todos los marcos ocupados por el proceso
-		while (aux != NULL){
-			pag_aux = obtenerPagina(pPid,((CLOCK_PAGINA *)aux->data)->nroPagina);
+		// Libero todos los marcos ocupados por el proceso
+		while (aux != NULL) {
+			pag_aux = obtenerPagina(pPid, ((CLOCK_PAGINA *) aux->data)->nroPagina);
 			pthread_rwlock_wrlock(semMemPrin);
 			vectorMarcos[pag_aux->nroDeMarco].estado = LIBRE;
 			pthread_rwlock_unlock(semMemPrin);
 			aux = aux->next;
 		}
 		pthread_rwlock_wrlock(semFifosxPid);
-		list_destroy_and_destroy_elements(fifo,free);	// Elimino la fifo y sus referencias
+		list_destroy_and_destroy_elements(fifo, free);    // Elimino la fifo y sus referencias
 		pthread_rwlock_unlock(semFifosxPid);
 
 		index = getPosicionCLockPid(pPid);
 		pthread_rwlock_wrlock(semFifosxPid);
-		list_remove_and_destroy_element(headerFIFOxPID,index,free);		// ELimino el nodo en al lista de Procesos en Memoria Principal
+		list_remove_and_destroy_element(headerFIFOxPID, index,
+										free);        // ELimino el nodo en al lista de Procesos en Memoria Principal
 		pthread_rwlock_unlock(semFifosxPid);
-		headerTablaPaginas = obtenerTablaDePaginasDePID(pPid);
-
-		pthread_rwlock_wrlock(semListaPids);
-		list_destroy_and_destroy_elements(headerTablaPaginas,free);		// Elimino tabla de Paginas asociada a ese PID
-		pthread_rwlock_unlock(semListaPids);
-
-		index = getPosicionListaPids(pPid);
-		pthread_rwlock_wrlock(semListaPids);
-		list_remove_and_destroy_element(headerListaDePids,index,free);	// ELimino el nodo en la lista de Pids ( lista de tablas de paginas asociadas a c/ PID )
-		pthread_rwlock_unlock(semListaPids);
-
 	}
+
+	headerTablaPaginas = obtenerTablaDePaginasDePID(pPid);
+	if( headerTablaPaginas != NULL) {
+		pthread_rwlock_wrlock(semListaPids);
+		list_destroy_and_destroy_elements(headerTablaPaginas,
+										  free);        // Elimino tabla de Paginas asociada a ese PID
+		pthread_rwlock_unlock(semListaPids);
+	}
+	index = getPosicionListaPids(pPid);
+	if( index != (-1) ) {
+		pthread_rwlock_wrlock(semListaPids);
+		list_remove_and_destroy_element(headerListaDePids, index,
+										free);    // ELimino el nodo en la lista de Pids ( lista de tablas de paginas asociadas a c/ PID )
+		pthread_rwlock_unlock(semListaPids);
+	}
+
 	printf(ANSI_COLOR_GREEN"PID[%d] eliminado de memoria.Cantidad de Marcos libres en Swap:%d\n"ANSI_COLOR_RESET,pPid,paginasLibresEnSwap);
 }
 
@@ -2341,7 +2347,7 @@ int getPosicionListaPids(int pPid) {
 		aux = aux->next;
 		i++;
 	}
-
+	return -1;
 }
 
 
