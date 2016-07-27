@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	int kernelSocketClient;
-	char *kernel_reply = calloc(1, sizeof(int));
+	void * kernel_reply = NULL;
 	//create kernel client
 	if (argc != 2) {
 		puts("usage: console ansisopFile");
@@ -50,93 +50,83 @@ int main(int argc, char *argv[]) {
 
 	fseek(fp, SEEK_SET, 0);
 	fseek(fp, 0L, SEEK_END);
-	long int sz = ftell(fp);
+	long int file_length = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
 
-	char hash_bang[100];
+	char * hash_bang = calloc(1, sizeof(char) * 100);
 	fgets(hash_bang, 100, fp);
-	sz = sz - strlen(hash_bang) - 1;
+	file_length = file_length - strlen(hash_bang) - 1;
 
-	char *prog = (char *) calloc(1, sz);
+	char *prog = (char *) calloc(1, (size_t) (file_length));
 
-	fread(prog, sz + 1, 1, fp);
+	fread(prog, (size_t) file_length, 1, fp);
 	fclose(fp);
 
-	//int sizeMsj = 1 + 4 + (int) sz; // 1+ansisop_len+ansisop
-	void *mensaje = NULL;
-	int mensaje_index = 0;
-	char kernelProtocol = '0';
+    int mensaje_index = 0;
+	char operacion = '0';
+	void * mensaje = NULL;
+    serialize_data(&operacion, sizeof(char), &mensaje, &mensaje_index);
+    serialize_data(&file_length, sizeof(int), &mensaje, &mensaje_index);
+    serialize_data(prog, (size_t) file_length, &mensaje, &mensaje_index);
 
-	serialize_data(&kernelProtocol, (size_t) sizeof(char), &mensaje, &mensaje_index);
-	serialize_data(&sz, (size_t) sizeof(int), &mensaje, &mensaje_index);
-	serialize_data(prog, (size_t) sz, &mensaje, &mensaje_index);
 	send(kernelSocketClient, mensaje, (size_t) mensaje_index, 0);
+	log_info(console_log, "El tamanio del programa es %d, y se envio al kernel: %s", (int) file_length, prog);
 
 	free(prog);
-	//verificar si este es necesario:
 	free(mensaje);
 
+    kernel_reply = calloc(1,sizeof(int));
 	if (recv(kernelSocketClient, kernel_reply, sizeof(int), 0) < 0) {
 		log_error(console_log, "Kernel no responde");
 		return EXIT_FAILURE;
-	} else {
-		int pid_console = 0;
-		int buffindex = 0;
-		deserialize_data(&pid_console, sizeof(int), kernel_reply, &buffindex);
-		if (pid_console == 0) {
-			log_error(console_log, "Kernel contesto: %d. No hay espacio en memoria para ejecutar el programa",
-					  pid_console);
-		} else {
-			log_info(console_log, "El pid de la consola es %d. Se esta ejecutando el programa.", pid_console);
-		}
 	}
-	free(kernel_reply);
+    int kRep, kRep_index = 0;
+    deserialize_data(&kRep, sizeof(int), kernel_reply, &kRep_index);
+    if (kRep == 0) {
+		log_error(console_log, "Kernel contesto: %d.No hay espacio en memoria para ejecutar el programa", kRep);
+	} else {
+		log_info(console_log, "El pid de la consola es %d. Se esta ejecutando el programa.", kRep);
+	}
+    free(kernel_reply);
 
 	void *kernelBuffer = NULL;
-	int valor = 0;
-	int textLen = 0;
+    int valor = 0, valor_index = 0;
+    int textLen = 0, textLen_index = 0;
 	bool continua = true;
-	void *kernel_operation =  calloc(1, sizeof(int));
-	int buffindex;
-	while (continua) {
-		buffindex = 0;
-		if (recv(kernelSocketClient, kernel_operation, sizeof(int), 0) > 0) {
-			int kernel_operation_index = 0;
-			int operation;
-			deserialize_data(&operation, sizeof(int), kernel_operation, &kernel_operation_index);
-			//log_info(console_log, "Kernel dijo: %d", operation);
-			switch (operation) {
+    int kernel_operation = 0;
+    while (continua) {
+		if (recv(kernelSocketClient, &kernel_operation, sizeof(int), 0) > 0) {
+			log_info(console_log, "Kernel dijo: %d", kernel_operation);
+			switch (kernel_operation) {
 				case 0:// Program END
 					continua = false;
 					log_info(console_log, "Vamo a recontra calmarno. El programa finalizó correctamente");
 					break;
 				case 1:// Print value
 					//recibo 4 bytes -> valor_variable
-					kernelBuffer = calloc(1,sizeof(int));
+                    kernelBuffer = calloc(1,sizeof(int));
 					recv(kernelSocketClient, kernelBuffer, sizeof(int), 0);
-					//valor = 0;
-					//buffindex=0;
-					deserialize_data(&valor, sizeof(int), kernelBuffer, &buffindex);
-					log_info(console_log, "%d", valor);
+                    deserialize_data(&valor, sizeof(int), kernelBuffer, &valor_index);
+                    valor_index = 0;
+					log_info(console_log, "El valor de la variable es: %d", valor);
 					free(kernelBuffer);
 					break;
+
 				case 2:// Print text
 					//recibo 4 del tamaño + texto
-					kernelBuffer = calloc(1,sizeof(int));
+                    kernelBuffer = calloc(1,sizeof(int));
 					recv(kernelSocketClient, kernelBuffer, sizeof(int), 0);
-					//textLen = 0;
-					//buffindex=0;
-					deserialize_data(&textLen, sizeof(int), kernelBuffer, &buffindex);
-					free(kernelBuffer);
-					if(textLen > 0) {
-						char* text = calloc(1, (size_t) textLen);
-						recv(kernelSocketClient, text, (size_t) textLen, 0);
-						log_info(console_log, "%s", text);
-						free(text);
-					} else {
-						log_error(console_log, "Se recibio un tamanio de texto invalido");
-					}
-					//free(kernelBuffer);
+                    deserialize_data(&textLen, sizeof(int), kernelBuffer, &textLen_index);
+                    textLen_index = 0;
+                    free(kernelBuffer);
+                    if(textLen > 0) {
+                        kernelBuffer = calloc(1, (size_t) textLen);
+                        recv(kernelSocketClient, kernelBuffer, (size_t) textLen, 0);
+                        log_info(console_log, "%s.", kernelBuffer);
+                    } else {
+                        log_error(console_log, "Se recibio un tamanio de texto invalido");
+                    }
+                    free(kernelBuffer);
 					break;
 				case 3:
 					continua = false;
@@ -146,18 +136,16 @@ int main(int argc, char *argv[]) {
 					continua = false;
 					log_error(console_log, "No hay marcos disponibles para comenzar a ejecutar el ansisop.");
 					break;
-				default:
-					continua = false;
-					log_error(console_log, "Se registro un error. El programa finalizo catastroficamente.");
-					break;
+                default:
+                    log_error(console_log, "Operacion invalida recibida");
+                    return -1;
 			}
 		} else {
-			continua = false;
-			log_error(console_log, "El programa finalizo repentinamente.");
-		}
+            continua = false;
+            log_error(console_log, "El programa finalizo repentinamente");
+        }
 	}
 
-	free(kernel_operation);
 	close(kernelSocketClient);
 	log_info(console_log, "Se cerro la conexion con el kernel");
 	puts("Terminated console.");
@@ -166,10 +154,12 @@ int main(int argc, char *argv[]) {
 }
 
 int loadConfig(char* configFile){
-	if(configFile == NULL)
+	if(configFile == NULL){
 		return -1;
+	}
 	t_config *config = config_create(configFile);
 	log_info(console_log, " .:: Loading settings ::.");
+
 	if(config != NULL){
 		setup.PUERTO_KERNEL=config_get_int_value(config,"PUERTO_KERNEL");
 		setup.IP_KERNEL=config_get_string_value(config,"IP_KERNEL");
@@ -181,10 +171,11 @@ void tratarSeniales(int senial) {
 	printf("Tratando seniales\n");
 	printf("\nSenial: %d\n", senial);
 	switch (senial) {
-		case SIGINT:
-			// Detecta Ctrl+C y evita el cierre.
-			printf("Esto acabará con el sistema. Presione Ctrl+C una vez más para confirmar.\n\n");
-			signal(SIGINT, SIG_DFL); // solo controlo una vez.
-			break;
+	case SIGINT:
+		// Detecta Ctrl+C y evita el cierre.
+		printf("Esto acabará con el sistema. Presione Ctrl+C una vez más para confirmar.\n\n");
+		signal(SIGINT, SIG_DFL); // solo controlo una vez.
+		break;
 	}
 }
+
