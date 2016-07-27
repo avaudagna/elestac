@@ -484,8 +484,10 @@ void * funcion_menu (void * noseusa)
                     break;
           }
      }
-printf("\n FINALIZA EL THREAD DEL MENU \n!!!!");
-pthread_exit(0);
+	printf(ANSI_COLOR_BLUE"Finalizando Modulo.\n"ANSI_COLOR_RESET);
+	liberarRecursos();
+	exit(1);
+
 }
 
 void marcarPaginasModificadas() {
@@ -634,11 +636,10 @@ void atenderCPU(int *socketBuff){
 			break;
 		case FIN_COMUNICACION_CPU:
 		default:
-			printf("Identificador de operacion invalido con CPU.Finalizando Thread y Socket.\n");
+			printf(ANSI_COLOR_BLUE"Identificador de operacion invalido con CPU.Finalizando Thread y Socket.\n"ANSI_COLOR_RESET);
 			estado = EXIT;
 			break;
 		}
-
 	}
 	contConexionesCPU--;
 	close(*socketBuff);		// cierro socket
@@ -2260,7 +2261,7 @@ void finalizarProceso(int *socketBuff){
 	memcpy(&pPid,buffer,sizeof(int));
 	free(buffer);
 
-	printf("Eliminando PID[%d] de Memoria.\n",pPid);
+	printf(ANSI_COLOR_GREEN"Eliminando PID[%d] de Memoria.\n"ANSI_COLOR_RESET,pPid);
 
 	buffer=calloc(1,sizeof(char)+sizeof(int));
 	memcpy(buffer,&caracter,sizeof(char));
@@ -2305,7 +2306,7 @@ void finalizarProceso(int *socketBuff){
 		pthread_rwlock_unlock(semListaPids);
 
 	}
-	printf("\n PID[%d] eliminado de memoria.Cantidad de Marcos libres en Swap:%d\n",pPid,paginasLibresEnSwap);
+	printf(ANSI_COLOR_GREEN"PID[%d] eliminado de memoria.Cantidad de Marcos libres en Swap:%d\n"ANSI_COLOR_RESET,pPid,paginasLibresEnSwap);
 }
 
 
@@ -2434,7 +2435,7 @@ void imprimirTablaDePaginasEnArchivo(void) {
 		fprintf(fp,"| PID | Pagina | Marco | Contador-LRU |");
 		t_link_element *entradaTlb = headerTLB->head;
 		while(entradaTlb != NULL) {
-			printf("\n|%3d%7d%9d%12d      |", ((TLB *) entradaTlb->data)->pid,
+			fprintf(fp,"\n|%3d%7d%9d%12d      |", ((TLB *) entradaTlb->data)->pid,
 				   ((TLB *) entradaTlb->data)->nroPagina,
 				   ((TLB *) entradaTlb->data)->nroDeMarco,
 				   ((TLB *) entradaTlb->data)->contadorLRU);
