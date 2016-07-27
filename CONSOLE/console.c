@@ -21,7 +21,9 @@ int main(int argc, char *argv[]) {
 	signal(SIGINT, tratarSeniales);
 
 	console_log = log_create("console.log", "Elestac-CONSOLE", true, LOG_LEVEL_TRACE);
-
+	printf("\n\t\e[31;1m===========================================\e[0m\n");
+	printf("\t\t.:: Hello world - Bievenido a Elestac ::.");
+	printf("\n\t\e[31;1m===========================================\e[0m\n\n");
 	if (loadConfig("/usr/share/ansisop/console.config") < 0){
 		log_error(console_log, "No se encontró el archivo de configuración");
 		return -1;
@@ -83,7 +85,7 @@ int main(int argc, char *argv[]) {
     int kRep, kRep_index = 0;
     deserialize_data(&kRep, sizeof(int), kernel_reply, &kRep_index);
     if (kRep == 0) {
-		log_error(console_log, "Kernel contesto: %d.No hay espacio en memoria para ejecutar el programa", kRep);
+		log_error(console_log, "Kernel contesto: %d. No hay espacio en memoria para ejecutar el programa", kRep);
 	} else {
 		log_info(console_log, "El pid de la consola es %d. Se esta ejecutando el programa.", kRep);
 	}
@@ -96,11 +98,11 @@ int main(int argc, char *argv[]) {
     int kernel_operation = 0;
     while (continua) {
 		if (recv(kernelSocketClient, &kernel_operation, sizeof(int), 0) > 0) {
-			log_info(console_log, "Kernel dijo: %d", kernel_operation);
+			//log_info(console_log, "Kernel dijo: %d", kernel_operation);
 			switch (kernel_operation) {
 				case 0:// Program END
 					continua = false;
-					log_info(console_log, "Vamo a recontra calmarno. El programa finalizó correctamente");
+					log_info(console_log, "Vamo a recontra calmarno. El programa finalizó correctamente.");
 					break;
 				case 1:// Print value
 					//recibo 4 bytes -> valor_variable
@@ -108,7 +110,7 @@ int main(int argc, char *argv[]) {
 					recv(kernelSocketClient, kernelBuffer, sizeof(int), 0);
                     deserialize_data(&valor, sizeof(int), kernelBuffer, &valor_index);
                     valor_index = 0;
-					log_info(console_log, "El valor de la variable es: %d", valor);
+					log_info(console_log, "(int) %d", valor);
 					free(kernelBuffer);
 					break;
 
@@ -122,7 +124,7 @@ int main(int argc, char *argv[]) {
                     if(textLen > 0) {
                         kernelBuffer = calloc(1, (size_t) textLen);
                         recv(kernelSocketClient, kernelBuffer, (size_t) textLen, 0);
-                        log_info(console_log, "%s.", kernelBuffer);
+                        log_info(console_log, "%s", kernelBuffer);
                     } else {
                         log_error(console_log, "Se recibio un tamanio de texto invalido");
                     }
@@ -148,7 +150,7 @@ int main(int argc, char *argv[]) {
 
 	close(kernelSocketClient);
 	log_info(console_log, "Se cerro la conexion con el kernel");
-	puts("Terminated console.");
+	printf("\n\t\e[31;1m Terminated console. \e[0m\n");
 	log_destroy(console_log);
 	return 0;
 }
