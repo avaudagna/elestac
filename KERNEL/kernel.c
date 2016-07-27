@@ -88,7 +88,6 @@ void* sem_wait_thread(void* cpuData){
 	bool listo = true;
 	int semIndex, miID, elPid;
 	int cpuData_index = 0;
-	char kernel_response = '0';
 	deserialize_data(&miID, sizeof(int), cpuData, &cpuData_index);
 	deserialize_data(&semIndex, sizeof(int), cpuData, &cpuData_index);
 	deserialize_data(&elPid, sizeof(int), cpuData, &cpuData_index);
@@ -752,6 +751,19 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 		send(clientUMC, umcKillProg, (size_t) umcKillProg_index, 0);
 		log_info(kernel_log, "Program %04d has been terminated", pid);
 		free(umcKillProg);
+		if(list_size(dying_pids) > 0){
+			bool getExPid(void *nbr) {
+				int anExPid, anExPid_index = 0;
+				deserialize_data(&anExPid, sizeof(int), nbr, &anExPid_index);
+				return (pid == anExPid);
+			}
+			int *unExPid = NULL;
+			unExPid = list_remove_by_condition(dying_pids, getExPid);
+			if(unExPid != NULL){
+				free(unExPid);
+				consoleStillOpen = false;
+			}
+		}
 		if (consoleStillOpen){
 			int finalizar = 0;
 			void* consoleKillProg = NULL;
