@@ -93,8 +93,11 @@ void* sem_wait_thread(void* cpuData){
 	deserialize_data(&elPid, sizeof(int), cpuData, &cpuData_index);
 	free(cpuData);
 	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started (PID %04d).", setup.SEM_ID[semIndex], miID, elPid);
-	sem_wait(&semaforo_ansisop[semIndex]);
-
+	//sem_wait(&semaforo_ansisop[semIndex]);
+	setup.SEM_PAPOTEADO[semIndex]--;
+	while(setup.SEM_PAPOTEADO[semIndex] < 0){
+		sleep(1);
+	}
 	bool match_PCB(void *pcb) {
 		t_pcb *unPCB = pcb;
 		bool matchea = (elPid == unPCB->pid);
@@ -149,7 +152,8 @@ int wait_coordination(int cpuID, int lePid){
 		return 1;
 	}else{
 		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d (PID %04d).", setup.SEM_ID[semIndex], cpuID, lePid);
-		sem_post(&semaforo_ansisop[semIndex]);
+		//sem_post(&semaforo_ansisop[semIndex]);
+		setup.SEM_PAPOTEADO[semIndex]++;
 		return 2;
 	}
 }
@@ -222,9 +226,11 @@ int loadConfig(char* configFile){
 		setup.SEM_INIT=config_get_array_value(config,"SEM_INIT");
 		counter=0; while (setup.SEM_ID[counter]) counter++;
 		semaforo_ansisop = realloc(semaforo_ansisop, counter * sizeof(sem_t));
+		setup.SEM_PAPOTEADO = realloc(setup.SEM_PAPOTEADO, counter * sizeof(int));
 		for (i = 0; i < counter; i++) {
 			initValue = (uint) atoi(setup.SEM_INIT[i]);
 			sem_init(&semaforo_ansisop[i], 0, initValue);
+			setup.SEM_PAPOTEADO[i] = atoi(setup.SEM_INIT[i]);
 		}
 		setup.SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
 		counter=0; while(setup.SHARED_VARS[counter]) counter++;
@@ -356,7 +362,7 @@ void check_CPU_FD_ISSET(void *cpu){
 	int nameSize_index = 0;
 	t_Client* laCPU = (t_Client*) cpu;
 	if (laCPU != NULL && FD_ISSET(laCPU->clientID, &allSockets)) {
-		log_debug(kernel_log,"CPU %d has something to say.", laCPU->clientID);
+		log_debug(kernel_log,ANSI_COLOR_BLUE"CPU %d has something to say."ANSI_COLOR_RESET, laCPU->clientID);
 		if (recv(laCPU->clientID, &cpu_protocol, sizeof(char), 0) > 0){
 			switch (cpu_protocol){
 				case '1':// Quantum end
@@ -468,7 +474,7 @@ void check_CPU_FD_ISSET(void *cpu){
 					log_error(kernel_log,"Caso no contemplado. CPU dijo: %s",cpu_protocol);
 			}
 		}else{
-			log_info(kernel_log,"CPU %d has closed the connection.", laCPU->clientID);
+			log_info(kernel_log,ANSI_COLOR_CYAN"CPU %d has closed the connection."ANSI_COLOR_RESET, laCPU->clientID);
 			close(laCPU->clientID);
 			bool getIndexCPU(void *nbr){
 				t_Client *unCliente = nbr;
@@ -500,7 +506,7 @@ void check_CONSOLE_FD_ISSET(void *console){
 	t_Client *cliente = console;
 	if (FD_ISSET(cliente->clientID, &allSockets)) {
 		if (recv(cliente->clientID, ConBuff, 1, 0) == 0){
-			log_info(kernel_log,"A console has closed the connection, the associated PID %04d will be terminated.", cliente->clientID);
+			log_info(kernel_log,ANSI_COLOR_CYAN"A console has closed the connection, the associated PID %04d will be terminated."ANSI_COLOR_RESET, cliente->clientID);
 			void *elPID = calloc(1, sizeof(int));
 			int elPID_index = 0;
 			serialize_data(&cliente->clientID, sizeof(int), &elPID, &elPID_index);

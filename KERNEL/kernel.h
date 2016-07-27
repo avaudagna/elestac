@@ -25,6 +25,14 @@
 #define EVENT_SIZE      (sizeof(struct inotify_event) + 24)
 #define EVENT_BUF_LEN   ( 256 * EVENT_SIZE )
 
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
 struct {
 		int 	PUERTO_PROG,
 				PUERTO_CPU,
@@ -32,6 +40,7 @@ struct {
 				QUANTUM_SLEEP;
 		char** 	SEM_ID;
 		char** 	SEM_INIT;
+		int*	SEM_PAPOTEADO;
 		char** 	IO_ID;
 		char** 	IO_SLEEP;
 		int     IO_COUNT;
