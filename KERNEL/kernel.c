@@ -763,13 +763,13 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 			send(pid, consoleKillProg, sizeof(char), 0); // send exit code to console
 			free(consoleKillProg);
 			close(pid); // close console socket
-			bool getConsoleIndex(void *nbr) {
-				t_Client *unCliente = nbr;
-				return (pid == unCliente->clientID);
-			}
-			list_remove_by_condition(consolas_conectadas, getConsoleIndex);
 		}
 	}
+	bool getConsoleIndex(void *nbr) {
+		t_Client *unCliente = nbr;
+		return (pid == unCliente->clientID);
+	}
+	list_remove_by_condition(consolas_conectadas, getConsoleIndex);
 }
 
 void process_io() {
