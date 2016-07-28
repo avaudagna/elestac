@@ -94,7 +94,6 @@ void* sem_wait_thread(void* cpuData){
 	deserialize_data(&elPid, sizeof(int), cpuData, &cpuData_index);
 	free(cpuData);
 	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started (PID %04d).", setup.SEM_ID[semIndex], miID, elPid);
-	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started (PID %04d).", setup.SEM_ID[semIndex], miID, elPid);
 	//sem_wait(&semaforo_ansisop[semIndex]);
     pthread_mutex_lock(&mut_semaphore);
 	    setup.SEM_PAPOTEADO[semIndex]--;
@@ -116,7 +115,7 @@ void* sem_wait_thread(void* cpuData){
 		return matchea;
 	}
 	while(listo){
-		t_pcb *elPCB;
+		t_pcb *elPCB = NULL;
 		if(list_size(PCB_WAITING) > 0){
 			elPCB = list_remove_by_condition(PCB_WAITING, match_PCB);
 			if(elPCB != NULL && elPCB->pid > 1){
@@ -134,7 +133,8 @@ void* sem_wait_thread(void* cpuData){
 		}
 	}
 	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished (PID %04d).", setup.SEM_ID[semIndex], miID, elPid);
-	pthread_exit(0);
+	//pthread_exit(0);
+	return (void*)1;
 }
 
 int wait_coordination(int cpuID, int lePid){
