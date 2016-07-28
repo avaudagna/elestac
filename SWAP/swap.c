@@ -18,6 +18,15 @@
 #define LECTURA '2'
 #define FINALIZARPROG '3'
 #define NUEVO_PROCESO '7'
+
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
 #define PATH_CONF "/home/alan/repos/tp-2016-1c-Vamo-a-calmarno/SWAP/swapConf"
 //#define PACKAGE_SIZE 1024
 //#define IPSWAP "127.0.0.1"
@@ -277,16 +286,7 @@ int request_FinalizacionPrograma(int pid){
 	int paginasLiberadas = 0;
 	paginasLiberadas = swap_LiberarPrograma(pid);
 
-	if(paginasLiberadas > 0){
-		log_info(LOG_SWAP, "Program finalized. Pages released: %d", paginasLiberadas);
-
-		return 1;
-	} else {
-		log_error(LOG_SWAP, "Error while releasing pages");
-
-		return -1;
-	}
-
+	log_info(LOG_SWAP,"Program finalized. Pages released: %d", paginasLiberadas);
 }
 
 /**********************
