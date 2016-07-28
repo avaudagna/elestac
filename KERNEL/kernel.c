@@ -87,26 +87,27 @@ int start_kernel(int argc, char* configFile){
 
 void* sem_wait_thread(void* cpuData){
 	bool listo = true;
-	int semIndex, miID, elPid;
+	int *semIndex = calloc(1, sizeof(int));
+	int miID, elPid;
 	int cpuData_index = 0, semValue = 0;
 	deserialize_data(&miID, sizeof(int), cpuData, &cpuData_index);
-	deserialize_data(&semIndex, sizeof(int), cpuData, &cpuData_index);
+	deserialize_data(semIndex, sizeof(int), cpuData, &cpuData_index);
 	deserialize_data(&elPid, sizeof(int), cpuData, &cpuData_index);
 	free(cpuData);
-	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started (PID %04d).", setup.SEM_ID[semIndex], miID, elPid);
+	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started (PID %04d).", setup.SEM_ID[*semIndex], miID, elPid);
 	//sem_wait(&semaforo_ansisop[semIndex]);
     pthread_mutex_lock(&mut_semaphore);
-	    setup.SEM_PAPOTEADO[semIndex]--;
+	    setup.SEM_PAPOTEADO[*semIndex]--;
     pthread_mutex_unlock(&mut_semaphore);
 
     pthread_mutex_lock(&mut_semaphore);
-        semValue = setup.SEM_PAPOTEADO[semIndex];
+        semValue = setup.SEM_PAPOTEADO[*semIndex];
     pthread_mutex_unlock(&mut_semaphore);
 
     while(semValue  < 0){
 		sleep(1);
         pthread_mutex_lock(&mut_semaphore);
-            semValue = setup.SEM_PAPOTEADO[semIndex];
+            semValue = setup.SEM_PAPOTEADO[*semIndex];
         pthread_mutex_unlock(&mut_semaphore);
     }
 	bool match_PCB(void *pcb) {
@@ -132,9 +133,9 @@ void* sem_wait_thread(void* cpuData){
 			}
 		}
 	}
-	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished (PID %04d).", setup.SEM_ID[semIndex], miID, elPid);
-	//pthread_exit(0);
-	return (void*)1;
+	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished (PID %04d).", setup.SEM_ID[*semIndex], miID, elPid);
+	free(semIndex);
+	return (void*)0;
 }
 
 int wait_coordination(int cpuID, int lePid){
