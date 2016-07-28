@@ -208,11 +208,11 @@ int execute_state_machine() {
 
 int post_process_operations() {
     actual_kernel_data->Q--;
+    actual_pcb->program_counter++;
     if(status_check() != WAITING && status_check() != BROKEN) {
         log_info(cpu_log, "Remaining Quantum : %d", actual_kernel_data->Q);
+        log_info(cpu_log, "Next execution line :%d", actual_pcb->program_counter);
     }
-    actual_pcb->program_counter++;
-    log_info(cpu_log, "Next execution line :%d", actual_pcb->program_counter);
     return SUCCESS;
 }
 
