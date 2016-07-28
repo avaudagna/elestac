@@ -104,7 +104,7 @@ void* sem_wait_thread(void* cpuData){
         semValue = setup.SEM_PAPOTEADO[semIndex];
     pthread_mutex_unlock(&mut_semaphore);
 
-    while(semValue  < 0){
+    while(semValue  < 1){
 		sleep(1);
         pthread_mutex_lock(&mut_semaphore);
             semValue = setup.SEM_PAPOTEADO[semIndex];
@@ -160,7 +160,10 @@ int wait_coordination(int cpuID, int lePid){
 		serialize_data(&semIndex, (size_t) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
 		serialize_data(&lePid, (size_t) sizeof(int), &losDatosGlobales, &losDatosGlobales_index);
 		pthread_t sem_thread;
-		pthread_create(&sem_thread, NULL, sem_wait_thread, losDatosGlobales);
+		int nuevoThread = pthread_create(&sem_thread, NULL, sem_wait_thread, losDatosGlobales);
+		if (0 != nuevoThread){
+			printf("me dio cosita %d: '%s''\n", nuevoThread, strerror(nuevoThread));
+		}
 		return 1;
 	}else{
 		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d (PID %04d).", setup.SEM_ID[semIndex], cpuID, lePid);
