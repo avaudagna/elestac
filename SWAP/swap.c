@@ -17,7 +17,7 @@
 #define ESCRIBIR '1'
 #define LECTURA '2'
 #define FINALIZARPROG '3'
-
+#define NUEVO_PROCESO '7'
 #define PATH_CONF "/home/alan/repos/tp-2016-1c-Vamo-a-calmarno/SWAP/swapConf"
 //#define PACKAGE_SIZE 1024
 //#define IPSWAP "127.0.0.1"
@@ -122,6 +122,8 @@ void imprimir_NodosEstructuraControl();
 char obtenerPrimerChar(void* buffer);
 int mod (int a, int b);
 void excepcionAlHablarConUMC();
+
+void umc_nuevo_proceso();
 
 int main(int argc , char **argv) {
 	if(argc != 2){
@@ -387,6 +389,9 @@ void init_Server(){
          ****************************/
 
 		switch(*operacion) {
+			case NUEVO_PROCESO:
+				umc_nuevo_proceso();
+				break;
 			case ESCRIBIR: //pid(int), numeroPagina(int), codigo (undefined)
 				umc_escribir();
 				break;
@@ -411,6 +416,34 @@ void init_Server(){
 //
 //		}
 
+}
+
+void umc_nuevo_proceso() {
+
+	void *buffer 	= calloc(1,sizeof(int));
+	int  contNec	= 0,
+		 aux1		= 0,
+		 contActual	= 0,
+	     i			= 0;
+	if(recv(umcSocket,buffer,sizeof(int),0) <= 0 ){
+		free(buffer);
+		excepcionAlHablarConUMC();
+	}
+	memcpy(&contNec,buffer,sizeof(int));
+	free(buffer);
+	for(i=0;i<(bitarray_get_max_bit(bitArrayStruct));i++){
+		if(!bitarray_test_bit(bitArrayStruct,i)){
+			aux1++;
+		}
+		else{
+			if(contActual < aux1) contActual=aux1;
+			aux1=0;
+		}
+	}
+	if(contActual < aux1) contActual=aux1;
+	if(contActual < contNec){
+		swap_Compactar();
+	}
 }
 
 
@@ -610,8 +643,14 @@ int init_SwapFile(){
 
 int init_BitMap(){
 	//Creamos y limpiamos el BitMap
+	unsigned int round_div(unsigned int dividend, unsigned int divisor)
+	{
+		return (dividend + (divisor / 2)) / divisor;
+	}
+
+
 	bitMap = calloc(1,sizeof(char)*CANTIDAD_PAGINAS);
-	bitArrayStruct = bitarray_create(bitMap,CANTIDAD_PAGINAS/8);
+	bitArrayStruct = bitarray_create(bitMap,round_div(CANTIDAD_PAGINAS,8));
 
 	int i; //Inicializamos todos los bits en cero (vacio)
 	for (i = 0; i < bitarray_get_max_bit(bitArrayStruct); ++i) {
