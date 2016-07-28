@@ -57,7 +57,7 @@
 #define OK "1"
 #define BUSCANDO_VICTIMA 0
 #define FINALIZAR_PROCESO '3'
-
+#define SOLICITUD_NUEVO_PROCESO_SWAP '7'
 #define STACK_OVERFLOW "2"
 
 
@@ -68,6 +68,7 @@
 #define ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
+
 
 
 typedef struct umc_parametros {
@@ -765,8 +766,10 @@ char handShakeKernel(int *socketBuff){
 void procesoSolicitudNuevoProceso(int * socketBuff){
 
 	int 	cantidadDePaginasSolicitadas,
-			pid_aux;
+			pid_aux,
+			cantTotal;
 	void   *buffer = calloc(1,sizeof(int)*2);
+	char 	caracter=SOLICITUD_NUEVO_PROCESO_SWAP;
 
 	if ( recv(*socketBuff,buffer,(sizeof(int)*2), 0) <= 0 ) { // levanto PID y Cantidad de Paginas de Codigo
 		free(buffer);
@@ -778,12 +781,25 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 	memcpy(&pid_aux,buffer,sizeof(int));
 	memcpy(&cantidadDePaginasSolicitadas,buffer+sizeof(int),sizeof(int));
 	free(buffer);
-
-	if ( (cantidadDePaginasSolicitadas+stack_size) <= paginasLibresEnSwap) {	// Se puede almacenar el nuevo proceso , respondo que SI
+	cantTotal=cantidadDePaginasSolicitadas+stack_size;
+	if ( cantTotal <= paginasLibresEnSwap) {	// Se puede almacenar el nuevo proceso , respondo que SI
+		buffer=calloc(1,sizeof(int)+sizeof(char));
+		memcpy(buffer,&caracter,sizeof(char));
+		memcpy(buffer+sizeof(char),&cantTotal,sizeof(int));
+		pthread_mutex_lock(semSwap);
+		if(send(socketClienteSwap,buffer,sizeof(char)+sizeof(int),0) == -1){	// Le aviso a SWAP que voy a necesitar N paginas contiguas
+			pthread_mutex_unlock(semSwap);
+			perror("send");
+			free(buffer);
+			printf(ANSI_COLOR_BLUE"Error en la comunicacion con Swap.Finalizando Modulo\n"ANSI_COLOR_RESET);
+			liberarRecursos();
+			exit(1);
+		}
+		pthread_mutex_unlock(semSwap);
+		free(buffer);
 		recibirYAlmacenarNuevoProceso(socketBuff,cantidadDePaginasSolicitadas,pid_aux);
 		buffer = calloc(1,sizeof(int));
 		memcpy(buffer,&cantidadDePaginasSolicitadas,sizeof(int));
-
 		if ( send(*socketBuff,buffer,sizeof(int),0) == -1) {	// Respondo Pagina donde comienza el Stack
 			free(buffer);
 			perror("recv");
