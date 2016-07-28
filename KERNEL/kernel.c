@@ -86,55 +86,50 @@ int start_kernel(int argc, char* configFile){
 }
 
 void* sem_wait_thread(void* cpuData){
-	bool listo = true;
 	int *semIndex = calloc(1, sizeof(int));
-	int miID, elPid;
-	int cpuData_index = 0, semValue = 0;
-	deserialize_data(&miID, sizeof(int), cpuData, &cpuData_index);
+	int *miID = calloc(1, sizeof(int));
+	int *elPid = calloc(1, sizeof(int));
+
+	//int miID, elPid;
+	int cpuData_index = 0;
+	deserialize_data(miID, sizeof(int), cpuData, &cpuData_index);
 	deserialize_data(semIndex, sizeof(int), cpuData, &cpuData_index);
-	deserialize_data(&elPid, sizeof(int), cpuData, &cpuData_index);
+	deserialize_data(elPid, sizeof(int), cpuData, &cpuData_index);
 	free(cpuData);
-	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started (PID %04d).", setup.SEM_ID[*semIndex], miID, elPid);
+	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started (PID %04d).", setup.SEM_ID[*semIndex], *miID, *elPid);
 	//sem_wait(&semaforo_ansisop[semIndex]);
     pthread_mutex_lock(&mut_semaphore);
 	    setup.SEM_PAPOTEADO[*semIndex]--;
     pthread_mutex_unlock(&mut_semaphore);
-
-    pthread_mutex_lock(&mut_semaphore);
-        semValue = setup.SEM_PAPOTEADO[*semIndex];
-    pthread_mutex_unlock(&mut_semaphore);
-
-    while(semValue  < 0){
+    while(setup.SEM_PAPOTEADO[*semIndex]  < 0){
 		sleep(1);
-        pthread_mutex_lock(&mut_semaphore);
-            semValue = setup.SEM_PAPOTEADO[*semIndex];
-        pthread_mutex_unlock(&mut_semaphore);
     }
 	bool match_PCB(void *pcb) {
 		t_pcb *unPCB = pcb;
-		bool matchea = (elPid == unPCB->pid);
-		return matchea;
+		return (*elPid == unPCB->pid);
 	}
-	while(listo){
+	while(1){
 		t_pcb *elPCB = NULL;
 		if(list_size(PCB_WAITING) > 0){
 			elPCB = list_remove_by_condition(PCB_WAITING, match_PCB);
 			if(elPCB != NULL && elPCB->pid > 1){
 				elPCB->status = READY;
 				list_add(PCB_READY, elPCB);
-				listo = false;
+				break;
 			}
 		}
 		if(list_size(PCB_EXIT_WAITING) > 0){
 			elPCB = list_remove_by_condition(PCB_EXIT_WAITING, match_PCB);
 			if(elPCB != NULL && elPCB->pid > 1){
 				list_add(PCB_EXIT, elPCB);
-				listo = false;
+				break;
 			}
 		}
 	}
-	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished (PID %04d).", setup.SEM_ID[*semIndex], miID, elPid);
+	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished (PID %04d).", setup.SEM_ID[*semIndex], *miID, *elPid);
 	free(semIndex);
+	free(miID);
+	free(elPid);
 	return (void*)0;
 }
 
