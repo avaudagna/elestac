@@ -290,7 +290,8 @@ void *requestPages2UMC(void* request_buffer){
 	void* req2UMC = NULL;//1+PID+nbrOfPages+ansisopLen+code
 	void* req2UMC_response = calloc(1, sizeof(int));
 	char umcProtocol = '1';
-	int nbrOfPages = ansisopLen/setup.PAGE_SIZE + 1;
+//	int nbrOfPages = ansisopLen/setup.PAGE_SIZE + 1;
+	int nbrOfPages = ansisopLen/setup.PAGE_SIZE + (ansisopLen % setup.PAGE_SIZE != 0);
 	int req2UMC_index = 0;
 	serialize_data(&umcProtocol, sizeof(char), &req2UMC, &req2UMC_index);
 	serialize_data(&PID, sizeof(int), &req2UMC, &req2UMC_index);
