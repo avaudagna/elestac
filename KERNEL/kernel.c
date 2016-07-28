@@ -57,6 +57,14 @@ int main (int argc, char* *argv){
 }
 
 int start_kernel(int argc, char* configFile){
+printf("\n\n"ANSI_COLOR_GREEN);
+	puts("	██╗  ██╗███████╗██████╗ ███╗   ██╗███████╗██╗");
+	puts("	██║ ██╔╝██╔════╝██╔══██╗████╗  ██║██╔════╝██║");
+	puts("	█████╔╝ █████╗  ██████╔╝██╔██╗ ██║█████╗  ██║");
+	puts("	██╔═██╗ ██╔══╝  ██╔══██╗██║╚██╗██║██╔══╝  ██║");
+	puts("	██║  ██╗███████╗██║  ██║██║ ╚████║███████╗███████╗");
+	puts("	╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝");
+	printf("\n\n"ANSI_COLOR_RESET);
 	printf("\n\t\e[31;1m===========================================\e[0m\n");
 	printf("\t.:: Vamo a calmarno que viene el Kernel ::.");
 	printf("\n\t\e[31;1m===========================================\e[0m\n\n");
@@ -228,11 +236,9 @@ int loadConfig(char* configFile){
 		setup.SEM_INIT=config_get_array_value(config,"SEM_INIT");
 		counter=0; while (setup.SEM_ID[counter]) counter++;
 		semaforo_ansisop = realloc(semaforo_ansisop, counter * sizeof(sem_t));
-		setup.SEM_PAPOTEADO = realloc(setup.SEM_PAPOTEADO, counter * sizeof(int));
 		for (i = 0; i < counter; i++) {
 			initValue = (uint) atoi(setup.SEM_INIT[i]);
 			sem_init(&semaforo_ansisop[i], 0, initValue);
-			setup.SEM_PAPOTEADO[i] = atoi(setup.SEM_INIT[i]);
 		}
 		setup.SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
 		counter=0; while(setup.SHARED_VARS[counter]) counter++;
@@ -278,7 +284,7 @@ void *requestPages2UMC(void* request_buffer){
 	deserialize_data(&PID, sizeof(int), request_buffer, &deserialize_index);
 	deserialize_data(&ansisopLen, sizeof(int), request_buffer, &deserialize_index);
 	code = calloc(1,(size_t) ansisopLen);
-	deserialize_data(code, (size_t) ansisopLen, request_buffer, &deserialize_index);
+	deserialize_data(code, ansisopLen, request_buffer, &deserialize_index);
 	deserialize_data(&clientUMC, sizeof(int), request_buffer, &deserialize_index);
 
 	void* req2UMC = NULL;//1+PID+nbrOfPages+ansisopLen+code
@@ -290,7 +296,7 @@ void *requestPages2UMC(void* request_buffer){
 	serialize_data(&PID, sizeof(int), &req2UMC, &req2UMC_index);
 	serialize_data(&nbrOfPages, sizeof(int), &req2UMC, &req2UMC_index);
 	serialize_data(&ansisopLen, sizeof(int), &req2UMC, &req2UMC_index);
-	serialize_data(code, (size_t) ansisopLen, &req2UMC, &req2UMC_index);
+	serialize_data(code, ansisopLen, &req2UMC, &req2UMC_index);
 	log_info(kernel_log, "Requesting %d pages to UMC.", nbrOfPages);
 
 	send(clientUMC, req2UMC, (size_t) req2UMC_index, 0);
@@ -608,10 +614,11 @@ void accept_new_PCB(int newConsole){
 	int request_buffer_index = 0;
 	serialize_data(&newConsole, sizeof(int), &request_buffer, &request_buffer_index);
 	serialize_data(&ansisopLen, sizeof(int), &request_buffer, &request_buffer_index);
-	serialize_data(code, (size_t) ansisopLen, &request_buffer, &request_buffer_index);
+	serialize_data(code, ansisopLen, &request_buffer, &request_buffer_index);
 	serialize_data(&clientUMC, sizeof(int), &request_buffer, &request_buffer_index);
 	pthread_t newPCB_thread;
 	pthread_create(&newPCB_thread, NULL, requestPages2UMC, request_buffer);
+	pthread_detach(newPCB_thread);
 	free(code);
 	free(ansisopLenBuff);
 }
@@ -848,5 +855,4 @@ void list_iterate_papoteado(t_list* self, void(*closure)(void*)) {
 		element = aux;
 	}
 }
-
 // C'est tout
