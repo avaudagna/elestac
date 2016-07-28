@@ -92,6 +92,7 @@ void	*sem_wait_thread(void *p);
 void	list_iterate_papoteado(t_list* self, void(*closure)(void*));
 t_pcb*  recvPCB(int cpuID);
 pthread_mutex_t mut_io_list;
+pthread_mutex_t mut_semaphore;
 sem_t *semaforo_io;
 sem_t *semaforo_ansisop;
 #endif /* KERNEL_H_ */

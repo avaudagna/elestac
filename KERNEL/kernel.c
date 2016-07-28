@@ -20,6 +20,7 @@ int losDatosGlobales_index;
 int main (int argc, char* *argv){
 	kernel_log = log_create("kernel.log", "Elestac-KERNEL", true, LOG_LEVEL_TRACE);
 	pthread_mutex_init(&mut_io_list, NULL);
+    pthread_mutex_init(&mut_semaphore, NULL);
 	PCB_READY = list_create();
 	PCB_BLOCKED = list_create();
 	PCB_EXIT = list_create();
@@ -87,17 +88,28 @@ int start_kernel(int argc, char* configFile){
 void* sem_wait_thread(void* cpuData){
 	bool listo = true;
 	int semIndex, miID, elPid;
-	int cpuData_index = 0;
+	int cpuData_index = 0, semValue = 0;
 	deserialize_data(&miID, sizeof(int), cpuData, &cpuData_index);
 	deserialize_data(&semIndex, sizeof(int), cpuData, &cpuData_index);
 	deserialize_data(&elPid, sizeof(int), cpuData, &cpuData_index);
 	free(cpuData);
 	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started (PID %04d).", setup.SEM_ID[semIndex], miID, elPid);
+	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started (PID %04d).", setup.SEM_ID[semIndex], miID, elPid);
 	//sem_wait(&semaforo_ansisop[semIndex]);
-	setup.SEM_PAPOTEADO[semIndex]--;
-	while(setup.SEM_PAPOTEADO[semIndex] < 0){
+    pthread_mutex_lock(&mut_semaphore);
+	    setup.SEM_PAPOTEADO[semIndex]--;
+    pthread_mutex_unlock(&mut_semaphore);
+
+    pthread_mutex_lock(&mut_semaphore);
+        semValue = setup.SEM_PAPOTEADO[semIndex];
+    pthread_mutex_unlock(&mut_semaphore);
+
+    while(semValue  < 0){
 		sleep(1);
-	}
+        pthread_mutex_lock(&mut_semaphore);
+            semValue = setup.SEM_PAPOTEADO[semIndex];
+        pthread_mutex_unlock(&mut_semaphore);
+    }
 	bool match_PCB(void *pcb) {
 		t_pcb *unPCB = pcb;
 		bool matchea = (elPid == unPCB->pid);
@@ -153,7 +165,9 @@ int wait_coordination(int cpuID, int lePid){
 	}else{
 		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d (PID %04d).", setup.SEM_ID[semIndex], cpuID, lePid);
 		//sem_post(&semaforo_ansisop[semIndex]);
-		setup.SEM_PAPOTEADO[semIndex]++;
+        pthread_mutex_lock(&mut_semaphore);
+		    setup.SEM_PAPOTEADO[semIndex]++;
+        pthread_mutex_unlock(&mut_semaphore);
 		return 2;
 	}
 }
