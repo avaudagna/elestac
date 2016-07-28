@@ -160,6 +160,7 @@ int wait_coordination(int cpuID, int lePid){
 		if (0 != nuevoThread){
 			printf("me dio cosita %d: '%s''\n", nuevoThread, strerror(nuevoThread));
 		}
+		pthread_detach(sem_thread);
 		return 1;
 	}else{
 		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d (PID %04d).", setup.SEM_ID[semIndex], cpuID, lePid);
