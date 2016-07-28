@@ -20,7 +20,6 @@ int losDatosGlobales_index;
 int main (int argc, char* *argv){
 	kernel_log = log_create("kernel.log", "Elestac-KERNEL", true, LOG_LEVEL_TRACE);
 	pthread_mutex_init(&mut_io_list, NULL);
-    pthread_mutex_init(&mut_semaphore, NULL);
 	PCB_READY = list_create();
 	PCB_BLOCKED = list_create();
 	PCB_EXIT = list_create();
@@ -89,21 +88,13 @@ void* sem_wait_thread(void* cpuData){
 	int *semIndex = calloc(1, sizeof(int));
 	int *miID = calloc(1, sizeof(int));
 	int *elPid = calloc(1, sizeof(int));
-
-	//int miID, elPid;
 	int cpuData_index = 0;
 	deserialize_data(miID, sizeof(int), cpuData, &cpuData_index);
 	deserialize_data(semIndex, sizeof(int), cpuData, &cpuData_index);
 	deserialize_data(elPid, sizeof(int), cpuData, &cpuData_index);
 	free(cpuData);
 	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started (PID %04d).", setup.SEM_ID[*semIndex], *miID, *elPid);
-	//sem_wait(&semaforo_ansisop[semIndex]);
-    pthread_mutex_lock(&mut_semaphore);
-	    setup.SEM_PAPOTEADO[*semIndex]--;
-    pthread_mutex_unlock(&mut_semaphore);
-    while(setup.SEM_PAPOTEADO[*semIndex]  < 0){
-		sleep(1);
-    }
+	sem_wait(&semaforo_ansisop[*semIndex]);
 	bool match_PCB(void *pcb) {
 		t_pcb *unPCB = pcb;
 		return (*elPid == unPCB->pid);
@@ -158,18 +149,13 @@ int wait_coordination(int cpuID, int lePid){
 		pthread_t sem_thread;
 		int nuevoThread = pthread_create(&sem_thread, NULL, sem_wait_thread, losDatosGlobales);
 		if (0 != nuevoThread){
-			printf("me dio cosita %d: '%s''\n", nuevoThread, strerror(nuevoThread));
+			printf(ANSI_COLOR_RED"Error %d: '%s''\n"ANSI_COLOR_RESET, nuevoThread, strerror(nuevoThread));
 		}
-		
 		pthread_detach(sem_thread);
-
 		return 1;
 	}else{
 		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d (PID %04d).", setup.SEM_ID[semIndex], cpuID, lePid);
-		//sem_post(&semaforo_ansisop[semIndex]);
-        pthread_mutex_lock(&mut_semaphore);
-		    setup.SEM_PAPOTEADO[semIndex]++;
-        pthread_mutex_unlock(&mut_semaphore);
+		sem_post(&semaforo_ansisop[semIndex]);
 		return 2;
 	}
 }
