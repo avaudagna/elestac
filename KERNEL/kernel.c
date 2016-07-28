@@ -104,7 +104,7 @@ void* sem_wait_thread(void* cpuData){
         semValue = setup.SEM_PAPOTEADO[semIndex];
     pthread_mutex_unlock(&mut_semaphore);
 
-    while(semValue  < 1){
+    while(semValue  < 0){
 		sleep(1);
         pthread_mutex_lock(&mut_semaphore);
             semValue = setup.SEM_PAPOTEADO[semIndex];
