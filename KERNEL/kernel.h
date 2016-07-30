@@ -40,7 +40,6 @@ struct {
 				QUANTUM_SLEEP;
 		char** 	SEM_ID;
 		char** 	SEM_INIT;
-		int*	SEM_PAPOTEADO;
 		char** 	IO_ID;
 		char** 	IO_SLEEP;
 		int     IO_COUNT;

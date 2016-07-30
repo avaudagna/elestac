@@ -32,21 +32,31 @@ int main (int argc, char* *argv){
 	if (start_kernel(argc, argv[1])<0) return 0; //load settings
 	clientUMC=connect2UMC();
 	if (clientUMC<0){
+		printf(ANSI_COLOR_RED);
 		log_error(kernel_log, "Could not connect to the UMC. Please, try again.");
+		printf(ANSI_COLOR_RESET);
 		return 0;
 	}
 	if(setServerSocket(&consoleServer, setup.KERNEL_IP, setup.PUERTO_PROG)<0){
+		printf(ANSI_COLOR_RED);
 		log_error(kernel_log,"Error while creating the CONSOLE server.");
+		printf(ANSI_COLOR_RESET);
 		return 0;
 	}
 	if(setServerSocket(&cpuServer, setup.KERNEL_IP, setup.PUERTO_CPU)<0){
+		printf(ANSI_COLOR_RED);
 		log_error(kernel_log,"Error while creating the CPU server.");
+		printf(ANSI_COLOR_RESET);
 		return 0;
 	}
 	maxSocket=cpuServer;
+	printf(ANSI_COLOR_GREEN);
 	log_info(kernel_log,"Servers to CPUs and consoles up and running. Waiting for incoming connections.");
+	printf(ANSI_COLOR_RESET);
 	while (control_clients());
+	printf(ANSI_COLOR_RED);
 	log_error(kernel_log, "Closing kernel.");
+	printf(ANSI_COLOR_RESET);
 	inotify_rm_watch(configFileFD, configFileWatcher);
 	close(configFileFD);
 	close(consoleServer);
@@ -57,12 +67,22 @@ int main (int argc, char* *argv){
 }
 
 int start_kernel(int argc, char* configFile){
+printf("\n\n"ANSI_COLOR_GREEN);
+	puts("	██╗  ██╗███████╗██████╗ ███╗   ██╗███████╗██╗");
+	puts("	██║ ██╔╝██╔════╝██╔══██╗████╗  ██║██╔════╝██║");
+	puts("	█████╔╝ █████╗  ██████╔╝██╔██╗ ██║█████╗  ██║");
+	puts("	██╔═██╗ ██╔══╝  ██╔══██╗██║╚██╗██║██╔══╝  ██║");
+	puts("	██║  ██╗███████╗██║  ██║██║ ╚████║███████╗███████╗");
+	puts("	╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝");
+	printf("\n\n"ANSI_COLOR_RESET);
 	printf("\n\t\e[31;1m===========================================\e[0m\n");
 	printf("\t.:: Vamo a calmarno que viene el Kernel ::.");
 	printf("\n\t\e[31;1m===========================================\e[0m\n\n");
 	if(argc==2){
 		if (loadConfig(configFile)<0) {
+			printf(ANSI_COLOR_RED);
 			log_error(kernel_log, "Config file can not be loaded. Please, try again.");
+			printf(ANSI_COLOR_RESET);
 			return -1;
 		}else{
 			configFileName = calloc(1, strlen(configFile));
@@ -75,8 +95,10 @@ int start_kernel(int argc, char* configFile){
 		configFileFD = inotify_init();
 		configFileWatcher = inotify_add_watch(configFileFD, configFilePath, IN_MODIFY | IN_CREATE);
 	}else{
+		printf(ANSI_COLOR_RED);	
 		printf("\r Usage: ./kernel setup.conf \n");
 		log_error(kernel_log, "Config file was not provided.");
+		printf(ANSI_COLOR_RESET);
 		return -1;
 	}
 	signal (SIGINT, tratarSeniales);
@@ -93,7 +115,9 @@ void* sem_wait_thread(void* cpuData){
 	deserialize_data(semIndex, sizeof(int), cpuData, &cpuData_index);
 	deserialize_data(elPid, sizeof(int), cpuData, &cpuData_index);
 	free(cpuData);
+	printf(ANSI_COLOR_GREEN);
 	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d started (PID %04d).", setup.SEM_ID[*semIndex], *miID, *elPid);
+	printf(ANSI_COLOR_RESET);
 	sem_wait(&semaforo_ansisop[*semIndex]);
 	bool match_PCB(void *pcb) {
 		t_pcb *unPCB = pcb;
@@ -117,7 +141,9 @@ void* sem_wait_thread(void* cpuData){
 			}
 		}
 	}
+	printf(ANSI_COLOR_GREEN);
 	log_info(kernel_log, "sem_wait_thread: WAIT semaphore %s by CPU %d finished (PID %04d).", setup.SEM_ID[*semIndex], *miID, *elPid);
+	printf(ANSI_COLOR_RESET);
 	free(semIndex);
 	free(miID);
 	free(elPid);
@@ -154,7 +180,9 @@ int wait_coordination(int cpuID, int lePid){
 		pthread_detach(sem_thread);
 		return 1;
 	}else{
+		printf(ANSI_COLOR_GREEN);
 		log_info(kernel_log, "wait_coordination: SIGNAL semaphore %s by CPU %d (PID %04d).", setup.SEM_ID[semIndex], cpuID, lePid);
+		printf(ANSI_COLOR_RESET);
 		sem_post(&semaforo_ansisop[semIndex]);
 		return 2;
 	}
@@ -176,7 +204,9 @@ void* do_work(void *p){
 			io_units_index = 0;
 			deserialize_data(&io_units, sizeof(int), io_op->io_units,&io_units_index);
 			if (io_op->pid > 0) {
+				printf(ANSI_COLOR_GREEN);
 				log_info(kernel_log, "%s will perform %d operations.", setup.IO_ID[miID], io_units);
+				printf(ANSI_COLOR_RESET);
 				int processing_io = atoi(setup.IO_SLEEP[miID]) * io_units * 1000;
 				usleep((useconds_t) processing_io);
 				bool match_PCB(void *pcb) {
@@ -190,7 +220,9 @@ void* do_work(void *p){
 					elPCB->status = READY;
 					list_add(PCB_READY, elPCB);
 				} // Else -> The PCB was killed by end_program while performing I/O
+				printf(ANSI_COLOR_GREEN);
 				log_info(kernel_log, "do_work: Finished an io operation on device %s requested by PID %d.", setup.IO_ID[miID], io_op->pid);
+				printf(ANSI_COLOR_RESET);
 				free(io_op);
 			}
 		}
@@ -228,11 +260,9 @@ int loadConfig(char* configFile){
 		setup.SEM_INIT=config_get_array_value(config,"SEM_INIT");
 		counter=0; while (setup.SEM_ID[counter]) counter++;
 		semaforo_ansisop = realloc(semaforo_ansisop, counter * sizeof(sem_t));
-		setup.SEM_PAPOTEADO = realloc(setup.SEM_PAPOTEADO, counter * sizeof(int));
 		for (i = 0; i < counter; i++) {
 			initValue = (uint) atoi(setup.SEM_INIT[i]);
 			sem_init(&semaforo_ansisop[i], 0, initValue);
-			setup.SEM_PAPOTEADO[i] = atoi(setup.SEM_INIT[i]);
 		}
 		setup.SHARED_VARS=config_get_array_value(config,"SHARED_VARS");
 		counter=0; while(setup.SHARED_VARS[counter]) counter++;
@@ -278,35 +308,40 @@ void *requestPages2UMC(void* request_buffer){
 	deserialize_data(&PID, sizeof(int), request_buffer, &deserialize_index);
 	deserialize_data(&ansisopLen, sizeof(int), request_buffer, &deserialize_index);
 	code = calloc(1,(size_t) ansisopLen);
-	deserialize_data(code, (size_t) ansisopLen, request_buffer, &deserialize_index);
+	deserialize_data(code, ansisopLen, request_buffer, &deserialize_index);
 	deserialize_data(&clientUMC, sizeof(int), request_buffer, &deserialize_index);
 
 	void* req2UMC = NULL;//1+PID+nbrOfPages+ansisopLen+code
 	void* req2UMC_response = calloc(1, sizeof(int));
 	char umcProtocol = '1';
-	int nbrOfPages = ansisopLen/setup.PAGE_SIZE + 1;
+	int nbrOfPages = ansisopLen/setup.PAGE_SIZE + (ansisopLen % setup.PAGE_SIZE != 0);
 	int req2UMC_index = 0;
 	serialize_data(&umcProtocol, sizeof(char), &req2UMC, &req2UMC_index);
 	serialize_data(&PID, sizeof(int), &req2UMC, &req2UMC_index);
 	serialize_data(&nbrOfPages, sizeof(int), &req2UMC, &req2UMC_index);
 	serialize_data(&ansisopLen, sizeof(int), &req2UMC, &req2UMC_index);
-	serialize_data(code, (size_t) ansisopLen, &req2UMC, &req2UMC_index);
+	serialize_data(code, ansisopLen, &req2UMC, &req2UMC_index);
+	printf(ANSI_COLOR_GREEN);
 	log_info(kernel_log, "Requesting %d pages to UMC.", nbrOfPages);
-
+	printf(ANSI_COLOR_RESET);
 	send(clientUMC, req2UMC, (size_t) req2UMC_index, 0);
 	recv(clientUMC, req2UMC_response, sizeof(int), 0);
 	int code_pages;
 	int code_pages_index = 0;
 	deserialize_data(&code_pages, sizeof(int), req2UMC_response, &code_pages_index);
+	printf(ANSI_COLOR_GREEN);
 	log_info(kernel_log, "UMC replied.");
+	printf(ANSI_COLOR_RESET);
 	free(req2UMC);
 	free(req2UMC_response);
 	createNewPCB(PID, code_pages, code);
 }
 void tratarSeniales(int senial){
+	printf(ANSI_COLOR_RED);
 	printf("\n\t=============================================\n");
 	printf("\t\tSystem received the signal: %d",senial);
 	printf("\n\t=============================================\n");
+	printf(ANSI_COLOR_RESET);
 	switch (senial){
 		case SIGINT:
 			// Detecta Ctrl+C y evita el cierre.
@@ -364,12 +399,16 @@ void check_CPU_FD_ISSET(void *cpu){
 	int nameSize_index = 0;
 	t_Client* laCPU = (t_Client*) cpu;
 	if (laCPU != NULL && FD_ISSET(laCPU->clientID, &allSockets)) {
-		log_debug(kernel_log,ANSI_COLOR_BLUE"CPU %d has something to say."ANSI_COLOR_RESET, laCPU->clientID);
+		printf(ANSI_COLOR_BLUE);
+		log_debug(kernel_log,"CPU %d has something to say.", laCPU->clientID);
+		printf(ANSI_COLOR_RESET);
 		if (recv(laCPU->clientID, &cpu_protocol, sizeof(char), 0) > 0){
 			switch (cpu_protocol){
 				case '1':// Quantum end
 				case '2':// Program END
-					log_debug(kernel_log, "Receving a PCB from CPU %d", laCPU->clientID);
+					printf(ANSI_COLOR_CYAN);
+					log_debug(kernel_log, "Receiving a PCB from CPU %d", laCPU->clientID);
+					printf(ANSI_COLOR_RESET);
 					t_pcb* incomingPCB = recvPCB(laCPU->clientID);
 					if (laCPU->status == EXIT || incomingPCB->status==EXIT || incomingPCB->status == BROKEN || incomingPCB->status == ABORTED){
 						list_add(PCB_EXIT, incomingPCB);
@@ -379,7 +418,9 @@ void check_CPU_FD_ISSET(void *cpu){
 					restoreCPU(laCPU);
 					break;
 				case '3':// IO
+					printf(ANSI_COLOR_CYAN);
 					log_debug(kernel_log, "Receiving an Input/Output request + a PCB");
+					printf(ANSI_COLOR_RESET);
 					t_io *io_op = calloc(1,sizeof(t_io));
 					io_op->pid = laCPU->pid;
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0); // size of the io_name
@@ -391,7 +432,9 @@ void check_CPU_FD_ISSET(void *cpu){
 					io_op->io_index = getIOindex(io_op->io_name);
 					t_pcb *blockedPCB = recvPCB(laCPU->clientID);
 					if (io_op->io_index < 0 || laCPU->status == EXIT) {
+						printf(ANSI_COLOR_RED);
 						log_error(kernel_log, "AnSisOp program request an unplugged device or the console has been closed. #VamoACalmarno");
+						printf(ANSI_COLOR_RESET);
 						list_add(PCB_EXIT,blockedPCB);
 					} else {
 						pthread_mutex_lock(&mut_io_list);
@@ -402,9 +445,13 @@ void check_CPU_FD_ISSET(void *cpu){
 					restoreCPU(laCPU);
 					break;
 				case '4':// semaforo
+					printf(ANSI_COLOR_CYAN);
 					log_debug(kernel_log, "Receiving a semaphore operation from CPU %d + a PCB", laCPU->clientID);
+					printf(ANSI_COLOR_RESET);
 					if(wait_coordination(laCPU->clientID, laCPU->pid) == 1){
+						printf(ANSI_COLOR_GREEN);
 						log_debug(kernel_log, "WAIT successfully handled for CPU %d.",laCPU->clientID);
+						printf(ANSI_COLOR_RESET);
 						t_pcb* semPCB = recvPCB(laCPU->clientID);
 						if(laCPU->status == EXIT){
 							list_add(PCB_EXIT_WAITING, semPCB);
@@ -413,11 +460,15 @@ void check_CPU_FD_ISSET(void *cpu){
 						}
 						restoreCPU(laCPU);
 					}else{
+						printf(ANSI_COLOR_GREEN);
 						log_debug(kernel_log, "SIGNAL successfully handled for CPU %d.",laCPU->clientID);
+						printf(ANSI_COLOR_RESET);
 					}
 					break;
 				case '5':// var compartida
+					printf(ANSI_COLOR_CYAN);
 					log_debug(kernel_log, "Receiving a shared var operation from CPU %d", laCPU->clientID);
+					printf(ANSI_COLOR_RESET);
 					recv(laCPU->clientID, tmp_buff, sizeof(char), 0);
 					if (*tmp_buff == '1')
 						setValue = 1;
@@ -441,7 +492,9 @@ void check_CPU_FD_ISSET(void *cpu){
 					free(theShared);
 					break;
 				case '6':// imprimirValor
+					printf(ANSI_COLOR_CYAN);
 					log_debug(kernel_log, "Receiving a value to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
+					printf(ANSI_COLOR_RESET);
 					int value2console;
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
 					deserialize_data(&value2console, sizeof(int), tmp_buff, &nameSize_index);
@@ -450,18 +503,24 @@ void check_CPU_FD_ISSET(void *cpu){
 					int consoleProtocol = 1;
 					serialize_data(&consoleProtocol, (size_t) sizeof(int), &text2Console, &text2Console_index);
 					serialize_data(&value2console, (size_t) sizeof(int), &text2Console, &text2Console_index);
+					printf(ANSI_COLOR_GREEN);
 					log_debug(kernel_log, "Console %d will print the value %d.", laCPU->pid, value2console);
+					printf(ANSI_COLOR_RESET);
 					send(laCPU->pid, text2Console, (size_t) text2Console_index, 0); // send the value to the console
 					free(text2Console);
 					break;
 				case '7':// imprimirTexto
+					printf(ANSI_COLOR_CYAN);
 					log_debug(kernel_log, "Receiving a text to print on console %d from CPU %d.", laCPU->pid, laCPU->clientID);
+					printf(ANSI_COLOR_RESET);
 					recv(laCPU->clientID, tmp_buff, sizeof(int), 0);
 					int txtSize;
 					deserialize_data(&txtSize, sizeof(int), tmp_buff, &nameSize_index);
 					char *theTXT = calloc(1, (size_t) txtSize);
 					recv(laCPU->clientID, theTXT, (size_t) txtSize, 0);
+					printf(ANSI_COLOR_GREEN);
 					log_debug(kernel_log, "Console %d will print this text: %s.", laCPU->pid, theTXT);
+					printf(ANSI_COLOR_RESET);
 					void* txt2console = NULL;
 					int consoleProtocol2 = 2;
 					int txt2console_index = 0;
@@ -473,10 +532,14 @@ void check_CPU_FD_ISSET(void *cpu){
 					free(txt2console);
 					break;
 				default:
+					printf(ANSI_COLOR_RED);
 					log_error(kernel_log,"Caso no contemplado. CPU dijo: %s",cpu_protocol);
+					printf(ANSI_COLOR_RESET);
 			}
 		}else{
-			log_info(kernel_log,ANSI_COLOR_CYAN"CPU %d has closed the connection."ANSI_COLOR_RESET, laCPU->clientID);
+			printf(ANSI_COLOR_RED);
+			log_info(kernel_log,"CPU %d has closed the connection.", laCPU->clientID);
+			printf(ANSI_COLOR_RESET);
 			close(laCPU->clientID);
 			bool getIndexCPU(void *nbr){
 				t_Client *unCliente = nbr;
@@ -508,7 +571,9 @@ void check_CONSOLE_FD_ISSET(void *console){
 	t_Client *cliente = console;
 	if (FD_ISSET(cliente->clientID, &allSockets)) {
 		if (recv(cliente->clientID, ConBuff, 1, 0) == 0){
-			log_info(kernel_log,ANSI_COLOR_CYAN"A console has closed the connection, the associated PID %04d will be terminated."ANSI_COLOR_RESET, cliente->clientID);
+			printf(ANSI_COLOR_RED);
+			log_info(kernel_log,"A console has closed the connection, the associated PID %04d will be terminated.", cliente->clientID);
+			printf(ANSI_COLOR_RESET);
 			void *elPID = calloc(1, sizeof(int));
 			int elPID_index = 0;
 			serialize_data(&cliente->clientID, sizeof(int), &elPID, &elPID_index);
@@ -544,7 +609,9 @@ int control_clients(){
 							setup.QUANTUM = config_get_int_value(config,"QUANTUM");
 							setup.QUANTUM_SLEEP = config_get_int_value(config,"QUANTUM_SLEEP");
 							config_destroy(config);
+							printf(ANSI_COLOR_RED);
 							log_info(kernel_log, "New config file loaded. QUANTUM=%d & QUANTUM_SLEEP=%d.", setup.QUANTUM, setup.QUANTUM_SLEEP);
+							printf(ANSI_COLOR_RESET);
 						}
 					}
 					base += EVENT_SIZE + event->len;
@@ -562,7 +629,11 @@ int control_clients(){
 			RoundRobinReport();
 		}
 		newCPU=accept_new_client("CPU", &cpuServer, &allSockets, cpus_conectadas);
-		if(newCPU>0) log_info(kernel_log,"New CPU accepted with ID %d",newCPU);
+		if(newCPU>0){
+			printf(ANSI_COLOR_BLUE);
+			log_info(kernel_log,"New CPU accepted with ID %d",newCPU);
+			printf(ANSI_COLOR_RESET);
+		}
 	}
 	call_handlers();
 	return 1;
@@ -573,7 +644,9 @@ int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista) {
 	char newBuff[1];
 	if (FD_ISSET(*server, &*sockets)){
 		if ((aceptado=acceptConnection(*server)) < 1){
+			printf(ANSI_COLOR_RED);
 			log_error(kernel_log,"Error while trying to Accept() a new %s.",what);
+			printf(ANSI_COLOR_RESET);
 		} else {
 			maxSocket=aceptado;
 			if (recv(aceptado, newBuff, 1, 0) > 0){
@@ -583,10 +656,14 @@ int accept_new_client(char* what,int *server, fd_set *sockets,t_list *lista) {
 					cliente->pid = 0;
 					cliente->status = 0;
 					list_add(lista, cliente);
+					printf(ANSI_COLOR_BLUE);
 					log_info(kernel_log, "New %s arriving (%d)", what, list_size(lista));
+					printf(ANSI_COLOR_RESET);
 				}
 			}else{
+				printf(ANSI_COLOR_RED);
 				log_error(kernel_log,"Error while trying to read from a newly accepted %s.",what);
+				printf(ANSI_COLOR_RESET);
 				close(aceptado);
 				return -1;
 			}
@@ -599,7 +676,9 @@ void accept_new_PCB(int newConsole){
 	void* ansisopLenBuff = calloc(1, sizeof(int));
 	int ansisopLenBuff_index = 0;
 	int ansisopLen;
+	printf(ANSI_COLOR_GREEN);
 	log_info(kernel_log, "NEW (0) program with PID=%04d arriving.", newConsole);
+	printf(ANSI_COLOR_RESET);
 	recv(newConsole, ansisopLenBuff, sizeof(int), 0);
 	deserialize_data(&ansisopLen, sizeof(int), ansisopLenBuff, &ansisopLenBuff_index);
 	char *code = calloc(1,(size_t) ansisopLen);
@@ -608,10 +687,11 @@ void accept_new_PCB(int newConsole){
 	int request_buffer_index = 0;
 	serialize_data(&newConsole, sizeof(int), &request_buffer, &request_buffer_index);
 	serialize_data(&ansisopLen, sizeof(int), &request_buffer, &request_buffer_index);
-	serialize_data(code, (size_t) ansisopLen, &request_buffer, &request_buffer_index);
+	serialize_data(code, ansisopLen, &request_buffer, &request_buffer_index);
 	serialize_data(&clientUMC, sizeof(int), &request_buffer, &request_buffer_index);
 	pthread_t newPCB_thread;
 	pthread_create(&newPCB_thread, NULL, requestPages2UMC, request_buffer);
+	pthread_detach(newPCB_thread);
 	free(code);
 	free(ansisopLenBuff);
 }
@@ -621,7 +701,9 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 	int PIDserializado_index = 0;
 	if (code_pages>0){
 		serialize_data(&newConsole, sizeof(int), &PIDserializado, &PIDserializado_index);
+		printf(ANSI_COLOR_BLUE);
 		log_info(kernel_log, "Pages of code + stack = %d.", code_pages + setup.STACK_SIZE);
+		printf(ANSI_COLOR_RESET);
 		send(newConsole, PIDserializado, sizeof(int), 0);
 		t_metadata_program* metadata = metadata_desde_literal(code);
 		t_pcb *newPCB = calloc(1, sizeof(t_pcb));
@@ -637,12 +719,16 @@ void createNewPCB(int newConsole, int code_pages, char* code){
 		memcpy(newPCB->etiquetas, metadata->etiquetas, metadata->etiquetas_size);
 		free(metadata);
 		list_add(PCB_READY, newPCB);
+		printf(ANSI_COLOR_BLUE);
 		log_info(kernel_log, "The program with PID=%04d is now READY (%d).", newPCB->pid, newPCB->status);
+		printf(ANSI_COLOR_RESET);
 	} else {
 		int cero = 0;
 		serialize_data(&cero, sizeof(int), &PIDserializado, &PIDserializado_index);
 		send(newConsole, PIDserializado, sizeof(int), 0);
+		printf(ANSI_COLOR_RED);
 		log_error(kernel_log, "The program with PID=%04d could not be started. System run out of memory.", newConsole);
+		printf(ANSI_COLOR_RESET);
 		close(newConsole);
 		bool getConsoleIndex(void *nbr) {
 			t_Client *unCliente = nbr;
@@ -670,7 +756,9 @@ void round_robin(){
 	serialize_data(&setup.QUANTUM_SLEEP, sizeof(int), &tmp_buffer, &tmp_buffer_size);
 	serialize_data(&pcb_buffer_size, sizeof(int), &tmp_buffer, &tmp_buffer_size);
 	serialize_data(pcb_buffer, pcb_buffer_size, &tmp_buffer, &tmp_buffer_size);
+	printf(ANSI_COLOR_BLUE);
 	log_info(kernel_log,"Submitting to CPU %d the PID=%04d.", laCPU->clientID, tuPCB->pid);
+	printf(ANSI_COLOR_RESET);
 	send(laCPU->clientID, tmp_buffer, (size_t) tmp_buffer_size, 0);
 	list_add(cpus_executing,laCPU);
 	free(tmp_buffer);
@@ -680,7 +768,6 @@ void round_robin(){
 }
 
 void RoundRobinReport(){
-	log_info(kernel_log, "Round Robin report:");
 	int nBLOCKED = list_size(PCB_BLOCKED);
 	int nEXIT = list_size(PCB_EXIT);
 	int nWAITING = list_size(PCB_WAITING);
@@ -688,7 +775,10 @@ void RoundRobinReport(){
 	int nEXEC = list_size(cpus_executing);
 	int nREADY = list_size(PCB_READY);
 	int nNEW = list_size(consolas_conectadas) - nREADY - nEXEC - nBLOCKED - nEXIT - nWAITING - nEW;
+	printf(ANSI_COLOR_BLUE);
+	log_info(kernel_log, "Round Robin report:");
 	log_info(kernel_log, "NEW=%d, READY=%d, EXECUTING=%d, BLOCKED=%d, EXIT=%d.", nNEW, nREADY, nEXEC, nBLOCKED+nWAITING+nEW, nEXIT);
+	printf(ANSI_COLOR_RESET);
 }
 
 void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) { /* Search everywhere for the PID and kill it ! */
@@ -757,7 +847,9 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 		serialize_data(&dos, sizeof(char), &umcKillProg, &umcKillProg_index);
 		serialize_data(&pid, sizeof(int), &umcKillProg, &umcKillProg_index);
 		send(clientUMC, umcKillProg, (size_t) umcKillProg_index, 0);
+		printf(ANSI_COLOR_RED);
 		log_info(kernel_log, "Program %04d has been terminated", pid);
+		printf(ANSI_COLOR_RESET);
 		free(umcKillProg);
 		if(list_size(dying_pids) > 0){
 			bool getExPid(void *nbr) {
@@ -778,7 +870,9 @@ void end_program(int pid, bool consoleStillOpen, bool cpuStillOpen, int status) 
 			int consoleKillProg_index = 0;
 			if (status == BROKEN) finalizar = 3;
 			if (status == ABORTED) finalizar = 4;
+			printf(ANSI_COLOR_RED);
 			log_info(kernel_log, "Program status was %d. Console will inform this properly to the user.", status);
+			printf(ANSI_COLOR_RESET);
 			serialize_data(&finalizar, sizeof(int), &consoleKillProg, &consoleKillProg_index);
 			send(pid, consoleKillProg, sizeof(char), 0); // send exit code to console
 			free(consoleKillProg);
@@ -848,5 +942,4 @@ void list_iterate_papoteado(t_list* self, void(*closure)(void*)) {
 		element = aux;
 	}
 }
-
 // C'est tout
