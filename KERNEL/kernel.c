@@ -351,6 +351,10 @@ void *requestPages2UMC(void* request_buffer){
 	}
 	if(todoBien){
 		createNewPCB(PID, code_pages, code);
+	}else{
+		printf(ANSI_COLOR_RED);
+		log_error(kernel_log, "The program with PID %04d was closed before it could be started. It has been already closed.", PID);
+		printf(ANSI_COLOR_RESET);
 	}
 }
 void tratarSeniales(int senial){
