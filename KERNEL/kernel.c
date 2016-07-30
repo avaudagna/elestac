@@ -20,6 +20,7 @@ int losDatosGlobales_index;
 int main (int argc, char* *argv){
 	kernel_log = log_create("kernel.log", "Elestac-KERNEL", true, LOG_LEVEL_TRACE);
 	pthread_mutex_init(&mut_io_list, NULL);
+	pthread_mutex_init(&mut_newPID_list, NULL);
 	PCB_READY = list_create();
 	PCB_BLOCKED = list_create();
 	PCB_EXIT = list_create();
@@ -336,14 +337,20 @@ void *requestPages2UMC(void* request_buffer){
 	free(req2UMC);
 	free(req2UMC_response);
 	bool todoBien = false;
-	if(list_size(new_pids) > 0){
+	int cuantosPIDs = 0;
+	pthread_mutex_lock(&mut_newPID_list);
+	cuantosPIDs = list_size(new_pids);
+	pthread_mutex_unlock(&mut_newPID_list);
+	if(cuantosPIDs > 0){
 		bool getUnPid(void *nbr){
 			int anExPid, anExPid_index = 0;
 			deserialize_data(&anExPid, sizeof(int), nbr, &anExPid_index);
 			return (PID == anExPid);
 		}
 		int *unNewPid  = NULL;
+		pthread_mutex_lock(&mut_newPID_list);
 		unNewPid = list_remove_by_condition(new_pids, getUnPid);
+		pthread_mutex_unlock(&mut_newPID_list);
 		if(unNewPid != NULL){
 			free(unNewPid);
 			todoBien = true;
