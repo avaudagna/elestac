@@ -361,6 +361,7 @@ void *requestPages2UMC(void* request_buffer){
 	}else{
 		printf(ANSI_COLOR_RED);
 		log_error(kernel_log, "The program with PID %04d was closed before it could be started. It has been already closed.", PID);
+		end_program(PID, false, false, BROKEN); //tell UMC to delete it
 		printf(ANSI_COLOR_RESET);
 	}
 }
@@ -737,7 +738,7 @@ void accept_new_PCB(int newConsole){
 
 	pthread_t newPCB_thread;
 	pthread_create(&newPCB_thread, NULL, requestPages2UMC, request_buffer);
-	pthread_detach(newPCB_thread);
+	//pthread_detach(newPCB_thread);
 	free(code);
 	free(ansisopLenBuff);
 }
