@@ -142,7 +142,7 @@ int return_pcb() {
     void * serialized_pcb = NULL;
     int serialized_buffer_index = 0;
     serialize_pcb(actual_pcb, &serialized_pcb, &serialized_buffer_index);
-    testSerializedPCB(actual_pcb, serialized_pcb);
+    //testSerializedPCB(actual_pcb, serialized_pcb);
     if( send(kernelSocketClient , &serialized_buffer_index, (size_t) sizeof(int), 0) < 0) {
         log_error(cpu_log, "Send serialized_buffer_length to KERNEL failed");
         return ERROR;
@@ -208,11 +208,11 @@ int execute_state_machine() {
 
 int post_process_operations() {
     actual_kernel_data->Q--;
+    actual_pcb->program_counter++;
     if(status_check() != WAITING && status_check() != BROKEN) {
         log_info(cpu_log, "Remaining Quantum : %d", actual_kernel_data->Q);
+        log_info(cpu_log, "Next execution line :%d", actual_pcb->program_counter);
     }
-    actual_pcb->program_counter++;
-    log_info(cpu_log, "Next execution line :%d", actual_pcb->program_counter);
     return SUCCESS;
 }
 

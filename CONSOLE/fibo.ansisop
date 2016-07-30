@@ -1,11 +1,11 @@
 #!/usr/bin/ansisop
 begin
 variables x
-#	x <- fibo 50
+	x <- fibo 50
 # Esperable: SegFault en el 10mo (40)
 
-	x <- fibo 8
-#Esperable: 21
+#	x <- fibo 7
+#Esperable: 13
 
 	textPrint Solucion:
 		print x
