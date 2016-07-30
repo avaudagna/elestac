@@ -39,6 +39,14 @@ int usage_check(int argc) {
 }
 
 void print_cpu_banner() {
+    printf(ANSI_COLOR_BLUE);
+    puts("  ███████   ████████  ██   ██");
+    puts("  ██        ██    ██  ██   ██");
+    puts("  ██        ████████  ██   ██");
+    puts("  ██        ██        ██   ██");
+    puts("  ██        ██        ██   ██");
+    puts("  ███████   ██        ███████");
+    printf(ANSI_COLOR_RESET);
     printf("\n\t===========================================================\n");
     printf("\t.:: Me llama usted, entonces voy, el CPU es quien yo soy ::.");
     printf("\n\t===========================================================\n\n");

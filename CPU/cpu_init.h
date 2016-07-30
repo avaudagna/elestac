@@ -1,6 +1,8 @@
 #ifndef CPU_CPU_INIT_H
 #define CPU_CPU_INIT_H
 
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
 
 #include <signal.h>
 #include <stdio.h>
