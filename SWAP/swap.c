@@ -812,7 +812,7 @@ int swap_Compactar(){
 
 	puts(".:: SWAP STATE AFTER DEFRAGMETATION ::. \n");
 	imprimir_EstadoBitMap();
-
+	usleep(1000*RETARDO_COMPACTACION);
 	return 0;
 }
 
@@ -1156,13 +1156,12 @@ void imprimir_NodosEstructuraControl(){
 void imprimir_EstadoBitMap(){
 	int i;
 	for(i = 0; i < CANTIDAD_PAGINAS ; i++){
-		printf("%d",bitarray_test_bit(bitArrayStruct, i));
+		log_info(LOG_SWAP,"%d",bitarray_test_bit(bitArrayStruct, i));
 
 		if(mod(i, 100) == 0 && i!=0)
 			printf("\n");
 
 	}
-
 	printf("\n Total: %d \n", i);
 }
 
