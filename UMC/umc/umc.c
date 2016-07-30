@@ -336,6 +336,15 @@ int main(int argc , char **argv){
 
 void init_UMC(char * configFile)
 {
+	printf("\n\n"ANSI_COLOR_RED);
+	puts("  ██   ██  █████████████  ███████");
+	puts("  ██   ██  ██   ███   ██  ██");
+	puts("  ██   ██  ██   ███   ██  ██");
+	puts("  ██   ██  ██   ███   ██  ██");
+	puts("  ██   ██  ██   ███   ██  ██");
+	puts("  ███████  ██   ███   ██  ███████");
+	printf("\n"ANSI_COLOR_RESET);
+
 	mensajesInit();
 	init_Semaforos();
 	init_Parameters(configFile);
@@ -461,7 +470,7 @@ void * funcion_menu (void * noseusa)
      while(!flag)
      {
 
-          printf("\n*****\nIngresar opcion deseada\n1) Setear Retardo\n2)Dump\n3)Limpiar TLB\n4)Marcar Todas las Paginas como modificadas\n-1)Salir\n*********\n");
+          printf(ANSI_COLOR_MAGENTA"\n**********************************************\nIngresar opcion deseada\n 1)Setear Retardo\n 2)Dump\n 3)Limpiar TLB\n 4)Marcar Todas las Paginas como modificadas\n-1)Salir\n**********************************************\n"ANSI_COLOR_RESET);
           scanf("%d",&opcion);
           switch(opcion)
           {
@@ -808,7 +817,7 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 		}
 		else {
 			free(buffer);
-			printf(ANSI_COLOR_RED"\nNuevo Proceso en Memoria :[%04d] , Paginas de Codigo :[%d]\n"ANSI_COLOR_RESET, pid_aux,cantidadDePaginasSolicitadas);
+			printf(ANSI_COLOR_RED"\nNuevo Proceso en Memoria:[%04d]|Paginas de Codigo :[%d]|Paginas de STACK:[%d]|Total=[%d]\n"ANSI_COLOR_RESET, pid_aux,cantidadDePaginasSolicitadas,stack_size,cantidadDePaginasSolicitadas+stack_size);
 		}
 
 	}else {
