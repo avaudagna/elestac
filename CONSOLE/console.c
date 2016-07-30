@@ -21,9 +21,9 @@ int main(int argc, char *argv[]) {
 	signal(SIGINT, tratarSeniales);
 
 	console_log = log_create("console.log", "Elestac-CONSOLE", true, LOG_LEVEL_TRACE);
-	printf("\n\t\e[31;1m===========================================\e[0m\n");
+	printf("\n\t\e[31;1m=========================================\e[0m\n");
 	printf("\t.:: Hello world - Bievenido a Elestac ::.");
-	printf("\n\t\e[31;1m===========================================\e[0m\n\n");
+	printf("\n\t\e[31;1m=========================================\e[0m\n\n");
 	if (loadConfig("/usr/share/ansisop/console.config") < 0){
 		log_error(console_log, "No se encontró el archivo de configuración");
 		return -1;
