@@ -74,7 +74,9 @@ t_posicion definirVariable(t_nombre_variable variable) {
 }
 
 void stack_overflow_exit() {
+    printf(ANSI_COLOR_CYAN);
     log_info(cpu_log, "=== STACK OVERFLOW ===");
+    printf(ANSI_COLOR_RESET);
     status_update(BROKEN);
 }
 
@@ -187,7 +189,9 @@ t_valor_variable dereferenciar(t_posicion direccion_variable) {
 
 int check_umc_response(char status) {
     if(status == OPERACION_EXITOSA_ID) {
+        printf(ANSI_COLOR_GREEN);
         log_info(cpu_log, "UMC_RESPONSE_OK");
+        printf(ANSI_COLOR_RESET);
         return SUCCESS;
     }
     else if (status == STACK_OVERFLOW_ID) {
@@ -202,7 +206,9 @@ int check_umc_response(char status) {
 }
 
 void process_aborted_exit() {
+    printf(ANSI_COLOR_MAGENTA);
     log_error(cpu_log, "=== PROCESS ABORTED ===");
+    printf(ANSI_COLOR_RESET);
     status_update(ABORTED);
 }
 

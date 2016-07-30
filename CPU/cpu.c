@@ -210,14 +210,20 @@ int post_process_operations() {
     actual_kernel_data->Q--;
     actual_pcb->program_counter++;
     if(status_check() != WAITING && status_check() != BROKEN) {
+        printf(ANSI_COLOR_BLUE);
         log_info(cpu_log, "Remaining Quantum : %d", actual_kernel_data->Q);
+        printf(ANSI_COLOR_RESET);
+        printf(ANSI_COLOR_YELLOW);
         log_info(cpu_log, "Next execution line :%d", actual_pcb->program_counter);
+        printf(ANSI_COLOR_RESET);
     }
     return SUCCESS;
 }
 
 void finished_quantum_post_process() {
+    printf(ANSI_COLOR_RED);
     log_info(cpu_log, "=== Finished Quantum ===");
+    printf(ANSI_COLOR_RESET);
     if(status_check() == EXECUTING) {
         status_update(READY);
     }
@@ -276,7 +282,9 @@ int check_execution_state() {
 
 void program_end_notification() {
 
+    printf(ANSI_COLOR_RED);
     log_info(cpu_log, "=== Finished Program ===");
+    printf(ANSI_COLOR_RESET);
     log_info(cpu_log, "Finishid executing PCB with PID %d", actual_pcb->pid);
     char operation = PROGRAM_END;
     if( send(kernelSocketClient , &operation, sizeof(char), 0) < 0) {
@@ -489,7 +497,9 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
         return ERROR;
     }
     deserialize_data(&kernel_data_buffer->Q , sizeof(int), buffer, &deserialized_data_index);
+    printf(ANSI_COLOR_BLUE);
     log_info(cpu_log, "Q: %d", kernel_data_buffer->Q);
+    printf(ANSI_COLOR_RESET);
 
     if( recv(kernelSocketClient , buffer , sizeof(int) , 0) <= 0) {
         log_error(cpu_log, "QSleep recv failed");
@@ -497,7 +507,9 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
     }
     deserialized_data_index = 0;
     deserialize_data(&kernel_data_buffer->QSleep , sizeof(int), buffer, &deserialized_data_index);
+    printf(ANSI_COLOR_BLUE);
     log_info(cpu_log, "QSleep: %d", kernel_data_buffer->QSleep);
+    printf(ANSI_COLOR_RESET);
 
     if( recv(kernelSocketClient ,buffer , sizeof(int) , 0) <= 0) {
         log_error(cpu_log, "pcb_size recv failed");
@@ -505,6 +517,7 @@ int recibir_pcb(int kernelSocketClient, t_kernel_data *kernel_data_buffer) {
     }
     deserialized_data_index = 0;
     deserialize_data(&kernel_data_buffer->pcb_size , sizeof(int), buffer, &deserialized_data_index);
+
     log_info(cpu_log, "pcb_size: %d", kernel_data_buffer->pcb_size);
     free(buffer);
 
