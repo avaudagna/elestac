@@ -1,3 +1,4 @@
+#!/usr/bin/ansisop
 begin
 	variables a,b
 	a=3
