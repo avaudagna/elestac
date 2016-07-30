@@ -136,7 +136,7 @@ void umc_nuevo_proceso();
 
 int main(int argc , char **argv) {
 	if(argc != 2){
-		printf("Cantidad de argumentos invalidos \nusage : ./SWAP swap-config-file");
+		log_info(LOG_SWAP,"Cantidad de argumentos invalidos \nusage : ./SWAP swap-config-file");
 		exit(1);
 	}
 	LOG_SWAP = log_create("swap.log", "Elestac-SWAP", true, LOG_LEVEL_TRACE);
@@ -442,7 +442,10 @@ void umc_nuevo_proceso() {
 	}
 	if(contActual < aux1) contActual=aux1;
 	if(contActual < contNec){
-		swap_Compactar();
+        log_info(LOG_SWAP, "Not enough contiguous space found for saving %d requested pages.", contNec);
+        log_info(LOG_SWAP, "Biggest hole available %d", contActual);
+        log_info(LOG_SWAP, "Proceeding with defragmentation\n");
+        swap_Compactar();
 	}
 }
 
@@ -783,14 +786,13 @@ int swap_PrimerOcupado(int principio){
 	return actual;
 }
 
-//TODO: Agregar retardo de compactacion
 int swap_Compactar(){
-	log_info(LOG_SWAP, ".:: DEFRAGMETATION REQUESTED ::.");
+	log_info(LOG_SWAP, ".:: DEFRAGMETATION REQUESTED ::.\n");
 
-	puts(".:: SWAP STATE BEFORE DEFRAGMETATION ::. \n");
+    log_info(LOG_SWAP,".:: SWAP STATE BEFORE DEFRAGMETATION ::.");
 	imprimir_EstadoBitMap();
 
-	puts("\n .:: BEGINING DEFRAGMETATION ::. \n");
+    log_info(LOG_SWAP,".:: BEGINING DEFRAGMETATION ::.\n");
 
 	//Aplicamos el retardo
 	usleep(1000*RETARDO_COMPACTACION);
@@ -810,7 +812,7 @@ int swap_Compactar(){
 
 	}
 
-	puts(".:: SWAP STATE AFTER DEFRAGMETATION ::. \n");
+	puts(".:: SWAP STATE AFTER DEFRAGMETATION ::.");
 	imprimir_EstadoBitMap();
 	usleep(1000*RETARDO_COMPACTACION);
 	return 0;
@@ -1147,7 +1149,7 @@ void imprimir_NodosEstructuraControl(){
 
 	struct NodoControlCodigo* current;
 	for(current = headControlCodigo; current != NULL; current = current->next){
-		printf("Nodo --> pid: %d, pageNumber: %d, positionInSWAP: %d, BitMap: %d \n", current->infoPagina->pid, current->infoPagina->pageNumber, current->infoPagina->positionInSWAP,current->infoPagina->bitMapPosition);
+		log_info(LOG_SWAP,"Nodo --> pid: %d, pageNumber: %d, positionInSWAP: %d, BitMap: %d \n", current->infoPagina->pid, current->infoPagina->pageNumber, current->infoPagina->positionInSWAP,current->infoPagina->bitMapPosition);
 	}
 
 	puts("");
@@ -1155,14 +1157,12 @@ void imprimir_NodosEstructuraControl(){
 
 void imprimir_EstadoBitMap(){
 	int i;
+	void * estadoBitmap = calloc(1, sizeof(char)*CANTIDAD_PAGINAS + 1);
 	for(i = 0; i < CANTIDAD_PAGINAS ; i++){
-		log_info(LOG_SWAP,"%d",bitarray_test_bit(bitArrayStruct, i));
-
-		if(mod(i, 100) == 0 && i!=0)
-			printf("\n");
-
+		sprintf(estadoBitmap+i, "%d", bitarray_test_bit(bitArrayStruct, i));
 	}
-	printf("\n Total: %d \n", i);
+	log_info(LOG_SWAP,"%s",estadoBitmap);
+	log_info(LOG_SWAP,"Total: %d\n", i);
 }
 
 /*************************
