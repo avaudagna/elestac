@@ -307,7 +307,9 @@ int get_execution_line(void ** instruction_line) {
         return ERROR;
     }
     strip_string(*instruction_line);
+    printf(ANSI_COLOR_YELLOW);
     log_info(cpu_log, "Next execution line: %s", *instruction_line);
+    printf(ANSI_COLOR_RESET);
     return SUCCESS;
 }
 
