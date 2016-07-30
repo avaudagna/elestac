@@ -767,7 +767,8 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 
 	int 	cantidadDePaginasSolicitadas,
 			pid_aux,
-			cantTotal;
+			cantTotal,
+			tamanioCodigo;
 	void   *buffer = calloc(1,sizeof(int)*2);
 	char 	caracter=SOLICITUD_NUEVO_PROCESO_SWAP;
 
@@ -824,6 +825,29 @@ void procesoSolicitudNuevoProceso(int * socketBuff){
 			exit(1);
 		}
 		free(buffer);
+		buffer = calloc(1,sizeof(int));
+		//Recibo pero descarto el resto de la trama
+		if( (recv(*socketBuff,buffer,sizeof(int), 0)) <= 0){		// levanto el campo tamaño de codigo
+			free(buffer);
+			perror("recv");
+			printf("\n Error en la comunicacion con Kernel:[Recepcion Code Size] Finalizando.\n");
+			liberarRecursos();
+			exit(1);
+		}else{
+			// levanto el codigo
+			memcpy(&tamanioCodigo,buffer,sizeof(int));
+            free(buffer);
+            buffer = calloc(1, (size_t) tamanioCodigo);
+			if( (recv(*socketBuff, buffer, (size_t)tamanioCodigo, 0)) <= 0){	// me almaceno todo el codigo
+				free(buffer);
+				perror("recv");
+				printf("\n Error en la comunicacion con Kernel:[Recepcion de todo el Codigo] Finalizando.\n");
+				liberarRecursos();
+				exit(1);
+			}
+            printf(ANSI_COLOR_BLUE"Cantidad de paginas insuficientes para almacenar\n"ANSI_COLOR_RESET);
+            free(buffer);
+        }
 	}
 }
 
