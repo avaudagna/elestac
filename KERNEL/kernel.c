@@ -10,7 +10,7 @@ char* configFileName;
 char* configFilePath;
 t_log   *kernel_log;
 t_list  *PCB_READY, *PCB_BLOCKED, *PCB_EXIT, *PCB_WAITING, *PCB_EXIT_WAITING;
-t_list  *consolas_conectadas, *cpus_conectadas, *cpus_executing, *dying_pids;
+t_list  *consolas_conectadas, *cpus_conectadas, *cpus_executing, *dying_pids, *new_pids;
 t_list **solicitudes_io;
 fd_set 	 allSockets;
 void* losDatosGlobales = NULL;
@@ -28,6 +28,7 @@ int main (int argc, char* *argv){
 	cpus_conectadas = list_create();
 	cpus_executing = list_create();
 	dying_pids = list_create();
+	new_pids = list_create();
 	consolas_conectadas = list_create();
 	if (start_kernel(argc, argv[1])<0) return 0; //load settings
 	clientUMC=connect2UMC();
@@ -334,7 +335,23 @@ void *requestPages2UMC(void* request_buffer){
 	printf(ANSI_COLOR_RESET);
 	free(req2UMC);
 	free(req2UMC_response);
-	createNewPCB(PID, code_pages, code);
+	bool todoBien = false;
+	if(list_size(new_pids) > 0){
+		bool getUnPid(void *nbr){
+			int anExPid, anExPid_index = 0;
+			deserialize_data(&anExPid, sizeof(int), nbr, &anExPid_index);
+			return (PID == anExPid);
+		}
+		int *unNewPid  = NULL;
+		unNewPid = list_remove_by_condition(new_pids, getUnPid);
+		if(unNewPid != NULL){
+			free(unNewPid);
+			todoBien = true;
+		}
+	}
+	if(todoBien){
+		createNewPCB(PID, code_pages, code);
+	}
 }
 void tratarSeniales(int senial){
 	printf(ANSI_COLOR_RED);
@@ -345,7 +362,7 @@ void tratarSeniales(int senial){
 	switch (senial){
 		case SIGINT:
 			// Detecta Ctrl+C y evita el cierre.
-			printf("Me di cuenta que me tiraste la senial :8 \nDale Ctrl+C una vez más para confirmar.\n\n");
+			printf("Me di cuenta que me tiraste la senial...\nDale Ctrl+C una vez más para confirmar.\n\n");
 			signal (SIGINT, SIG_DFL); // solo controlo una vez.
 			break;
 		case SIGPIPE:
@@ -574,6 +591,18 @@ void check_CONSOLE_FD_ISSET(void *console){
 			printf(ANSI_COLOR_RED);
 			log_info(kernel_log,"A console has closed the connection, the associated PID %04d will be terminated.", cliente->clientID);
 			printf(ANSI_COLOR_RESET);
+			if(list_size(new_pids) > 0){
+				bool getUnPid(void *nbr){
+					int anExPid, anExPid_index = 0;
+					deserialize_data(&anExPid, sizeof(int), nbr, &anExPid_index);
+					return (cliente->clientID == anExPid);
+				}
+				int *unNewPid  = NULL;
+				unNewPid = list_remove_by_condition(new_pids, getUnPid);
+				if(unNewPid != NULL){
+					free(unNewPid);
+				}
+			}
 			void *elPID = calloc(1, sizeof(int));
 			int elPID_index = 0;
 			serialize_data(&cliente->clientID, sizeof(int), &elPID, &elPID_index);
@@ -689,6 +718,12 @@ void accept_new_PCB(int newConsole){
 	serialize_data(&ansisopLen, sizeof(int), &request_buffer, &request_buffer_index);
 	serialize_data(code, ansisopLen, &request_buffer, &request_buffer_index);
 	serialize_data(&clientUMC, sizeof(int), &request_buffer, &request_buffer_index);
+
+	void *elPID = calloc(1, sizeof(int));
+	int elPID_index = 0;
+	serialize_data(&newConsole, sizeof(int), &elPID, &elPID_index);
+	list_add(new_pids, elPID);
+
 	pthread_t newPCB_thread;
 	pthread_create(&newPCB_thread, NULL, requestPages2UMC, request_buffer);
 	pthread_detach(newPCB_thread);
