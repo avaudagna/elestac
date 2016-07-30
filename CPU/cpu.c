@@ -142,7 +142,7 @@ int return_pcb() {
     void * serialized_pcb = NULL;
     int serialized_buffer_index = 0;
     serialize_pcb(actual_pcb, &serialized_pcb, &serialized_buffer_index);
-    testSerializedPCB(actual_pcb, serialized_pcb);
+    //testSerializedPCB(actual_pcb, serialized_pcb);
     if( send(kernelSocketClient , &serialized_buffer_index, (size_t) sizeof(int), 0) < 0) {
         log_error(cpu_log, "Send serialized_buffer_length to KERNEL failed");
         return ERROR;
