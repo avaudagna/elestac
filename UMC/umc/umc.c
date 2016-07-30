@@ -547,9 +547,7 @@ void procesarConexiones(void)
 			perror("pthread_create");
 			exit(1);
 	}
-		//pthread_join(thread_id,NULL);
-
-
+	pthread_detach(thread_id);
 }
 
 
